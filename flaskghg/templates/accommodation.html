@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Accommodation Data" />
+    <meta name="author" content="Your Name" />
+    <title>Accommodation Data</title>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<style>
+    .container {
+        width: 100%; /* Full width of the screen */
+        max-width: 100vw; /* Maximum width set to the viewport width */
+        margin: 0 auto; /* Center the container */
+        padding: 20px; /* Padding around the container */
+        overflow-x: hidden; /* Remove horizontal scrolling */
+    }
+    
+    table {
+        width: 1200px; /* Full width table */
+        border-collapse: collapse; /* Collapse borders for a clean look */
+        font-size: 11px; /* Appropriate font size for readability */
+        table-layout: fixed; /* Ensures equal distribution of column widths */
+    }
+    
+    th, td {
+        padding: 10px; /* Adequate padding for cells */
+        text-align: center; /* Center-align table content */
+        border: 1px solid #ddd; /* Light border for cells */
+        word-wrap: break-word; /* Ensure text wraps if too long */
+        white-space: normal; /* Allows text wrapping inside table cells */
+    }
+    
+    th {
+        background-color: #d50000; /* Red background for table headers */
+        color: white; /* White text for better contrast */
+    }
+    
+    td {
+        background-color: white; /* Default background for table cells */
+    }
+    
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9; /* Light grey for alternating rows */
+    }
+    
+    .pagination {
+        margin-top: 20px; /* Space between the table and pagination */
+        text-align: center; /* Center the pagination */
+    }
+    
+    .pagination button {
+        padding: 5px 10px; /* Padding for pagination buttons */
+        margin: 2px; /* Margins between buttons */
+        font-size: 12px; /* Button text size */
+        cursor: pointer;
+    }
+    
+    .pagination .page-info {
+        margin: 0 10px;
+        font-size: 14px;
+    }
+    
+    .delete-icon {
+        cursor: pointer;
+        color: #fd0808; /* Red color for delete icon */
+    }
+    
+    body {
+        font-family: 'Roboto', sans-serif;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden; /* Prevent horizontal scrolling */
+    }
+    
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #e0e0e0;
+        padding: 10px 20px; /* Adjust padding */
+        border-bottom: 2px solid #ccc;
+        z-index: 1;
+        position: relative;
+    }
+    
+    .header .logo {
+        width: 50px; /* Adjust width of the logo */
+        height: auto;
+        margin-left: 20px;
+        transition: margin-left 0.5s ease;
+    }
+    
+    .header .title {
+        font-size: 28px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+        flex-grow: 1;
+    }
+    
+    .content {
+        flex-grow: 1;
+        background-color: #d50000;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: margin-left 0.5s ease;
+    }
+    
+    .filter-container {
+        margin-bottom: 20px;
+    }
+    
+    .filter-container select {
+        padding: 10px;
+        font-size: 16px;
+    }
+    
+    .modal {
+        display: none; /* Flexbox to center content */
+        justify-content: center; /* Center horizontally */
+        align-items: flex-start; /* Align content at the top */
+        position: fixed; /* Stay in place */
+        z-index: 2; /* Sit above everything */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+        padding-top: 50px; /* Adjust padding to move content lower */
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 4% auto; /* Center it vertically and horizontally */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 50%; /* Could be adjusted based on design */
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    
+    .close:hover,
+    .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    
+    .modal .container {
+        background-color: #d50000;
+        padding: 15px; /* Slightly reduced padding */
+        width: 100%; /* Full width within modal */
+        height: auto; /* Adjust based on content */
+        border-radius: 10px;
+        color: #fff;
+        display: flex;
+        justify-content: space-between; /* Align form and result container side by side */
+        box-sizing: border-box;
+    }
+    
+    .form-container,
+    .result-container {
+        width: 48%; /* Make both form and result container take equal space */
+        margin: 0; /* Remove extra margins */
+    }
+    
+    .form-container form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Reduced gap between form elements */
+    }
+    
+    .form-container form label {
+        font-size: 14px; /* Smaller font size for labels */
+        margin-bottom: 5px; /* Minimal space between label and input */
+    }
+    
+    .form-container form input,
+    .form-container form select {
+        padding: 8px; /* Reduced padding inside input fields */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        color: #333;
+        font-size: 14px; /* Smaller font size for inputs */
+    }
+    
+    .form-container form button {
+        padding: 10px; /* Smaller button padding */
+        background-color: #666;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px; /* Smaller font size for buttons */
+    }
+    
+    .form-container form button:hover {
+        background-color: #555;
+    }
+    
+    .result-container {
+        background-color: #e0e0e0;
+        padding: 15px; /* Smaller padding for result container */
+        border-radius: 10px;
+    }
+    
+    #result {
+        background-color: #fff;
+        color: #333;
+        padding: 15px; /* Reduced padding */
+        border-radius: 10px;
+        margin-top: 15px;
+    }
+    
+    canvas {
+        margin-top: 20px;
+        display: block;
+        width: 100%;
+    }
+    
+    .buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px; /* Reduced gap between buttons */
+        margin-top: 20px;
+    }
+    
+    button {
+        padding: 10px 15px; /* Reduced button padding */
+        font-size: 14px; /* Smaller button font size */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    
+    button:first-child {
+        background-color: #666;
+        color: white;
+    }
+    
+    button:first-child:hover {
+        background-color: #555;
+    }
+    
+    button:last-child {
+        background-color: #d50000;
+        color: white;
+    }
+    
+    button:last-child:hover {
+        background-color: #b71c1c;
+    }
+    
+    @media screen and (max-width: 768px) {
+        table {
+            font-size: 10px; /* Adjusted font size for smaller screens */
+        }
+    
+        th, td {
+            padding: 6px; /* Adjusted padding for smaller screens */
+        }
+    
+        .modal-content {
+            width: 90%; /* Modal width adjusts to smaller screens */
+        }
+    
+        .form-container,
+        .result-container {
+            width: 100%; /* Stack form and result container on smaller screens */
+        }
+    
+        .container {
+            padding: 10px; /* Adjust padding for smaller screens */
+        }
+    }
+</style>
+<body class="sb-nav-fixed">
+    <!-- Navbar -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">EXTERNAL <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+            <div class="input-group">
+                <input class="form-control" type="text" placeholder="Search for..." aria-label="Search for..." aria-describedby="btnNavbarSearch" />
+                <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
+            </div>
+        </form>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#">Settings</a></li>
+                    <li><a class="dropdown-item" href="#">Activity Log</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar & Layout -->
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('external_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAccommodation" aria-expanded="false" aria-controls="collapseAccommodation">
+                            <div class="sb-nav-link-icon"><i class="fas fa-hotel"></i></div>
+                            Accommodation
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseAccommodation" aria-labelledby="headingAccommodation" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <div id="AccommodationHeader">
+                        <h1 class="mt-4">Accommodation</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="{{ url_for('accommodation') }}">Dashboard</a></li>
+                        </ol>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Accommodation emissions contribute significantly to the carbon footprint through energy use, waste generation, and water consumption.
+                        </div>
+                    </div>
+
+                    <!-- Modal Trigger -->
+                    <div class="mb-4">
+                        <button id="openModalBtn" class="btn btn-primary" style="background-color:#0076CE; color: white; border: none;" onclick="openCalculatorModal()">Add Accommodation Data</button>
+                    </div>
+
+                    <!-- Data Table -->
+                    <table id="reportTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Campus</th>
+                                <th>Office</th>
+                                <th>Year</th>
+                                <th>Traveller</th>
+                                <th>Event Name</th>
+                                <th>Travel Date From</th>
+                                <th>Travel Date To</th>
+                                <th>Country</th>
+                                <th>Local/International</th>
+                                <th>Occupied Rooms</th>
+                                <th>Nights per Room</th>
+                                <th>kg CO2e</th>
+                                <th>t CO2e</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportData">
+                            {% for accommodation in accommodation_data %}
+                            <tr>
+                                <td>{{ accommodation.Campus }}</td>
+                                <td>{{ accommodation.Office }}</td>
+                                <td>{{ accommodation.Year }}</td>
+                                <td>{{ accommodation.TravellerName }}</td>
+                                <td>{{ accommodation.EventName }}</td>
+                                <td>{{ accommodation.TravelDateFrom }}</td>
+                                <td>{{ accommodation.TravelDateTo }}</td>
+                                <td>{{ accommodation.Country }}</td>
+                                <td>{{ accommodation.LocalOrInternational }}</td>
+                                <td>{{ accommodation.OccupiedRooms }}</td>
+                                <td>{{ accommodation.NightsPerRoom }}</td>
+                                <td>{{ accommodation.GHGEmissionKGC02e }}</td>
+                                <td>{{ accommodation.GHGEmissionTC02e }}</td>
+                                <td>
+                                    <span class="delete-icon" onclick="deleteRow({{ accommodation.id }})">
+                                        <i class="fa-solid fa-trash-can" style="color: #fd0808;"></i>
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <button onclick="prevPage()">Previous</button>
+                        <span class="page-info" id="page-info">Page 1 of 1</span>
+                        <button onclick="nextPage()">Next</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal for Accommodation Data Entry -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="container">
+                <div class="form-container">
+                    <form method="POST" action="{{ url_for('accommodation') }}" id="accommodationForm">
+                        <label for="campus">Campus:</label>
+                        <select id="campus" name="campus" required>
+                            <option value="Alangilan">Alangilan</option>
+                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                        </select>
+
+                        <label for="office">Office/Department:</label>
+                        <select id="office" name="office" required>
+                            <option value="OVCDEA">OVCDEA</option>
+                            <option value="RGO">RGO</option>
+                        </select>
+
+                        <label for="year">Year:</label>
+                        <input type="number" id="year" name="year" required><br>
+
+                        <label for="travellerName">Name of Traveller:</label>
+                        <input type="text" id="travellerName" name="travellerName" required><br>
+
+                        <label for="eventName">Event Name/Purpose of Travel:</label>
+                        <input type="text" id="eventName" name="eventName" required><br>
+
+                        <label for="travelDateFrom">Travel Date From:</label>
+                        <input type="date" id="travelDateFrom" name="travelDateFrom" required><br>
+
+                        <label for="travelDateTo">Travel Date To:</label>
+                        <input type="date" id="travelDateTo" name="travelDateTo" required><br>
+
+                        <label for="country">Country:</label>
+                        <input type="text" id="country" name="country" required><br>
+
+                        <label for="localOrInternational">Local/International:</label>
+                        <select id="localOrInternational" name="localOrInternational" required>
+                            <option value="Local">Local</option>
+                            <option value="International">International</option>
+                        </select>
+
+                        <label for="occupiedRooms">Number of Occupied Rooms:</label>
+                        <input type="number" id="occupiedRooms" name="occupiedRooms" step="0.01" required><br>
+
+                        <label for="nightsPerRoom">Number of Nights per Room:</label>
+                        <input type="number" id="nightsPerRoom" name="nightsPerRoom" step="0.01" required><br>
+
+                        <button type="submit">Calculate again</button>
+                    </form>
+                </div>
+
+                <div class="result-container">
+                    <div id="result"></div>
+                    <canvas id="emissionChart"></canvas>
+                    <button type="button" onclick="reloadPage()">Calculate Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openCalculatorModal() {
+            document.getElementById('myModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('myModal').style.display = 'none';
+        }
+
+        const reportData = {{ accommodation_data | safe }};
+    </script>
+</body>
+</html>

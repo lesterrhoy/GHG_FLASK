@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Solid Waste Unsegregated Consumption</title>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        table {
+         width: 100%; /* Full width for table */
+         border-collapse: collapse; /* Collapse borders */
+         font-size: 10px; /* Smaller table font */
+     }
+     
+     th, td {
+         padding: 4px; /* Smaller cell padding */
+         text-align: center; /* Center align text */
+         border: 1px solid #00000000; /* Add border */
+     }
+     
+     th {
+         background-color:  #d50000 !important; /* Background color */
+         color: #fff; /* Red text color with !important */
+         font-size: 11px; /* Reduce font size for headers to prevent overflow */
+     }
+     
+             #yearFilter, #quarterFilter, #monthFilter {
+             margin: 10px 0; /* Adds top and bottom margin */
+              }
+     
+             body {
+                 font-family: 'Roboto', sans-serif;
+                 height: 100vh;
+                 display: flex;
+                 flex-direction: column;
+             }
+     
+             .header {
+                 display: flex;
+                 justify-content: space-between;
+                 align-items: center;
+                 background-color: #e0e0e0;
+                 padding-top: 10px;
+                 padding-bottom: 10px;
+                 border-bottom: 2px solid #ccc;
+                 z-index: 1;
+                 position: relative;
+             }
+     
+             .header .logo {
+                 width: 50px;
+                 height: auto;
+                 margin-left: 100px;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .header .logo.csd {
+                 margin-left: 20px;
+             }
+     
+             .header .title {
+                 font-size: 28px;
+                 font-weight: bold;
+                 color: #333;
+                 text-align: center;
+                 flex-grow: 1;
+             }
+     
+             .content {
+                 flex-grow: 1;
+                 background-color: #d50000;
+                 padding: 40px;
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .filter-container {
+                 margin-bottom: 20px;
+             }
+     
+             .filter-container select {
+                 padding: 10px;
+                 font-size: 16px;
+             }
+     
+             #reportTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px; /* Adds space between the table and the buttons */
+}
+
+#reportTable th, #reportTable td {
+    padding: 10px;
+    border: 1px solid #000;
+}
+
+                 .modal {
+         display: none; /* Flexbox to center content */
+         justify-content: center; /* Center horizontally */
+         align-items: flex-start; /* Align content at the top */
+         position: fixed; /* Stay in place */
+         z-index: 2; /* Sit above everything */
+         left: 0;
+         top: 0;
+         width: 100%; /* Full width */
+         height: 100%; /* Full height */
+         background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+         padding-top: 50px; /* Adjust padding to move content lower */
+     }
+     
+     .modal-content {
+         background-color: #fefefe;
+         margin: 2% auto; /* Center it vertically and horizontally */
+         padding: 20px;
+         border: 1px solid #888;
+         width: 50%; /* Could be adjusted based on design */
+         border-radius: 10px;
+         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+     }
+     
+     .close {
+         color: #aaa;
+         float: right;
+         font-size: 28px;
+         font-weight: bold;
+     }
+     
+     .close:hover,
+     .close:focus {
+         color: #000;
+         text-decoration: none;
+         cursor: pointer;
+     }
+     
+     .modal .container {
+         background-color: #d50000;
+         padding: 15px; /* Slightly reduced padding */
+         width: 100%; /* Full width within modal */
+         height: auto; /* Adjust based on content */
+         border-radius: 10px;
+         color: #fff;
+         display: flex;
+         justify-content: space-between; /* Align form and result container side by side */
+         box-sizing: border-box;
+     }
+     
+     .form-container {
+         width: 100%; /* Adjust the width to allow more space for form fields */
+     }
+     
+     .form-container form {
+         display: flex;
+         flex-direction: column;
+         gap: 10px; /* Reduced gap between form elements */
+     }
+     
+     .form-container form label {
+         font-size: 14px; /* Smaller font size for labels */
+         margin-bottom: 5px; /* Minimal space between label and input */
+     }
+     
+     .form-container form select,
+     .form-container form input {
+         width: 100%; /* This makes the input/select fill the entire available width */
+         padding: 8px;
+         border: 1px solid #ccc;
+         border-radius: 5px;
+         background-color: #f9f9f9;
+         color: #333;
+         font-size: 14px;
+     }
+     
+     .form-container form button {
+         padding: 10px; /* Smaller button padding */
+         background-color: #666;
+         color: #fff;
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         font-size: 14px; /* Smaller font size for buttons */
+     }
+     
+     .form-container form button:hover {
+         background-color: #555;
+     }
+     
+     .result-container {
+         background-color: #e0e0e0;
+         padding: 15px; /* Smaller padding for result container */
+         border-radius: 10px;
+     }
+     
+     #result {
+         background-color: #fff;
+         color: #333;
+         padding: 15px; /* Reduced padding */
+         border-radius: 10px;
+         margin-top: 15px;
+     }
+     
+     canvas {
+         margin-top: 20px;
+         display: block;
+         width: 100%;
+     }
+     
+     .buttons-container {
+         display: flex;
+         justify-content: center;
+         gap: 10px; /* Reduced gap between buttons */
+         margin-top: 20px;
+     }
+     
+     button {
+         padding: 10px 15px; /* Reduced button padding */
+         font-size: 14px; /* Smaller button font size */
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         transition: background-color 0.3s ease;
+         margin-left: 10px; /* Adds space to move the button to the right */
+     }
+     
+     button:first-child {
+         background-color: #666;
+         color: white;
+     }
+     
+     button:first-child:hover {
+         background-color: #555;
+     }
+     
+     button:last-child {
+         background-color: #d50000;
+         color: white;
+     }
+     
+     button:last-child:hover {
+         background-color: #b71c1c;
+     }
+     
+     .pagination-container {
+         margin-top: 20px; /* Add some margin above the pagination */
+         text-align: center;
+     }
+     
+     .pagination .page-item .page-link {
+         color: black; /* Set font color to black */
+     }
+     
+     .pagination .page-item.active .page-link {
+         background-color: #d50000; /* Active page with the same red color */
+         border-color: #d50000;
+         color: white; /* White text for the active page */
+     }
+     
+     .pagination .page-link:hover {
+         background-color: #b71c1c; /* Darker red on hover */
+         color: white; /* White text on hover */
+     }
+     
+     
+     
+             .delete-icon {
+                 cursor: pointer;
+                 color: #fd0808;
+             }
+     
+             @media screen and (max-width: 768px) {
+         table {
+             font-size: 10px; /* Adjusted font size for smaller screens */
+         }
+     
+         th, td {
+             padding: 6px; /* Adjusted padding for smaller screens */
+         }
+     
+         .modal-content {
+             width: 90%; /* Modal width adjusts to smaller screens */
+         }
+     
+         .form-container,
+         .result-container {
+             width: 100%; /* Stack form and result container on smaller screens */
+         }
+     
+         .container {
+             padding: 10px; /* Adjust padding for smaller screens */
+         }
+     }
+         </style>
+</head>
+<body>
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#!">Settings</a></li>
+                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('emu_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Waste Unsegregated</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="{{ url_for('emu_dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Waste Unsegregated</li>
+                    </ol>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Solid waste unsegregation refers to the improper handling or disposal of waste where different types 
+                            of waste—such as biodegradable, recyclable, and non-recyclable materials—are not separated at the point of disposal.
+                             When waste is unsegregated, all types of waste are mixed together and treated as a single waste stream. 
+                             This leads to several environmental and operational challenges, including increased greenhouse gas (GHG) emissions 
+                             from landfills, where organic waste decomposes anaerobically to produce methane.
+                        </div>
+                    </div>
+
+                    <!-- Button to open the modal -->
+                    <div id="WasteSection">
+                        <div class="mb-4">
+                            <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Waste Consumption</button>
+                        </div>
+                    </div>
+
+                    <div class="buttons-container mt-3">
+                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
+                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                    </div>
+
+                   
+                    <div class="filter-container">
+                        <label for="yearFilter">Year:</label>
+                        <select id="yearFilter" name="year" onchange="applyFilter()">
+                            <option value="">All Years</option>
+                            <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+                        </select>
+                    
+                        <label for="monthFilter">Month:</label>
+                        <select id="monthFilter" name="month" onchange="applyFilter()">
+                            <option value="">All Months</option>
+                            <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
+                            <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
+                            <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
+                            <option value="April" {% if selected_month == 'April' %}selected{% endif %}>April</option>
+                            <option value="May" {% if selected_month == 'May' %}selected{% endif %}>May</option>
+                            <option value="June" {% if selected_month == 'June' %}selected{% endif %}>June</option>
+                            <option value="July" {% if selected_month == 'July' %}selected{% endif %}>July</option>
+                            <option value="August" {% if selected_month == 'August' %}selected{% endif %}>August</option>
+                            <option value="September" {% if selected_month == 'September' %}selected{% endif %}>September</option>
+                            <option value="October" {% if selected_month == 'October' %}selected{% endif %}>October</option>
+                            <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
+                            <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
+                        </select>
+                    </div>
+                    
+
+                    <div id="myModal" class="modal">
+                        <div class="modal-content">
+                            <span class="close" onclick="closeModal()">&times;</span>
+                            <div class="container">
+                                <div class="form-container">
+                                    <form id="WasteForm" action="{{ url_for('waste_unsegregation') }}" method="POST">
+
+                                        <label for="campus">Campus:</label>
+                                        <select id="campus" name="campus" required>
+                                            <option value=""></option>
+                                            <option value="Alangilan">Alangilan</option>
+                                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                                            <option value="Balayan">Balayan</option>
+                                            <option value="Central">Central</option>
+                                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                                            <option value="Lemery">Lemery</option>
+                                            <option value="Lipa">Lipa</option>
+                                            <option value="Lobo">Lobo</option>
+                                            <option value="Mabini">Mabini</option>
+                                            <option value="Pablo Borbon">Pablo Borbon</option>
+                                            <option value="Rosario">Rosario</option>
+                                            <option value="San Juan">San Juan</option>
+                                        </select>
+
+                                        <label for="year">Year:</label>
+                                        <select id="year" name="year" required>
+                                            <option value=""></option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+
+                                        <label for="month">Month:</label>
+                                        <select id="month" name="month" required>
+                                            <option value=""></option>
+                                            <option value="January">January</option>
+                                            <option value="February">February</option>
+                                            <option value="March">March</option>
+                                            <option value="April">April</option>
+                                            <option value="May">May</option>
+                                            <option value="June">June</option>
+                                            <option value="July">July</option>
+                                            <option value="August">August</option>
+                                            <option value="September">September</option>
+                                            <option value="October">October</option>
+                                            <option value="November">November</option>
+                                            <option value="December">December</option>
+                                        </select>
+
+                                        <label for="wasteType">Waste Type:</label>
+                                        <select id="wasteType" name="wasteType" required>
+                                            <option value=""></option>
+                                            <option value="Mixed Municipal Solid Waste">Mixed Municipal Solid Waste</option>
+                                        </select>
+
+                                        <label for="quantityKg">Quantity (in kg):</label>
+                                        <input type="number" id="quantityKg" name="quantityKg" step="0.01" required>
+
+                                        <label for="sentToLandfillKg">Sent to Landfill (in kg):</label>
+                                        <input type="number" id="sentToLandfillKg" name="sentToLandfillKg" step="0.01" required>
+
+                                        <button type="submit">Calculate</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="header text-center mt-4">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                        <h2>Waste Unsegregated Consumption Report</h2>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                    </div>
+                    <br>
+                    <div class="container">
+                        <table id="reportTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Year</th>
+                                    <th>Month</th>
+                                    <th>Waste Type</th>
+                                    <th>Quantity (KG)</th>
+                                    <th>Sent to Landfill (KG)</th>
+                                    <th>Sent to Landfill (TONS)</th>
+                                    <th>GHG Emission (KG CO₂e)</th>
+                                    <th>GHG Emission (T CO₂e)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportData">
+                                {% for report in reports %}
+                                <tr>
+                                    <td>{{ report.Campus }}</td>
+                                    <td>{{ report.Year }}</td>
+                                    <td>{{ report.Month }}</td>
+                                    <td>{{ report.WasteType }}</td>
+                                    <td>{{ report.QuantityInKG }}</td>
+                                    <td>{{ report.SentToLandfillKG }}</td>
+                                    <td>{{ report.SentToLandfillTONS }}</td>
+                                    <td>{{ report.GHGEmissionKGCO2e }}</td>
+                                    <td>{{ report.GHGEmissionTCO2e }}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteRow({{ report.id }})">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                <!-- Pagination controls -->
+                <div class="pagination-container">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination justify-content-center">
+                            {% if total_pages > 1 %}
+                                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('waste_unsegregation', page=current_page - 1, year=selected_year, category=selected_category) }}" tabindex="-1">Previous</a>
+                                </li>
+                                {% for i in range(1, total_pages + 1) %}
+                                    <li class="page-item {% if i == current_page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('waste_unsegregation', page=i, year=selected_year, category=selected_category) }}">{{ i }}</a>
+                                    </li>
+                                {% endfor %}
+                                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('waste_unsegregation', page=current_page + 1, year=selected_year, category=selected_category) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                </div>
+            </main>
+
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+          // Function to open the modal
+    function openCalculatorModal() {
+        const modal = document.getElementById("myModal");
+        modal.style.display = "block";  // Display the modal
+    }
+
+    // Optional: Close the modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById("myModal");
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+        function openModal() {
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'block'; // Show the modal
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'none'; // Hide the modal
+        }
+
+        document.getElementById("WasteForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent page reload
+
+            // Get form data
+            const campus = document.getElementById('campus').value;
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
+            const wasteType = document.getElementById('wasteType').value;
+            const quantityKg = parseFloat(document.getElementById('quantityKg').value);
+            const sentToLandfillKg = parseFloat(document.getElementById('sentToLandfillKg').value);
+
+            // Prepare data for submission
+            const data = `campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&wasteType=${encodeURIComponent(wasteType)}&quantityKg=${encodeURIComponent(quantityKg)}&sentToLandfillKg=${encodeURIComponent(sentToLandfillKg)}`;
+
+            // Send data via AJAX
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "{{ url_for('add_waste_unsegregated') }}", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        location.reload(); // Reload the page to see the new data
+                    } else {
+                        alert("Error: Could not submit data.");
+                    }
+                }
+            };
+
+            xhr.send(data);
+        });
+
+        function deleteRow(id) {
+            if (confirm("Are you sure you want to delete this record?")) {
+                fetch(`/delete_waste_record/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Reload the page after deletion
+                    } else {
+                        alert("Error deleting record: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                });
+            }
+        }
+
+// Function to print the solid waste unsegregated consumption report
+function printReport() {
+    const originalContents = document.body.innerHTML; // Save the original content
+
+    // Get the table header (excluding the "Actions" column)
+    const tableHeader = `
+        <thead>
+            <tr>
+                <th style="border: 1px solid black;">Campus</th>
+                <th style="border: 1px solid black;">Year</th>
+                <th style="border: 1px solid black;">Month</th>
+                <th style="border: 1px solid black;">Waste Type</th>
+                <th style="border: 1px solid black;">Quantity (KG)</th>
+                <th style="border: 1px solid black;">Sent to Landfill (KG)</th>
+                <th style="border: 1px solid black;">Sent to Landfill (TONS)</th>
+                <th style="border: 1px solid black;">GHG Emission (KG CO₂e)</th>
+                <th style="border: 1px solid black;">GHG Emission (T CO₂e)</th>
+            </tr>
+        </thead>`;
+
+    // Get the table body without the "Actions" column
+    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
+        .map(row => {
+            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
+            return `<tr>${cells.map(cell => `<td style="border: 1px solid black;">${cell.innerHTML}</td>`).join('')}</tr>`;
+        })
+        .join('');
+
+    // Create a print layout with borders added to the table
+    const printContents = `
+        <div class="header">
+            <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" style="width: 50px; height: auto;">
+            <h2>Solid Waste Unsegregated Consumption Report</h2>
+            <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" style="width: 50px; height: auto;">
+        </div>
+        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+            ${tableHeader}
+            <tbody>
+                ${tableBody}
+            </tbody>
+        </table>
+    `;
+
+    document.body.innerHTML = printContents; // Replace body content with table
+    window.print(); // Print the current window
+    document.body.innerHTML = originalContents; // Restore original content
+}
+
+function downloadExcel() {
+            const table = document.getElementById("reportTable");
+            const workbook = XLSX.utils.table_to_book(table, { sheet: "Waste Unsegregated Consumption" });
+            XLSX.writeFile(workbook, "WasteUnsegreConsumptionReport.xlsx");
+        }
+
+        function applyFilter() {
+        const year = document.getElementById('yearFilter').value;
+        const month = document.getElementById('monthFilter').value;
+        const url = new URL(window.location.href);
+        if (year) {
+            url.searchParams.set('year', year);
+        } else {
+            url.searchParams.delete('year');
+        }
+        if (month) {
+            url.searchParams.set('month', month);
+        } else {
+            url.searchParams.delete('month');
+        }
+        window.location.href = url.toString();
+    }
+    </script>
+
+<script>
+    const bsuLogoUrl = "{{ url_for('static', filename='images/bsu.png') }}";
+    const csdLogoUrl = "{{ url_for('static', filename='images/csd.png') }}";
+</script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

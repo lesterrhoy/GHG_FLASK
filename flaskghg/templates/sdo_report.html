@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDO Report</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <style>
+        .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 30px;
+      background-color: #f2f2f2;
+  }
+  
+  .header img {
+      height: 80px;
+      margin-right: 10px;
+  }
+  
+  .header .title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      flex-grow: 1;
+  }
+  
+  /* Table styling */
+  .container {
+      margin-top: 20px; /* Space between header and table */
+  }
+  
+  /* Style for the table and its borders */
+  table {
+      width: 80%; /* Full width for the table */
+      border-collapse: collapse; /* Collapse borders to create a seamless look */
+      font-size: 12px; /* Adjust font size if needed */
+  }
+  
+  /* Styling for the table header cells */
+  th, td {
+      border: 10px solid black; /* Change the border color to black */
+      padding: 8px; /* Padding inside each cell for readability */
+      text-align: center; /* Center align the text in the cells */
+  }
+  
+  /* Style specifically for the table headers */
+  th {
+      background-color: #4CAF50; /* Background color for table headers */
+      color: white; /* White text for contrast */
+  }
+  /* Remove gray background and shadow effects */
+  body, .container, .header, .card, .card-header, .card-body, table {
+      background-color: white !important; /* Ensures white background */
+      box-shadow: none !important; /* Removes shadow */
+  }
+  
+  
+  @media print {
+      
+      /* Hide all section headers by default */
+      .section-header {
+          display: none !important;
+      }
+  
+      /* Only show the header of the selected section */
+      .selected-section .section-header {
+          display: block !important;
+      }
+  
+      /* Hide unnecessary elements during printing */
+      .btn, .pagination-container, .modal-footer, form.mb-3 {
+          display: none !important;
+      }
+  
+      /* Hide all other sections */
+      .section {
+          display: none !important;
+      }
+  
+      /* Make the selected section visible */
+      .selected-section {
+          display: block !important;
+      }
+      body, .container, .header, .card, .card-header, .card-body, table {
+          background-color: white !important; /* Force white background */
+          color: black !important; /* Ensure text is black for visibility */
+          box-shadow: none !important; /* Remove shadows */
+      }
+      .filter-container {
+              display: none;
+          }
+      /* Hide any modal dialogs */
+      .modal, .modal-backdrop {
+          display: none !important;
+      }
+      body {
+          margin: 0.5cm;
+      }
+      .error {
+          display: none;
+      }
+  }
+      </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
+        <h1 class="text-center">Consumption Report</h1>
+        <img src="{{ url_for('static', filename='images/CSD.png') }}" alt="Logo 2" class="logo">
+    </div>
+
+    <div class="container my-4">
+        <!-- Form for selecting office -->
+        <form class="mb-3">
+            <div class="form-group">
+                <label for="office">Select Office:</label>
+                <select id="office" class="form-control" onchange="showConsumptionTables()">
+                    <option value="">-- Select an Office --</option>
+                    <option value="All Offices">All Offices</option>
+                    <option value="Environmental Management Office">Environmental Management Office</option>
+                    <option value="Procurement Office">Procurement Office</option>
+                    <option value="External Affairs">External Affairs</option>
+                </select>
+            </div>
+        </form>
+
+        <div class="container">
+            <!-- Electricity Consumption Table -->
+            <div id="electricityTable">
+                <h3>Electricity Consumption</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Category</th>
+                            <th>Month</th>
+                            <th>Quarter</th>
+                            <th>Year</th>
+                            <th>Consumption</th>
+                            <th>Price Per KWH</th>
+                            <th>KG CO2 per KWH</th>
+                            <th>T CO2 per KWH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in electricity_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.category }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.quarter }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.consumption }}</td>
+                            <td>{{ row.price_per_kwh }}</td>
+                            <td>{{ row.kg_co2_per_kwh }}</td>
+                            <td>{{ row.t_co2_per_kwh }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Electricity Table -->
+                <div class="pagination-container" id="electricityPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="electricityPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Water Consumption Table -->
+            <div id="waterTable">
+                <h3>Water Consumption</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Category</th>
+                            <th>Month</th>
+                            <th>Quarter</th>
+                            <th>Year</th>
+                            <th>Prev Reading</th>
+                            <th>Current Reading</th>
+                            <th>Multiplier</th>
+                            <th>Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in water_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.category }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.quarter }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.previous_reading }}</td>
+                            <td>{{ row.current_reading }}</td>
+                            <td>{{ row.multiplier }}</td>
+                            <td>{{ row.total_amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Water Table -->
+                <div class="pagination-container" id="waterPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="waterPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Solid Waste (Unsegregated) Table -->
+            <div id="unsegWasteTable">
+                <h3>Unsegregated Solid Waste</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Waste Type</th>
+                            <th>Quantity (KG)</th>
+                            <th>Sent to Landfill (KG)</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in unseg_waste_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.waste_type }}</td>
+                            <td>{{ row.quantity_kg }}</td>
+                            <td>{{ row.sent_to_landfill_kg }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Unsegregated Waste Table -->
+                <div class="pagination-container" id="unsegWastePagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="unsegWastePageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Solid Waste (Segregated) Table -->
+            <div id="segWasteTable">
+                <h3>Segregated Solid Waste</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Main Category</th>
+                            <th>Subcategory</th>
+                            <th>Quantity (KG)</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in seg_waste_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.main_category }}</td>
+                            <td>{{ row.subcategory }}</td>
+                            <td>{{ row.quantity_kg }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Segregated Waste Table -->
+                <div class="pagination-container" id="segWastePagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="segWastePageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Treated Water Table -->
+            <div id="treatedWaterTable">
+                <h3>Treated Water</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Month</th>
+                            <th>Quarter</th>
+                            <th>Year</th>
+                            <th>Treated Water Volume</th>
+                            <th>Reused Treated Water Volume</th>
+                            <th>Effluent Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in treated_water_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.quarter }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.treated_water_volume }}</td>
+                            <td>{{ row.reused_treated_water_volume }}</td>
+                            <td>{{ row.effluent_volume }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Treated Water Table -->
+                <div class="pagination-container" id="treatedWaterPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="treatedWaterPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- LPG Consumption Table -->
+            <div id="lpgTable">
+                <h3>LPG Consumption</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Office</th>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Quarter</th>
+                            <th>Concessionaries Type</th>
+                            <th>Quantity (KG)</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in lpg_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.office }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.quarter }}</td>
+                            <td>{{ row.concessionaries_type }}</td>
+                            <td>{{ row.quantity_kg }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for LPG Table -->
+                <div class="pagination-container" id="lpgPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="lpgPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Fuel Emissions Table -->
+            <div id="fuelEmissionsTable">
+                <h3>Fuel Emissions</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Date</th>
+                            <th>Driver</th>
+                            <th>Vehicle</th>
+                            <th>Fuel Type</th>
+                            <th>Quantity (Liters)</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in fuel_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.date }}</td>
+                            <td>{{ row.driver }}</td>
+                            <td>{{ row.vehicle }}</td>
+                            <td>{{ row.fuel_type }}</td>
+                            <td>{{ row.quantity_liters }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Fuel Emissions Table -->
+                <div class="pagination-container" id="fuelEmissionsPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="fuelEmissionsPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Food Waste Table -->
+            <div id="foodWasteTable">
+                <h3>Food Waste</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Quarter</th>
+                            <th>Type of Food</th>
+                            <th>Quantity (Servings)</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in food_waste_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.month }}</td>
+                            <td>{{ row.quarter }}</td>
+                            <td>{{ row.type_of_food }}</td>
+                            <td>{{ row.quantity_servings }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Food Waste Table -->
+                <div class="pagination-container" id="foodWastePagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="foodWastePageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Accommodation Table -->
+            <div id="accommodationTable">
+                <h3>Accommodation</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Year</th>
+                            <th>Traveler Name</th>
+                            <th>Travel Purpose</th>
+                            <th>Number of Rooms</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in accommodation_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.year }}</td>
+                            <td>{{ row.traveler_name }}</td>
+                            <td>{{ row.travel_purpose }}</td>
+                            <td>{{ row.num_rooms }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Accommodation Table -->
+                <div class="pagination-container" id="accommodationPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="accommodationPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+            <!-- Flight Table -->
+            <div id="flightTable">
+                <h3>Flight Emissions</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Traveler Name</th>
+                            <th>Travel Purpose</th>
+                            <th>Flight Type</th>
+                            <th>GHG Emission (Tons CO2e)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in flight_data %}
+                        <tr>
+                            <td>{{ row.campus }}</td>
+                            <td>{{ row.traveler_name }}</td>
+                            <td>{{ row.travel_purpose }}</td>
+                            <td>{{ row.flight_type }}</td>
+                            <td>{{ row.ghg_emission_tons }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <!-- Pagination for Flight Table -->
+                <div class="pagination-container" id="flightPagination">
+                    <button class="page-btn prevBtn">Previous</button>
+                    <span id="flightPageInfo">Page 1 of 1</span>
+                    <button class="page-btn nextBtn">Next</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Save As Button -->
+        <div class="col-md-8 text-start no-print">
+            <button class="btn btn-primary me-2 border-0" id="saveAsButton" onclick="openPrintSelection()">
+                <i class="fas fa-print"></i> Save As
+            </button>
+            <br><br>
+        </div>
+
+        <!-- Excel and Print Selection Modal -->
+        <div class="modal fade" id="printSelectionModal" tabindex="-1" role="dialog" aria-labelledby="printSelectionModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="printSelectionModalLabel">Print Options</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="printSelectionForm">
+                            <!-- Consumption Table Selection -->
+                            <div class="form-group">
+                                <label for="tableSelect">Select Consumption Table:</label>
+                                <select id="tableSelect" class="form-control">
+                                    <option value="electricityTable">Electricity Consumption</option>
+                                    <option value="waterTable">Water Consumption</option>
+                                    <option value="unsegWasteTable">Unsegregated Solid Waste</option>
+                                    <option value="segWasteTable">Segregated Solid Waste</option>
+                                    <option value="treatedWaterTable">Treated Water</option>
+                                    <option value="fuelEmissionsTable">Fuel Emissions</option>
+                                    <option value="foodWasteTable">Food Waste</option>
+                                    <option value="lpgTable">LPG Consumption</option>
+                                    <option value="accommodationTable">Accommodation</option>
+                                    <option value="flightTable">Flight</option>
+                                </select>
+                            </div>
+                            <!-- Print All or Filtered -->
+                            <div class="form-group">
+                                <label for="printOption">Print Data:</label>
+                                <select id="printOption" class="form-control">
+                                    <option value="all">All Data</option>
+                                    <option value="filtered">Filtered Data</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Button for printing -->
+                        <button type="button" class="btn btn-primary" onclick="handlePrintSelection()">PDF Print</button>
+                        <!-- Button for downloading Excel -->
+                        <button type="button" class="btn btn-success" onclick="handleExcelSelection()">Download Excel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Script for Pagination -->
+    <script>
+        function paginateTable(tableId, paginationId, pageInfoId) {
+            const rowsPerPage = 10;
+            const table = document.getElementById(tableId);
+            const pagination = document.getElementById(paginationId);
+            const pageInfo = document.getElementById(pageInfoId);
+            let currentPage = 1;
+
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            function showPage(page) {
+                const start = (page - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+
+                for (let i = 0; i < totalRows; i++) {
+                    rows[i].style.display = (i >= start && i < end) ? '' : 'none';
+                }
+
+                pageInfo.textContent = `Page ${page} of ${totalPages}`;
+                pagination.querySelector('.prevBtn').disabled = (page === 1);
+                pagination.querySelector('.nextBtn').disabled = (page === totalPages);
+            }
+
+            pagination.querySelector('.prevBtn').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    showPage(currentPage);
+                }
+            });
+
+            pagination.querySelector('.nextBtn').addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    showPage(currentPage);
+                }
+            });
+
+            showPage(currentPage);
+        }
+
+        // Initialize pagination for all tables
+        document.addEventListener('DOMContentLoaded', function() {
+            paginateTable('electricityTable', 'electricityPagination', 'electricityPageInfo');
+            paginateTable('waterTable', 'waterPagination', 'waterPageInfo');
+            paginateTable('unsegWasteTable', 'unsegWastePagination', 'unsegWastePageInfo');
+            paginateTable('segWasteTable', 'segWastePagination', 'segWastePageInfo');
+            paginateTable('treatedWaterTable', 'treatedWaterPagination', 'treatedWaterPageInfo');
+            paginateTable('lpgTable', 'lpgPagination', 'lpgPageInfo');
+            paginateTable('fuelEmissionsTable', 'fuelEmissionsPagination', 'fuelEmissionsPageInfo');
+            paginateTable('foodWasteTable', 'foodWastePagination', 'foodWastePageInfo');
+            paginateTable('accommodationTable', 'accommodationPagination', 'accommodationPageInfo');
+            paginateTable('flightTable', 'flightPagination', 'flightPageInfo');
+        });
+    </script>
+</body>
+</html>

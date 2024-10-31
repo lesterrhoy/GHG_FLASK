@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accommodation Report</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* General styling */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #f2f2f2;
+        }
+
+        .header img {
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .header .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        /* Table styling */
+        .container {
+            margin-top: 20px; /* Space between header and table */
+        }
+
+        /* Style for the table and its borders */
+        table {
+            width: 100%; /* Full width for the table */
+            border-collapse: collapse; /* Collapse borders to create a seamless look */
+            font-size: 12px; /* Adjust font size if needed */
+            border: 1px solid #ddd; /* Add border to the outer edges of the table */
+        }
+
+        /* Styling for the table header cells */
+        th, td {
+            border: 1px solid #ddd; /* Ensure all table cells have borders */
+            padding: 8px; /* Padding inside each cell for readability */
+            text-align: center; /* Center align the text in the cells */
+        }
+
+        /* Style specifically for the table headers */
+        th {
+            background-color: #4CAF50; /* Background color for table headers */
+            color: white; /* White text for contrast */
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="../static/images/bsu.png" alt="Logo 1" class="logo">
+        <h1 class="text-center">Accommodation Report</h1>
+        <img src="../static/images/CSD.png" alt="Logo 2" class="logo">
+    </div>
+
+    <div class="container my-4">
+        <!-- Filter Form -->
+        <form class="mb-3" id="filterForm">
+            <div class="form-group">
+                <label for="consumption">Select Consumption:</label>
+                <select id="consumption" class="form-control" name="consumption" onchange="showConsumptionTables()">
+                    <option value="">-- Select a Consumption Type --</option>
+                    <option value="accommodationTable">Accommodation</option>
+                    <option value="flightTable">Flight</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Accommodation Table -->
+    <div id="accommodationTable" class="office-tables" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5">Accommodation</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Campus</th><th>Office</th><th>Year</th><th>Traveller Name</th><th>Travel Purpose</th>
+                            <th>Travel Date From</th><th>Travel Date To</th><th>Country</th><th>Travel Type</th>
+                            <th>Num Occupied Room</th><th>Num Night Per Room</th><th>Factor</th>
+                            <th>GHG Emission KG CO2e</th><th>GHG Emission T CO2e</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in accommodation_data %}
+                        <tr>
+                            <td>{{ row.Campus }}</td>
+                            <td>{{ row.Office }}</td>
+                            <td>{{ row.YearTransact }}</td>
+                            <td>{{ row.TravellerName }}</td>
+                            <td>{{ row.TravelPurpose }}</td>
+                            <td>{{ row.TravelDateFrom }}</td>
+                            <td>{{ row.TravelDateTo }}</td>
+                            <td>{{ row.Country }}</td>
+                            <td>{{ row.TravelType }}</td>
+                            <td>{{ row.NumOccupiedRoom }}</td>
+                            <td>{{ row.NumNightPerRoom }}</td>
+                            <td>{{ row.Factor }}</td>
+                            <td>{{ row.GHGEmissionKGC02e }}</td>
+                            <td>{{ row.GHGEmissionTC02e }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flight Table -->
+    <div id="flightTable" class="office-tables" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5">Flight</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Campus</th><th>Office</th><th>Year</th><th>Traveller Name</th><th>Travel Purpose</th>
+                            <th>Travel Date</th><th>Domestic/International</th><th>Origin</th><th>Destination</th>
+                            <th>Class</th><th>Oneway/RoundTrip</th><th>GHG Emission KG CO2e</th><th>GHG Emission T CO2e</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in flight_data %}
+                        <tr>
+                            <td>{{ row.Campus }}</td>
+                            <td>{{ row.Office }}</td>
+                            <td>{{ row.Year }}</td>
+                            <td>{{ row.TravellerName }}</td>
+                            <td>{{ row.TravelPurpose }}</td>
+                            <td>{{ row.TravelDate }}</td>
+                            <td>{{ row.DomesticInternational }}</td>
+                            <td>{{ row.Origin }}</td>
+                            <td>{{ row.Destination }}</td>
+                            <td>{{ row.Class }}</td>
+                            <td>{{ row.OnewayRoundTrip }}</td>
+                            <td>{{ row.GHGEmissionKGC02e }}</td>
+                            <td>{{ row.GHGEmissionTC02e }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showConsumptionTables() {
+            const selectedConsumption = document.getElementById('consumption').value;
+            const accommodationTable = document.getElementById('accommodationTable');
+            const flightTable = document.getElementById('flightTable');
+
+            accommodationTable.style.display = (selectedConsumption === 'accommodationTable') ? 'block' : 'none';
+            flightTable.style.display = (selectedConsumption === 'flightTable') ? 'block' : 'none';
+        }
+    </script>
+
+</body>
+</html>

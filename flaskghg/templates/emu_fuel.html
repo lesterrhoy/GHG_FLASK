@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Fuel Consumption</title>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+           table {
+            width: 100%; /* Full width for table */
+            border-collapse: collapse; /* Collapse borders */
+            font-size: 10px; /* Smaller table font */
+        }
+
+        th, td {
+            padding: 4px; /* Smaller cell padding */
+            text-align: center; /* Center align text */
+            border: 1px solid #ddd; /* Add border */
+        }
+
+        th {
+            background-color: #d50000; /* Red background for table headers */
+            color: white; /* White text for better contrast */
+            font-size: 11px; /* Reduce font size for headers to prevent overflow */
+        }
+        #yearFilter, #quarterFilter, #monthFilter {
+        margin: 10px 0; /* Adds top and bottom margin */
+         }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #e0e0e0;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+            z-index: 1;
+            position: relative;
+        }
+
+        .header .logo {
+            width: 50px;
+            height: auto;
+            margin-left: 100px;
+            transition: margin-left 0.5s ease;
+        }
+
+        .header .logo.csd {
+            margin-left: 20px;
+        }
+
+        .header .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .content {
+            flex-grow: 1;
+            background-color: #d50000;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: margin-left 0.5s ease;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+        }
+
+        .filter-container select {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #reportTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #reportTable th, #reportTable td {
+            padding: 10px;
+            border: 1px solid #000;
+        }
+            .modal {
+    display: none; /* Flexbox to center content */
+    justify-content: center; /* Center horizontally */
+    align-items: flex-start; /* Align content at the top */
+    position: fixed; /* Stay in place */
+    z-index: 2; /* Sit above everything */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+    padding-top: 50px; /* Adjust padding to move content lower */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto; /* Center it vertically and horizontally */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%; /* Could be adjusted based on design */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal .container {
+    background-color: #d50000;
+    padding: 15px; /* Slightly reduced padding */
+    width: 100%; /* Full width within modal */
+    height: auto; /* Adjust based on content */
+    border-radius: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between; /* Align form and result container side by side */
+    box-sizing: border-box;
+}
+
+.form-container,
+.result-container {
+    width: 48%; /* Make both form and result container take equal space */
+    margin: 0; /* Remove extra margins */
+}
+
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Reduced gap between form elements */
+}
+
+.form-container form label {
+    font-size: 14px; /* Smaller font size for labels */
+    margin-bottom: 5px; /* Minimal space between label and input */
+}
+
+.form-container form input,
+.form-container form select {
+    padding: 8px; /* Reduced padding inside input fields */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 14px; /* Smaller font size for inputs */
+}
+
+.form-container form button {
+    padding: 10px; /* Smaller button padding */
+    background-color: #666;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px; /* Smaller font size for buttons */
+}
+
+.form-container form button:hover {
+    background-color: #555;
+}
+
+.result-container {
+    background-color: #e0e0e0;
+    padding: 15px; /* Smaller padding for result container */
+    border-radius: 10px;
+}
+
+#result {
+    background-color: #fff;
+    color: #333;
+    padding: 15px; /* Reduced padding */
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+canvas {
+    margin-top: 20px;
+    display: block;
+    width: 100%;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Reduced gap between buttons */
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 15px; /* Reduced button padding */
+    font-size: 14px; /* Smaller button font size */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-left: 10px; /* Adds space to move the button to the right */
+}
+
+button:first-child {
+    background-color: #666;
+    color: white;
+}
+
+button:first-child:hover {
+    background-color: #555;
+}
+
+button:last-child {
+    background-color: #d50000;
+    color: white;
+}
+
+button:last-child:hover {
+    background-color: #b71c1c;
+}
+
+.pagination-container {
+    margin-top: 20px; /* Add some margin above the pagination */
+    text-align: center;
+}
+
+.pagination .page-item .page-link {
+    color: black; /* Set font color to black */
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #d50000; /* Active page with the same red color */
+    border-color: #d50000;
+    color: white; /* White text for the active page */
+}
+
+.pagination .page-link:hover {
+    background-color: #b71c1c; /* Darker red on hover */
+    color: white; /* White text on hover */
+}
+
+
+
+        .delete-icon {
+            cursor: pointer;
+            color: #fd0808;
+        }
+
+        @media screen and (max-width: 768px) {
+    table {
+        font-size: 10px; /* Adjusted font size for smaller screens */
+    }
+
+    th, td {
+        padding: 6px; /* Adjusted padding for smaller screens */
+    }
+
+    .modal-content {
+        width: 90%; /* Modal width adjusts to smaller screens */
+    }
+
+    .form-container,
+    .result-container {
+        width: 100%; /* Stack form and result container on smaller screens */
+    }
+
+    .container {
+        padding: 10px; /* Adjust padding for smaller screens */
+    }
+}
+    </style>
+</head>
+<body>
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#!">Settings</a></li>
+                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('emu_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Fuel Consumption</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="{{ url_for('emu_dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Fuel</li>
+                    </ol>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Fuel consumption primarily includes emissions from vehicles used for transportation, generators, and other equipment that rely on fuel such as gasoline, diesel, or liquefied petroleum gas (LPG). The combustion of these fuels releases carbon dioxide (CO2), methane (CH4), and nitrous oxide (N2O) into the atmosphere, all of which are potent greenhouse gases contributing to climate change.
+                        </div>
+                    </div>
+                    
+                    <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                    
+                    <div class="buttons-container mt-3 text-center">
+                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
+                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                    </div>
+
+                    <div class="container">
+        <div class="filter-container">
+            <select id="yearFilter" onchange="filterByYear()">
+                <option value="">Select Year</option>
+            </select>
+        </div>
+            
+                    
+
+                    <div class="modal" id="myModal" style="display: none;">
+                        <div class="modal-content">
+                            <span class="close" onclick="closeModal()">&times;</span>
+                            <div class="container">
+                                <div class="form-container">
+                                    <form id="fuelForm" method="POST" action="{{ url_for('emu_fuel') }}">
+                                        <label for="campus">Campus:</label>
+                                        <select id="campus" name="campus" required>
+                                            <option value=""></option>
+                                            <option value="Alangilan">Alangilan</option>
+                                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                                            <option value="Balayan">Balayan</option>
+                                            <option value="Central">Central</option>
+                                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                                            <option value="Lemery">Lemery</option>
+                                            <option value="Lipa">Lipa</option>
+                                            <option value="Lobo">Lobo</option>
+                                            <option value="Mabini">Mabini</option>
+                                            <option value="Pablo Borbon">Pablo Borbon</option>
+                                            <option value="Rosario">Rosario</option>
+                                            <option value="San Juan">San Juan</option>
+                                        </select>
+
+                                        <label for="date">Date:</label>
+                                        <input type="date" id="date" name="date" required>
+
+                                        <label for="driver">Driver:</label>
+                                        <input type="text" id="driver" name="driver" required>
+
+                                        <label for="type">Type:</label>
+                                        <select id="type" name="type" required>
+                                            <option value="" disabled selected></option>
+                                            <option value="Vehicle">Vehicle</option>
+                                            <option value="Equipment">Equipment</option>
+                                        </select>
+
+                                        <label for="vehicleType">Vehicle Type:</label>
+                                        <select id="vehicleType" name="vehicle_equipment" required>
+                                            <option value=""></option>
+                                            <option value="Generator">Generator</option>
+                                            <option value="Foton Bus">Foton Bus</option>
+                                            <option value="Honda Civic">Honda Civic</option>
+                                            <option value="Hyundai Starex">Hyundai Starex</option>
+                                            <option value="Isuzu Sportivo">Isuzu Sportivo</option>
+                                            <option value="Isuzu Traviz">Isuzu Traviz</option>
+                                            <option value="Mitsubishi Adventure">Mitsubishi Adventure</option>
+                                            <option value="Mitsubishi L300 FB Van">Mitsubishi L300 FB Van</option>
+                                            <option value="Nissan Urvan">Nissan Urvan</option>
+                                            <option value="Toyota Avanza">Toyota Avanza</option>
+                                            <option value="Toyota Grandia">Toyota Grandia</option>
+                                            <option value="Toyota Hi-Ace">Toyota Hi-Ace</option>
+                                            <option value="Toyota Hilux">Toyota Hilux</option>
+                                            <option value="Toyota Minibus">Toyota Minibus</option>
+                                        </select>
+
+                                        <label for="plateNo">Plate Number:</label>
+                                        <input type="text" id="plateNo" name="plateNo" required>
+
+                                        <label for="category">Category:</label>
+                                        <select id="category" name="category">
+                                            <option value=""></option>
+                                            <option value="fuel">Fuel</option>
+                                            <option value="repair">Repair and Maintenance</option>
+                                        </select>
+
+                                        <label for="fuelType">Fuel Type:</label>
+                                        <select id="fuelType" name="fuelType" required>
+                                            <option value=""></option>
+                                            <option value="Diesel">Diesel</option>
+                                            <option value="Gasoline">Gasoline</option>
+                                        </select>
+
+                                        <label for="itemDescription">Item Description:</label>
+                                        <input type="text" id="itemDescription" name="itemDescription" required>
+
+                                        <label for="transactionNo">Transaction Number:</label>
+                                        <input type="text" id="transactionNo" name="transactionNo" required>
+
+                                        <label for="odometer">Odometer:</label>
+                                        <input type="number" id="odometer" name="odometer" required>
+
+                                        <label for="quantityLiters">Quantity Liters:</label>
+                                        <input type="number" id="quantityLiters" step="0.01" name="quantityLiters" required>
+
+                                        <label for="totalAmount">Total Amount:</label>
+                                        <input type="number" id="totalAmount" step="0.01" name="totalAmount" required>
+
+                                        <button type="button" class="yellow-button" onclick="calculateAndSubmit()">Calculate</button>
+                                    </form>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="header">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
+                        <div class="title">Fuel Consumption Report</div>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
+                    </div>
+                    <br>
+                    <div class="container">
+                        <table id="reportTable">
+                            <thead>
+    <tr>
+        <th>Campus</th>
+        <th>Date</th>
+        <th>Driver</th>
+        <th>Type</th> <!-- Add this -->
+        <th>Vehicle Type</th>
+        <th>Plate Number</th>
+        <th>Category</th> <!-- Add this -->
+        <th>Fuel Type</th>
+        <th>Quantity (Liters)</th>
+        <th>Total Amount</th>
+        <th>CO₂ Emission (kg)</th>
+        <th>NH₄ Emission (kg CO₂-e)</th>
+        <th>N₂O Emission (kg CO₂-e)</th>
+        <th>Total Emission (kg CO₂-e)</th>
+        <th>Total Emission (t CO₂-e)</th>
+        <th>Actions</th>
+    </tr>
+</thead>
+<tbody id="reportData">
+    {% for report in reports %}
+    <tr data-id="{{ report.id }}">
+        <td>{{ report.campus }}</td>
+        <td>{{ report.date }}</td>
+        <td>{{ report.driver }}</td>
+        <td>{{ report.type }}</td>
+        <td>{{ report.vehicle_equipment }}</td>
+        <td>{{ report.plate_no }}</td>
+        <td>{{ report.category }}</td>
+        <td>{{ report.fuel_type }}</td>
+        <td>{{ report.quantity_liters }}</td>
+        <td>{{ report.total_amount }}</td>
+        <td>{{ report.co2_emission }}</td>
+        <td>{{ report.nh4_emission }}</td>
+        <td>{{ report.n2o_emission }}</td>
+        <td>{{ report.total_emission }}</td>
+        <td>{{ report.total_emission_t }}</td>
+        <td>
+            <button class="btn btn-danger btn-sm" onclick="deleteRow({{ report.id }})">Delete</button>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+                            
+                        </table>
+                    </div>
+
+                    <!-- Pagination controls -->
+                    <!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            {% if total_pages > 1 %}
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('emu_fuel', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                {% for i in range(1, total_pages + 1) %}
+                    <li class="page-item {% if i == current_page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('emu_fuel', page=i) }}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('emu_fuel', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+                </div>
+            </main>
+
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        function calculateAndSubmit() {
+            // Get the form data
+            const formData = new FormData(document.getElementById('fuelForm'));
+        
+            // Submit the form data using fetch API
+            fetch('/emu_fuel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();  // Convert the response to JSON
+            })
+            .then(data => {
+                if (data.success) {
+                    // Add the new data to the table
+                    const newRow = `
+                        <tr>
+                            <td>${data.data.campus}</td>
+                            <td>${data.data.date}</td>
+                            <td>${data.data.driver}</td>
+                            <td>${data.data.type}</td>
+                            <td>${data.data.vehicle_equipment}</td>
+                            <td>${data.data.plate_no}</td>
+                            <td>${data.data.category}</td>
+                            <td>${data.data.fuel_type}</td>
+                            <td>${data.data.quantity_liters}</td>
+                            <td>${data.data.total_amount}</td>
+                            <td>${data.data.co2_emission}</td>
+                            <td>${data.data.nh4_emission}</td>
+                            <td>${data.data.n2o_emission}</td>
+                            <td>${data.data.total_emission}</td>
+                            <td>${data.data.total_emission_t}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRow(${data.data.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                    // Append the new row to the report table
+                    document.getElementById('reportData').insertAdjacentHTML('beforeend', newRow);
+        
+                    // Close the modal after submission
+                    const modal = document.getElementById('myModal');
+                    modal.style.display = 'none';
+        
+                    // Optionally reset the form fields after submission
+                    document.getElementById('fuelForm').reset();
+                } else {
+                    // Handle the case where submission failed
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        
+        
+        function deleteRow(id) {
+    // Confirm the deletion
+    if (confirm("Are you sure you want to delete this record?")) {
+        fetch(`/delete_fuel_record/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Find the table row with the corresponding record ID
+                const row = document.querySelector(`tr[data-id='${id}']`);
+                if (row) {
+                    // Remove the row from the table
+                    row.remove();
+                }
+            } else {
+                alert("Error deleting record: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+        });
+    }
+}
+
+        function openCalculatorModal() {
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'block'; // Show the modal
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'none'; // Hide the modal
+        }
+
+        function reloadPage() {
+            // Reset the form fields inside the modal
+            const fuelForm = document.getElementById('fuelForm');
+            fuelForm.reset();
+
+            // Clear the result display
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            // Clear the chart if it exists
+            const emissionChart = document.getElementById('emissionChart');
+            const ctx = emissionChart.getContext('2d');
+            ctx.clearRect(0, 0, emissionChart.width, emissionChart.height); // Clear the canvas
+        }
+function displayResults(data) {
+    // Existing code to show results...
+
+    // Optionally, you can also append the new row to the table
+    const newRow = `
+        <tr>
+            <td>${data.campus}</td>
+            <td>${data.date}</td>
+            <td>${data.driver}</td>
+            <td>${data.type}</td>
+            <td>${data.vehicle_equipment}</td>
+            <td>${data.plate_no}</td>
+            <td>${data.category}</td>
+            <td>${data.fuel_type}</td>
+            <td>${data.quantity_liters}</td>
+            <td>${data.total_amount}</td>
+            <td>${data.co2_emission}</td>
+            <td>${data.nh4_emission}</td>
+            <td>${data.n2o_emission}</td>
+            <td>${data.total_emission}</td>
+            <td>${data.total_emission_t}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteRow(${data.id})">Delete</button>
+            </td>
+        </tr>
+    `;
+    document.getElementById('reportData').insertAdjacentHTML('beforeend', newRow);
+}
+
+
+       // Function to print the fuel report
+function printReport() {
+    const originalContents = document.body.innerHTML; // Save the original content
+
+    // Get the table header (excluding the "Actions" column)
+    const tableHeader = `
+        <thead>
+            <tr>
+                <th>Campus</th>
+                <th>Date</th>
+                <th>Driver</th>
+                <th>Type</th>
+                <th>Vehicle Type</th>
+                <th>Plate Number</th>
+                <th>Category</th>
+                <th>Fuel Type</th>
+                <th>Quantity (Liters)</th>
+                <th>Total Amount</th>
+                <th>CO₂ Emission (kg)</th>
+                <th>NH₄ Emission (kg CO₂-e)</th>
+                <th>N₂O Emission (kg CO₂-e)</th>
+                <th>Total Emission (kg CO₂-e)</th>
+                <th>Total Emission (t CO₂-e)</th>
+            </tr>
+        </thead>`;
+
+    // Get the table body without the "Actions" column
+    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
+        .map(row => {
+            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
+            return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
+        })
+        .join('');
+
+    // Create a print layout
+    const printContents = `
+        <div class="header">
+            <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
+            <h2>Fuel Consumption Report</h2>
+            <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+        </div>
+        <table border="1" cellspacing="0" cellpadding="5">
+            ${tableHeader}
+            <tbody>
+                ${tableBody}
+            </tbody>
+        </table>
+    `;
+
+    document.body.innerHTML = printContents; // Replace body content with table
+    window.print(); // Print the current window
+    document.body.innerHTML = originalContents; // Restore original content
+}
+
+
+        function openExcelSelection() {
+            const table = document.getElementById("reportTable");
+            const workbook = XLSX.utils.table_to_book(table, { sheet: "Fuel Consumption" });
+            XLSX.writeFile(workbook, "FuelConsumptionReport.xlsx");
+        }
+
+        function deleteRow(id) {
+            // Implement AJAX call to delete the row
+            fetch(`/delete_fuel_record/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Find the table row with the corresponding record ID
+                    const row = document.querySelector(`tr[data-id='${id}']`);
+                    if (row) {
+                        // Remove the row from the table
+                        row.remove();
+                    }
+                } else {
+                    alert("Error deleting record: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+    // Dynamically populate the year filter with the past 10 years
+    const yearFilter = document.getElementById('yearFilter');
+    const currentYear = new Date().getFullYear();
+
+    for (let year = currentYear; year >= currentYear - 5; year--) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.text = year;
+        yearFilter.appendChild(option);
+    }
+});
+
+function filterByYear() {
+    const year = document.getElementById('yearFilter').value;
+    let url = '/emu_fuel?page=1';  // Start at the first page
+
+    if (year) {
+        url += `&year=${year}`;
+    }
+
+    // Redirect to the filtered page
+    window.location.href = url;
+}
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>
