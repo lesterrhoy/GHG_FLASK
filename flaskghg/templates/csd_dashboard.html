@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>csd_dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <style>
+        .sb-topnav .navbar-nav .nav-item .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0 10px; /* Adjust as needed */
+    color: white;
+}
+
+.sb-topnav .navbar-nav .nav-item .nav-link i {
+    margin-right: 5px; /* Space between icon and text */
+}
+
+    </style>
+</head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSD Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar brand -->
+        <a class="navbar-brand ps-3" href="{{ url_for('csd_dashboard') }}">CSD Dashboard</a>
+    
+        <!-- Spacer to push "Sign-out" to the right -->
+        <div class="ms-auto"></div>
+    
+        <!-- Sign-out Icon and Link -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <!-- Sidebar and Main Content -->
+    <div id="layoutSidenav">
+        <!-- Sidebar -->
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+                            Manage Account
+                        </a>
+                        <body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar brand -->
+        <a class="navbar-brand ps-3" href="{{ url_for('csd_dashboard') }}">CSD Dashboard</a>
+
+        <!-- Spacer to push "Sign-out" to the right -->
+        <div class="ms-auto"></div>
+        <!-- Sign-out Icon and Link -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
+                       
+                        <!-- CSD Report Link -->
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            REPORT
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('csd_report') }}">Consumption Report</a>
+                            </nav>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="layoutSidenav_content">
+            <main class="container-fluid px-4">
+                <h1 class="mt-4">Manage Account</h1>
+                <div class="container">
+                    <div class="card" style="width: 50%; margin-left: 0;">
+                        <div class="card-body">
+                            <!-- Flash Messages -->
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} mt-3">{{ message }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+
+                            <!-- Display Logged-in Campus (SDO) -->
+                            <p><strong>Logged-in Campus (SDO):</strong> {{ campus_name }}</p>
+
+                            <!-- Account Creation Form -->
+                            <form action="{{ url_for('manageacc_sdo') }}" method="POST">
+                                <div class="form-group mb-3">
+                                    <label for="username">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="office">Office</label>
+                                    <div class="dropdown-icon-wrapper">
+                                        <select class="form-control" id="office" name="office" required>
+                                            <option value=""></option>
+                                            <option value="Environmental Management Unit">Environmental Management Unit</option>
+                                            <option value="External Affair">External Affair</option>
+                                            <option value="Procurement Office">Procurement Office</option>
+                                        </select>
+                                        <span class="dropdown-icon">&#9662;</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="campus">Campus</label>
+                                    <div class="dropdown-icon-wrapper">
+                                        <select class="form-control" id="campus" name="campus" required>
+                                            <option value=""></option>
+                                            <option value="Alangilan">Alangilan</option>
+                                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                                        </select>
+                                        <span class="dropdown-icon">&#9662;</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="password">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <button type="submit" class="btn btn-primary">Create Account</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">&copy; Your Website 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a> &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Dashboard</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item active">Dashboard</li>
+                    </ol>
+
+                    <!-- Filters for Campus, Office, etc. -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="officeFilter">Select Office:</label>
+                            <select id="officeFilter" class="form-control" onchange="filterData()">
+                                <option value="all_offices">All Offices</option>
+                                <option value="environmental_management_unit">Environmental Management Unit</option>
+                                <option value="procurement_office">Procurement Office</option>
+                                <option value="external_affair">External Affair</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="campusFilter">Select Campus:</label>
+                            <select id="campusFilter" class="form-control" onchange="filterData()">
+                                <option value="all">All Campuses</option>
+                                <option value="Alangilan">Alangilan</option>
+                                <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                                <option value="Balayan">Balayan</option>
+                                <option value="Central">Central</option>
+                                <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                                <option value="Lemery">Lemery</option>
+                                <option value="Lipa">Lipa</option>
+                                <option value="Lobo">Lobo</option>
+                                <option value="Mabini">Mabini</option>
+                                <option value="Pablo Borbon">Pablo Borbon</option>
+                                <option value="Rosario">Rosario</option>
+                                <option value="San Juan">San Juan</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Line Graphs for 10 Consumption Types -->
+                    <div class="row">
+                        <!-- Electricity Consumption -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-bolt"></i> Electricity Consumption</div>
+                                <div class="card-body"><canvas id="electricityChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Fuel Consumption -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-gas-pump"></i> Fuel Emissions</div>
+                                <div class="card-body"><canvas id="fuelChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Water Consumption -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-water"></i> Water Consumption</div>
+                                <div class="card-body"><canvas id="waterChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Treated Water -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-shower"></i> Treated Water</div>
+                                <div class="card-body"><canvas id="treatedWaterChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- LPG Consumption -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-fire-alt"></i> LPG Consumption</div>
+                                <div class="card-body"><canvas id="lpgChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Food Waste -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-utensils"></i> Food Waste</div>
+                                <div class="card-body"><canvas id="foodChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Waste Segregation -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-recycle"></i> Waste Segregation</div>
+                                <div class="card-body"><canvas id="wasteSegregationChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Waste Unsegregation -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-trash-alt"></i> Waste Unsegregation</div>
+                                <div class="card-body"><canvas id="wasteUnsegregationChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Flight Emissions -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-plane"></i> Flight Emissions</div>
+                                <div class="card-body"><canvas id="flightChart"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Accommodation Emissions -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-hotel"></i> Accommodation Emissions</div>
+                                <div class="card-body"><canvas id="accommodationChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">&copy; CSD Dashboard 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Script to Initialize Charts -->
+    <script>
+        function filterData() {
+            const campus = document.getElementById('campusFilter').value;
+    
+            fetch(`/fetch_forecast_data?campus=${campus}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateChart('electricityChart', data.electricity_forecast);
+                    updateChart('fuelChart', data.fuel_forecast);
+                    updateChart('waterChart', data.water_forecast);
+                    updateChart('treatedWaterChart', data.treated_water_forecast);
+                    updateChart('lpgChart', data.lpg_forecast);
+                    updateChart('foodChart', data.food_waste_forecast);
+                    updateChart('wasteSegregationChart', data.waste_segregation_forecast);
+                    updateChart('wasteUnsegregationChart', data.waste_unsegregation_forecast);
+                    updateChart('flightChart', data.flight_forecast);
+                    updateChart('accommodationChart', data.accommodation_forecast);
+                });
+        }
+    
+        // Function to update a chart
+        function updateChart(chartId, data) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Consumption',
+                        data: data,
+                        backgroundColor: 'rgba(2, 117, 216, 0.2)',
+                        borderColor: 'rgba(2, 117, 216, 1)',
+                        borderWidth: 2
+                    }]
+                }
+            });
+        }
+    
+        // Call filterData() on page load
+        document.addEventListener('DOMContentLoaded', filterData);
+    </script>
+    

@@ -1,0 +1,259 @@
+<!-- sdo_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>SDO Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+</head>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="#">SDO <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <ul class="navbar-nav ms-auto me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-user fa-fw"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('sdo_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manageacc_sdo') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+                            Manage Account
+                        </a>
+                        <div class="sb-sidenav-menu-heading">REPORT</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            REPORT
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('sdo_report') }}">Consumption Report</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">SDO Dashboard</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item active">Consumption Trends</li>
+                    </ol>
+
+                    <!-- Charts for Each Consumption -->
+                    <div class="row">
+                        <!-- Electricity Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-bolt me-1"></i>
+                                    Electricity Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="electricityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fuel Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-gas-pump me-1"></i>
+                                    Fuel Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="fuelChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Waste Segregated Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-recycle me-1"></i>
+                                    Waste Segregated Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="wasteSegregatedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Waste Unsegregated Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-trash-alt me-1"></i>
+                                    Waste Unsegregated Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="wasteUnsegregatedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Treated Water Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-water me-1"></i>
+                                    Treated Water Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="treatedWaterChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Water Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-tint me-1"></i>
+                                    Water Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="waterChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LPG Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-gas-pump me-1"></i>
+                                    LPG Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="lpgChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Food Waste Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-utensils me-1"></i>
+                                    Food Waste Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="foodWasteChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accommodation Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-hotel me-1"></i>
+                                    Accommodation Emissions Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="accommodationChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flight Emissions Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-plane me-1"></i>
+                                    Flight Emissions Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="flightChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const forecastData = {{ forecast_data | tojson }};
+            
+            function createChart(chartId, label, data, color) {
+                const ctx = document.getElementById(chartId).getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Current', 'Next Month', '2 Months Ahead', '3 Months Ahead', '4 Months Ahead', '5 Months Ahead'],
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            borderColor: color,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        title: { display: true, text: label + ' Forecast' },
+                        scales: {
+                            x: { display: true },
+                            y: { display: true, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // Create charts for all forecast data
+            createChart('electricityChart', 'Electricity', forecastData.electricity_forecast, 'rgba(75, 192, 192, 1)');
+            createChart('fuelChart', 'Fuel', forecastData.fuel_forecast, 'rgba(153, 102, 255, 1)');
+            createChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, 'rgba(255, 159, 64, 1)');
+            createChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, 'rgba(255, 99, 132, 1)');
+            createChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, 'rgba(54, 162, 235, 1)');
+            createChart('waterChart', 'Water Consumption', forecastData.water_forecast, 'rgba(75, 192, 192, 1)');
+            createChart('lpgChart', 'LPG', forecastData.lpg_forecast, 'rgba(153, 102, 255, 1)');
+            createChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast, 'rgba(255, 159, 64, 1)');
+            createChart('accommodationChart', 'Accommodation', forecastData.accommodation_forecast, 'rgba(153, 102, 255, 1)');
+            createChart('flightChart', 'Flight Emissions', forecastData.flight_forecast, 'rgba(255, 99, 132, 1)');
+        });
+    </script>
+</body>
+
+</html>
