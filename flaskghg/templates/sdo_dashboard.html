@@ -214,46 +214,93 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const forecastData = {{ forecast_data | tojson }};
-            
-            function createChart(chartId, label, data, color) {
-                const ctx = document.getElementById(chartId).getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Current', 'Next Month', '2 Months Ahead', '3 Months Ahead', '4 Months Ahead', '5 Months Ahead'],
-                        datasets: [{
-                            label: label,
-                            data: data,
-                            borderColor: color,
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        title: { display: true, text: label + ' Forecast' },
-                        scales: {
-                            x: { display: true },
-                            y: { display: true, beginAtZero: true }
-                        }
-                    }
-                });
+        // Helper function to get month names
+        function getMonthNames(startMonthIndex, totalMonths) {
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            let labels = [];
+            for (let i = 0; i < totalMonths; i++) {
+                let month = monthNames[(startMonthIndex + i) % 12];
+                if (i >= 12) {  // Mark future trend months
+                    month += " (Future)";
+                }
+                labels.push(month);
             }
-
-            // Create charts for all forecast data
-            createChart('electricityChart', 'Electricity', forecastData.electricity_forecast, 'rgba(75, 192, 192, 1)');
-            createChart('fuelChart', 'Fuel', forecastData.fuel_forecast, 'rgba(153, 102, 255, 1)');
-            createChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, 'rgba(255, 159, 64, 1)');
-            createChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, 'rgba(255, 99, 132, 1)');
-            createChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, 'rgba(54, 162, 235, 1)');
-            createChart('waterChart', 'Water Consumption', forecastData.water_forecast, 'rgba(75, 192, 192, 1)');
-            createChart('lpgChart', 'LPG', forecastData.lpg_forecast, 'rgba(153, 102, 255, 1)');
-            createChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast, 'rgba(255, 159, 64, 1)');
-            createChart('accommodationChart', 'Accommodation', forecastData.accommodation_forecast, 'rgba(153, 102, 255, 1)');
-            createChart('flightChart', 'Flight Emissions', forecastData.flight_forecast, 'rgba(255, 99, 132, 1)');
-        });
+            return labels;
+        }
+    
+        // Get the current month index and generate labels for 12 months plus 2 future months
+        const currentMonthIndex = new Date().getMonth();
+        const labels = getMonthNames(currentMonthIndex, 14);
+    
+        // Forecast data passed from server
+        const forecastData = {{ forecast_data | tojson }};
+    
+        // Helper function to create a line chart with connected historical and forecasted data
+        function createForecastChart(chartId, label, data) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+    
+            // Separate historical and forecast data
+            const historicalData = data.slice(0, 12); // First 12 points for historical data
+            const forecastData = data.slice(12);      // Last 2 points for forecasted data
+    
+            // Combine historical and forecast data into a single dataset for continuous line
+            const combinedData = [...historicalData, ...forecastData];
+    
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `${label} (Historical + Forecast)`,
+                            data: combinedData,
+                            borderColor: 'blue',
+                            fill: false,
+                            pointBackgroundColor: (ctx) => ctx.dataIndex < 12 ? 'blue' : 'red', // Blue for historical, red for forecast points
+                            borderWidth: 2
+                        },
+                        {
+                            label: `${label} (Forecast)`,
+                            data: [...Array(12).fill(null), ...forecastData], // Offset forecast data to start after historical data
+                            borderColor: 'red',
+                            fill: false,
+                            borderDash: [5, 5],  // Dashed line for forecast
+                            pointBackgroundColor: 'red',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Month' } },
+                        y: { title: { display: true, text: 'Consumption/Emissions' } }
+                    }
+                }
+            });
+        }
+    
+        // Generate charts for each category
+        createForecastChart('electricityChart', 'Electricity Consumption', forecastData.electricity_forecast);
+        createForecastChart('fuelChart', 'Fuel Consumption', forecastData.fuel_forecast);
+        createForecastChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast);
+        createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast);
+        createForecastChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast);
+        createForecastChart('waterChart', 'Water Consumption', forecastData.water_forecast);
+        createForecastChart('lpgChart', 'LPG Consumption', forecastData.lpg_forecast);
+        createForecastChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast);
+        createForecastChart('accommodationChart', 'Accommodation Emissions', forecastData.accommodation_forecast);
+        createForecastChart('flightChart', 'Flight Emissions', forecastData.flight_forecast);
     </script>
-</body>
+    
+    
 
 </html>

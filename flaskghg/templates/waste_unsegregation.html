@@ -578,7 +578,19 @@
                                         <label for="sentToLandfillKg">Sent to Landfill (in kg):</label>
                                         <input type="number" id="sentToLandfillKg" name="sentToLandfillKg" step="0.01" required>
 
-                                        <button type="submit">Calculate</button>
+                                       <!-- Add the fields for GHG Emission in KG and T -->
+                                        <label for="ghgEmissionKg">GHG Emission (KG CO₂e):</label>
+                                        <input type="number" id="ghgEmissionKg" name="ghgEmissionKg" step="0.01" readonly>
+
+                                        <label for="ghgEmissionTons">GHG Emission (T CO₂e):</label>
+                                        <input type="number" id="ghgEmissionTons" name="ghgEmissionTons" step="0.01" readonly>
+
+                                        <!-- Calculate Button -->
+                                        <button type="button" onclick="calculateGHGEmissions()">Calculate</button>
+
+                                        <!-- Submit Button -->
+                                        <button type="submit">Submit</button>
+
                                     </form>
                                 </div>
                             </div>
@@ -690,36 +702,63 @@
         }
 
         document.getElementById("WasteForm").addEventListener("submit", function(event) {
-            event.preventDefault(); // Prevent page reload
+    event.preventDefault(); // Prevent page reload
 
-            // Get form data
-            const campus = document.getElementById('campus').value;
-            const year = document.getElementById('year').value;
-            const month = document.getElementById('month').value;
-            const wasteType = document.getElementById('wasteType').value;
-            const quantityKg = parseFloat(document.getElementById('quantityKg').value);
-            const sentToLandfillKg = parseFloat(document.getElementById('sentToLandfillKg').value);
+    // Perform the calculation
+    const quantityKg = parseFloat(document.getElementById('quantityKg').value) || 0;
+    const sentToLandfillKg = parseFloat(document.getElementById('sentToLandfillKg').value) || 0;
 
-            // Prepare data for submission
-            const data = `campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&wasteType=${encodeURIComponent(wasteType)}&quantityKg=${encodeURIComponent(quantityKg)}&sentToLandfillKg=${encodeURIComponent(sentToLandfillKg)}`;
+    const quantityTon = quantityKg / 1000;
+    const sentToLandfillTon = sentToLandfillKg / 1000;
+    const ghgEmissionTonCO2e = sentToLandfillTon * 0.8 * 0.25 * 0.5 * 0.5 * 1.33;
+    const ghgEmissionKgCO2e = ghgEmissionTonCO2e * 1000;
 
-            // Send data via AJAX
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "{{ url_for('add_waste_unsegregated') }}", true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    // Set calculated values to the form fields (so they are sent with form submission)
+    document.getElementById('ghgEmissionKg').value = ghgEmissionKgCO2e.toFixed(2);
+    document.getElementById('ghgEmissionTons').value = ghgEmissionTonCO2e.toFixed(2);
 
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        location.reload(); // Reload the page to see the new data
-                    } else {
-                        alert("Error: Could not submit data.");
-                    }
-                }
-            };
+    // Prepare data for submission
+    const campus = document.getElementById('campus').value;
+    const year = document.getElementById('year').value;
+    const month = document.getElementById('month').value;
+    const wasteType = document.getElementById('wasteType').value;
 
-            xhr.send(data);
-        });
+    const data = `campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&wasteType=${encodeURIComponent(wasteType)}&quantityKg=${encodeURIComponent(quantityKg)}&sentToLandfillKg=${encodeURIComponent(sentToLandfillKg)}&ghgEmissionKgCO2e=${encodeURIComponent(ghgEmissionKgCO2e)}&ghgEmissionTonCO2e=${encodeURIComponent(ghgEmissionTonCO2e)}`;
+
+    // Send data via AJAX
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "{{ url_for('add_waste_unsegregated') }}", true);
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                location.reload(); // Reload the page to see the new data
+            } else {
+                alert("Error: Could not submit data.");
+            }
+        }
+    };
+
+    xhr.send(data);
+});
+
+// Function to calculate GHG emissions for preview
+function calculateGHGEmissions() {
+    const quantityKg = parseFloat(document.getElementById('quantityKg').value) || 0;
+    const sentToLandfillKg = parseFloat(document.getElementById('sentToLandfillKg').value) || 0;
+
+    const quantityTon = quantityKg / 1000;
+    const sentToLandfillTon = sentToLandfillKg / 1000;
+    const ghgEmissionTonCO2e = sentToLandfillTon * 0.8 * 0.25 * 0.5 * 0.5 * 1.33;
+    const ghgEmissionKgCO2e = ghgEmissionTonCO2e * 1000;
+
+    // Display the values with two decimal places to avoid scientific notation
+    document.getElementById('ghgEmissionKg').value = ghgEmissionKgCO2e.toFixed(2);
+    document.getElementById('ghgEmissionTons').value = ghgEmissionTonCO2e.toFixed(5);
+}
+
+
 
         function deleteRow(id) {
             if (confirm("Are you sure you want to delete this record?")) {

@@ -501,7 +501,7 @@
                         </thead>
                         <tbody id="reportData">
                             {% for record in food_data %}
-                            <tr>
+                            <tr id="row-{{ record['id'] }}">
                                 <td>{{ record['Campus'] }}</td>
                                 <td>{{ record['YearTransaction'] }}</td>
                                 <td>{{ record['Month'] }}</td>
@@ -511,15 +511,14 @@
                                 <td>{{ record['GHGEmissionKGCO2e'] }}</td>
                                 <td>{{ record['GHGEmissionTCO2e'] }}</td>
                                 <td>
-                                    <span class="delete-icon" onclick="deleteRow({{ record['id'] }})">
-                                        <i class="fa-solid fa-trash-can" style="color: #fd0808;"></i>
-                                    </span>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteRecord({{ record['id'] }})">
+                                        <i class=></i> Delete
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    
                     <!-- Move pagination below the table -->
                     <div class="pagination-container">
                         <nav aria-label="Page navigation example">
@@ -546,127 +545,168 @@
                         </nav>
                     </div>
 
-    <!-- Modal -->
-    <div id="myModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <div class="container">
-                <div class="form-container">
-                    <form method="POST" action="{{ url_for('food_consumption') }}" id="co2Form">
-                        <label for="campus">Campus:</label>
-                                        <select id="campus" name="campus" required>
-                                            <option value=""></option>
-                                            <option value="Alangilan">Alangilan</option>
-                                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
-                                            <option value="Balayan">Balayan</option>
-                                            <option value="Central">Central</option>
-                                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
-                                            <option value="Lemery">Lemery</option>
-                                            <option value="Lipa">Lipa</option>
-                                            <option value="Lobo">Lobo</option>
-                                            <option value="Mabini">Mabini</option>
-                                            <option value="Pablo Borbon">Pablo Borbon</option>
-                                            <option value="Rosario">Rosario</option>
-                                            <option value="San Juan">San Juan</option>
-                                        </select>
-                                        
-                        <label for="year">Year:</label>
-                        <select id="year" name="year" required>
-                            <option value=""></option>
-                            <option value="2020">2020</option>
-                            <option value="2021">2021</option>
-                            <option value="2022">2022</option>
-                            <option value="2023">2023</option>
-                            <option value="2024">2024</option>
-                        </select>
+        <!-- Modal -->
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <div class="container">
+                    <div class="form-container">
+                        <form method="POST" action="{{ url_for('food_consumption') }}" id="co2Form">
+                            <label for="campus">Campus:</label>
+                            <select id="campus" name="campus" required>
+                                <option value=""></option>
+                                <option value="Alangilan">Alangilan</option>
+                                <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                                <option value="Balayan">Balayan</option>
+                                <option value="Central">Central</option>
+                                <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                                <option value="Lemery">Lemery</option>
+                                <option value="Lipa">Lipa</option>
+                                <option value="Lobo">Lobo</option>
+                                <option value="Mabini">Mabini</option>
+                                <option value="Pablo Borbon">Pablo Borbon</option>
+                                <option value="Rosario">Rosario</option>
+                                <option value="San Juan">San Juan</option>
+                            </select>
+                                            
+                            <label for="year">Year:</label>
+                            <select id="year" name="year" required>
+                                <option value=""></option>
+                                <option value="2020">2020</option>
+                                <option value="2021">2021</option>
+                                <option value="2022">2022</option>
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                            </select>
 
-                        <label for="month">Month:</label>
-                        <select id="month" name="month" required>
-                            <option value=""></option>
-                            <option value="January">January</option>
-                            <option value="February">February</option>
-                            <option value="March">March</option>
-                            <option value="April">April</option>
-                            <option value="May">May</option>
-                            <option value="June">June</option>
-                            <option value="July">July</option>
-                            <option value="August">August</option>
-                            <option value="September">September</option>
-                            <option value="October">October</option>
-                            <option value="November">November</option>
-                            <option value="December">December</option>
-                        </select>
+                            <label for="month">Month:</label>
+                            <select id="month" name="month" required>
+                                <option value=""></option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
 
-                        <label for="office">Office:</label>
-                        <select id="office" name="office" required>
-                            <option value=""></option>
-                            <option value="Procurement">Procurement</option>
-                            <option value="Auxiliary Services">Auxiliary Services</option>
-                            <option value="RGO">RGO</option>
-                        </select>
+                            <label for="office">Office:</label>
+                            <select id="office" name="office" required>
+                                <option value=""></option>
+                                <option value="Auxiliary Services">Auxiliary Services</option>
+                                <option value="RGO">RGO</option>
+                            </select>
 
-                        <label for="foodType">Type of Food Served:</label>
-                        <select id="foodType" name="foodType" required>
-                            <option value=""></option>
-                            <option value="1 Standard Breakfast">1 Standard Breakfast</option>
-                            <option value="1 Gourmet Breakfast">1 Gourmet Breakfast</option>
-                            <option value="1 Hot Snack (burger and fries)">1 Hot Snack (burger and fries)</option>
-                            <option value="1 Cold or Hot Snack">1 Cold or Hot Snack</option>
-                            <option value="1 Sandwich">1 Sandwich</option>
-                            <option value="1 Average Meal">1 Average Meal</option>
-                            <option value="Meal,Vegan">Meal,Vegan</option>
-                            <option value="Meal,Vegetarian">Meal,Vegetarian</option>
-                            <option value="Meal with Beef">Meal with Beef</option>
-                            <option value="Meal with Chicken">Meal with Chicken</option>
-                        </select>
+                            <label for="foodType">Type of Food Served:</label>
+                            <select id="foodType" name="foodType" required>
+                                <option value=""></option>
+                                <option value="1 Standard Breakfast">1 Standard Breakfast</option>
+                                <option value="1 Gourmet Breakfast">1 Gourmet Breakfast</option>
+                                <option value="1 Hot Snack (burger and fries)">1 Hot Snack (burger and fries)</option>
+                                <option value="1 Cold or Hot Snack">1 Cold or Hot Snack</option>
+                                <option value="1 Sandwich">1 Sandwich</option>
+                                <option value="1 Average Meal">1 Average Meal</option>
+                                <option value="Meal,Vegan">Meal,Vegan</option>
+                                <option value="Meal,Vegetarian">Meal,Vegetarian</option>
+                                <option value="Meal with Beef">Meal with Beef</option>
+                                <option value="Meal with Chicken">Meal with Chicken</option>
+                            </select>
 
-                        <label for="servings">No. of Servings:</label>
-                        <input type="number" id="servings" name="servings" step="0.01" required>
+                            <label for="servings">No. of Servings:</label>
+                            <input type="number" id="servings" name="servings" step="0.01" required>
 
-                        <button type="submit">Calculate CO2 Emission</button>
-                    </form>
+                            <!-- GHG Emission fields that will be calculated -->
+                            <label for="ghgEmissionKg">GHG Emission (KG CO2e):</label>
+                            <input type="number" id="ghgEmissionKg" name="ghgEmissionKg" step="0.01" readonly>
+
+                            <label for="ghgEmissionTons">GHG Emission (T CO2e):</label>
+                            <input type="number" id="ghgEmissionTons" name="ghgEmissionTons" step="0.01" readonly>
+
+                            <!-- Buttons to calculate and generate report -->
+                            <button type="button" onclick="calculateCO2Emission()">Calculate CO2 Emission</button>
+                            <button type="button" onclick="generateReport()">Generate Report</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-
-   
     <script>
-        function openCalculatorModal() {
-            document.getElementById('myModal').style.display = 'block';
-        }
+          // Emission factors based on food type
+        const foodFactors = {
+            "1 Standard Breakfast": 0.84,
+            "1 Gourmet Breakfast": 2.33,
+            "1 Hot Snack (burger and fries)": 2.77,
+            "1 Cold or Hot Snack": 2.02,
+            "1 Sandwich": 1.27,
+            "1 Average Meal": 4.70,
+            "Meal,Vegan": 1.69,
+            "Meal,Vegetarian": 2.85,
+            "Meal with Beef": 6.93,
+            "Meal with Chicken": 3.39
+        };
 
-        function closeModal() {
-            document.getElementById('myModal').style.display = 'none';
-        }
+    // Function to calculate CO2 emissions
+    function calculateCO2Emission() {
+        const foodType = document.getElementById('foodType').value;
+        const servings = parseFloat(document.getElementById('servings').value) || 0;
+
+        const factor = foodFactors[foodType] || 0;
+        const ghgEmissionKgCO2e = servings * factor;
+        const ghgEmissionTCO2e = ghgEmissionKgCO2e / 1000;
+
+        document.getElementById('ghgEmissionKg').value = ghgEmissionKgCO2e.toFixed(2);
+        document.getElementById('ghgEmissionTons').value = ghgEmissionTCO2e.toFixed(2);
+    }
+
+    // Function to submit the form and close the modal
+    function generateReport() {
+        document.getElementById("co2Form").submit();
+        closeModal();
+    }
+
+    // Functions to open and close the modal
+    function openCalculatorModal() {
+        document.getElementById('myModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
 
         // Function to print the food consumption report
-function printReport() {
-    const originalContents = document.body.innerHTML; // Save the original content
+        function printReport() {
+        const originalContents = document.body.innerHTML; // Save the original content
 
-    // Get the table header (excluding the "Actions" column)
-    const tableHeader = `
-        <thead>
-            <tr>
-                <th>Campus</th>
-                <th>Year</th>
-                <th>Month</th>
-                <th>Office</th>
-                <th>Food Type</th>
-                <th>Servings</th>
-                <th>GHG Emission (KG CO2e)</th>
-                <th>GHG Emission (T CO2e)</th>
-            </tr>
-        </thead>`;
+        // Get the table header (excluding the "Actions" column)
+        const tableHeader = `
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Office</th>
+                    <th>Food Type</th>
+                    <th>Servings</th>
+                    <th>GHG Emission (KG CO2e)</th>
+                    <th>GHG Emission (T CO2e)</th>
+                </tr>
+            </thead>`;
 
-    // Get the table body without the "Actions" column
-    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-        .map(row => {
-            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
-            return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
-        })
-        .join('');
+        // Get the table body without the "Actions" column
+        const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
+            .map(row => {
+                const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
+                return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
+            })
+            .join('');
 
     // Create a print layout
     const printContents = `
@@ -693,6 +733,31 @@ function downloadExcel() {
     const table = document.getElementById("reportTable");
     const workbook = XLSX.utils.table_to_book(table, { sheet: "Food Consumption" });
     XLSX.writeFile(workbook, "FoodConsumptionReport.xlsx");
+}
+function deleteRecord(recordId) {
+    if (confirm("Are you sure you want to delete this record?")) {
+        fetch(`/delete_food_record/${recordId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table if the deletion was successful
+                const row = document.getElementById(`row-${recordId}`);
+                if (row) row.remove();
+                alert("Record deleted successfully.");
+            } else {
+                alert("Error deleting record: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            alert("An error occurred while deleting the record.");
+        });
+    }
 }
 
        

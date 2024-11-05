@@ -533,8 +533,9 @@ button.btn-danger:hover {
     </div>
 
     <script>
-      function calculateAndSubmit() {
-    // Calculate emissions based on quantity liters
+     function calculateAndSubmit() {
+    // Get the selected fuel type
+    const fuelType = document.getElementById('fuelType').value;
     const quantityLiters = parseFloat(document.getElementById('quantityLiters').value);
 
     // Check if quantityLiters is a valid number
@@ -543,10 +544,26 @@ button.btn-danger:hover {
         return;
     }
 
-    // Emission calculations
-    const co2Emission = quantityLiters * 2.556;
-    const nh4Emission = quantityLiters * 0.00275;
-    const n2oEmission = quantityLiters * 0.044998;
+    // Emission factors based on fuel type
+    let co2EmissionFactor, nh4EmissionFactor, n2oEmissionFactor;
+
+    if (fuelType === "Diesel") {
+        co2EmissionFactor = 2.556;
+        nh4EmissionFactor = 0.00275; // 0.00011 * 25
+        n2oEmissionFactor = 0.044998; // 0.000151 * 298
+    } else if (fuelType === "Gasoline") {
+        co2EmissionFactor = 2.175;
+        nh4EmissionFactor = 0.006; // 0.00024 * 25
+        n2oEmissionFactor = 0.17284; // 0.00058 * 298
+    } else {
+        alert("Please select a valid fuel type.");
+        return;
+    }
+
+    // Calculate emissions
+    const co2Emission = quantityLiters * co2EmissionFactor;
+    const nh4Emission = quantityLiters * nh4EmissionFactor;
+    const n2oEmission = quantityLiters * n2oEmissionFactor;
     const totalEmission = co2Emission + nh4Emission + n2oEmission;
     const totalEmissionT = totalEmission / 1000;
 
@@ -606,6 +623,7 @@ button.btn-danger:hover {
         console.error('Error:', error);
     });
 }
+
 
 function generateReport() {
     // Close the modal after calculation

@@ -343,8 +343,6 @@ def emu_dashboard():
                            forecast_data=forecast_data)
 
 
-
-
 #Route for Electricity Consumption
 @app.route('/electricity_consumption', methods=['GET', 'POST'])
 def electricity_consumption():
@@ -748,7 +746,7 @@ def emu_fuel():
         cursor = conn.cursor(dictionary=True)
 
         if request.method == 'POST':
-            # Process form submission
+            # Process form submission and retrieve all the submitted data
             campus = request.form.get('campus')
             date = request.form.get('date')
             driver = request.form.get('driver')
@@ -762,31 +760,31 @@ def emu_fuel():
             odometer = request.form.get('odometer')
             quantity_liters = request.form.get('quantityLiters')
             total_amount = request.form.get('totalAmount')
+            co2_emission = request.form.get('co2_emission')
+            nh4_emission = request.form.get('nh4_emission')
+            n2o_emission = request.form.get('n2o_emission')
+            total_emission = request.form.get('total_emission')
+            total_emission_t = request.form.get('total_emission_t')
 
-            # Validate data
+            # Validate required fields
             if not (campus and date and driver and type and vehicle_equipment and plate_no and fuel_type and quantity_liters and total_amount):
                 return jsonify({'success': False, 'message': 'Please fill out all required fields.'})
 
-            # Calculate emissions based on quantity_liters
-            co2_emission = float(quantity_liters) * 2.556     # CO2 Emission
-            nh4_emission = float(quantity_liters) * 0.00275   # NH4 Emission
-            n2o_emission = float(quantity_liters) * 0.044998  # N2O Emission
-            total_emission = co2_emission + nh4_emission + n2o_emission  # Total Emission in kg CO2-e
-            total_emission_t = total_emission / 1000           # Convert total emission to metric tons
-
-            # Insert the new record into the database including the calculated emission values
+            # Insert the new record into the database
             insert_query = """
-            INSERT INTO fuel_emissions (campus, date, driver, type, vehicle_equipment, plate_no, category, fuel_type, item_description, transaction_no, odometer, quantity_liters, total_amount, co2_emission, nh4_emission, n2o_emission, total_emission, total_emission_t)
+            INSERT INTO fuel_emissions (campus, date, driver, type, vehicle_equipment, plate_no, category, fuel_type, 
+                                        item_description, transaction_no, odometer, quantity_liters, total_amount, 
+                                        co2_emission, nh4_emission, n2o_emission, total_emission, total_emission_t)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(insert_query, (
-                campus, date, driver, type, vehicle_equipment, plate_no, category, fuel_type, 
-                item_description, transaction_no, odometer, quantity_liters, total_amount, 
+                campus, date, driver, type, vehicle_equipment, plate_no, category, fuel_type,
+                item_description, transaction_no, odometer, quantity_liters, total_amount,
                 co2_emission, nh4_emission, n2o_emission, total_emission, total_emission_t
             ))
             conn.commit()
 
-            # Return the new record as JSON so it can be dynamically added to the table
+            # Return the new record as JSON for dynamically adding it to the table on the frontend
             new_record = {
                 'campus': campus,
                 'date': date,
@@ -850,26 +848,18 @@ def emu_fuel():
         cursor.execute(sql, tuple(params))
         reports = cursor.fetchall()
 
-        # If no reports were found, initialize reports as an empty list
-        if not reports:
-            reports = []
-
-        # Render the main template with the reports
+        # Render the main template with the reports and pagination data
         return render_template('emu_fuel.html', reports=reports, current_page=page, total_pages=total_pages)
 
-    except mysql.connector.Error as e:
-        return jsonify({'success': False, 'message': f'Database error: {e}'})
-
+    except Exception as e:
+        print(f"Database Error: {e}")  # Debugging
+        flash(f"Database Error: {e}", "danger")
+        return render_template("error.html", message=f"Database Error: {e}")  # Render an error page if database connection fails
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
-
-
-
-
-
 
 
 @app.route('/delete_fuel_record/<int:id>', methods=['DELETE'])
@@ -1076,36 +1066,48 @@ def waste_unsegregation():
         selected_month=selected_month
     )
 
-
-
 # Route for handling the addition of waste unsegregation data via POST request
 @app.route('/add_waste_unsegregated', methods=['POST'])
 def add_waste_unsegregated():
-    # Retrieve form data
-    campus = request.form.get('campus')
-    year = request.form.get('year')
-    month = request.form.get('month')
-    waste_type = request.form.get('wasteType')
-    quantity_kg = float(request.form.get('quantityKg'))
-    sent_to_landfill_kg = float(request.form.get('sentToLandfillKg'))
-
-    # Perform necessary calculations
-    sent_to_landfill_tons = sent_to_landfill_kg / 1000
-    percentage = (sent_to_landfill_kg / quantity_kg) * 100 if quantity_kg else 0
-    ghg_emission_kg_co2e = sent_to_landfill_tons * 0.8 * 0.25 * 0.5 * 0.5 * 1.33
-    ghg_emission_t_co2e = ghg_emission_kg_co2e / 1000
-
     try:
-        # Insert data into the database
+        # Retrieve and validate form data
+        campus = request.form.get('campus')
+        year = request.form.get('year')
+        month = request.form.get('month')
+        waste_type = request.form.get('wasteType')
+        
+        # Validate numeric fields and handle cases where values may be missing
+        quantity_kg = float(request.form.get('quantityKg') or 0)
+        sent_to_landfill_kg = float(request.form.get('sentToLandfillKg') or 0)
+        
+        # Perform necessary calculations
+        sent_to_landfill_tons = sent_to_landfill_kg / 1000  # Convert kg to tons
+        percentage = (sent_to_landfill_kg / quantity_kg * 100) if quantity_kg else 0  # Avoid division by zero
+
+        # GHG emission calculations
+        ghg_emission_kg_co2e = sent_to_landfill_tons * 0.8 * 0.25 * 0.5 * 0.5 * 1.33 * 1000  # Convert tons to kg CO2e
+        ghg_emission_t_co2e = ghg_emission_kg_co2e / 1000  # Convert kg CO2e to tons CO2e
+
+        # Connect to the database and insert data
         conn = get_db_connection()
         cursor = conn.cursor()
-        sql = """INSERT INTO tblsolidwasteunsegregated 
-                 (Campus, Year, Month, WasteType, QuantityInKG, SentToLandfillKG, SentToLandfillTONS, Percentage, GHGEmissionKGCO2e, GHGEmissionTCO2e)
-                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-        cursor.execute(sql, (campus, year, month, waste_type, quantity_kg, sent_to_landfill_kg, sent_to_landfill_tons, percentage, ghg_emission_kg_co2e, ghg_emission_t_co2e))
+
+        sql = """
+            INSERT INTO tblsolidwasteunsegregated 
+            (Campus, Year, Month, WasteType, QuantityInKG, SentToLandfillKG, SentToLandfillTONS, Percentage, GHGEmissionKGCO2e, GHGEmissionTCO2e)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(sql, (
+            campus, year, month, waste_type, quantity_kg, sent_to_landfill_kg,
+            sent_to_landfill_tons, percentage, ghg_emission_kg_co2e, ghg_emission_t_co2e
+        ))
         conn.commit()
 
         flash("Waste unsegregated record added successfully.", "success")
+        return redirect(url_for('waste_unsegregation'))
+
+    except (ValueError, TypeError) as e:
+        flash(f"Invalid input data: {e}", "danger")
         return redirect(url_for('waste_unsegregation'))
 
     except mysql.connector.Error as e:
@@ -1113,8 +1115,10 @@ def add_waste_unsegregated():
         return redirect(url_for('waste_unsegregation'))
 
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
 
 
 # Route for deleting a waste record
@@ -1190,151 +1194,138 @@ def csd_dashboard():
         flash("You need to be logged in to access this page.", "warning")
         return redirect(url_for('login'))
 
-    campus = request.args.get('campus', 'All Campuses')
-    username = session.get('username')
+    # Debugging: Ensure the campus session variable is present but not used to filter data
+    campus = session.get('campus')
+    print(f"Fetching data for all campuses. Session campus is: {campus}")
 
-    data = {
-        'electricity': [],
-        'fuel': [],
-        'waste_segregation': [],
-        'waste_unsegregation': [],
-        'treated_water': [],
-        'water': [],
-        'lpg': [],
-        'food_waste': [],
-        'accommodation': [],
-        'flight': []
-    }
+    # Initialize report data
+    electricity_data = []
+    fuel_data = []
+    waste_segregation_data = []
+    waste_unsegregation_data = []
+    treated_water_data = []
+    water_data = []
+    lpg_data = []
+    food_waste_data = []
+    accommodation_data = []
+    flight_data = []
 
     try:
         conn = get_db_connection()
+        if conn is None:
+            raise Exception("Could not establish database connection.")
+        
         cursor = conn.cursor(dictionary=True)
 
-        queries = {
-            'electricity': "SELECT campus, SUM(consumption) as consumption FROM electricity_consumption",
-            'fuel': "SELECT campus, SUM(consumption) as consumption FROM fuel_emissions",
-            'waste_segregation': "SELECT campus, SUM(segregated_amount) as consumption FROM tblsolidwastesegregated",
-            'waste_unsegregation': "SELECT campus, SUM(unsegregated_amount) as consumption FROM tblsolidwasteunsegregated",
-            'treated_water': "SELECT campus, SUM(treated_water_volume) as consumption FROM tbltreatedwater",
-            'water': "SELECT campus, SUM(consumption) as consumption FROM tblwater",
-            'lpg': "SELECT campus, SUM(consumption) as consumption FROM tbllpg",
-            'food_waste': "SELECT campus, SUM(consumption) as consumption FROM tblfoodwaste",
-            'accommodation': "SELECT campus, SUM(consumption) as consumption FROM tblaccommodation",
-            'flight': "SELECT campus, SUM(ghg_emission) as consumption FROM tblflight"
-        }
+        # Fetch data for each category without filtering by campus
+        cursor.execute("SELECT * FROM electricity_consumption")
+        electricity_data = cursor.fetchall()
+        
+        cursor.execute("SELECT * FROM fuel_emissions")
+        fuel_data = cursor.fetchall()
 
-        for key, query in queries.items():
-            if campus == 'All Campuses':
-                query += " GROUP BY campus"
-            else:
-                query += " WHERE campus = %s GROUP BY campus"
-                cursor.execute(query, (campus,))
-            cursor.execute(query)
-            data[key] = cursor.fetchall()
+        cursor.execute("SELECT * FROM tblsolidwastesegregated")
+        waste_segregation_data = cursor.fetchall()
 
-    except mysql.connector.Error as e:
-        flash(f"Database error: {e}", "danger")
+        cursor.execute("SELECT * FROM tblsolidwasteunsegregated")
+        waste_unsegregation_data = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM tbltreatedwater")
+        treated_water_data = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM tblwater")
+        water_data = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM tbllpg")
+        lpg_data = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM tblfoodwaste")
+        food_waste_data = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM tblaccommodation")
+        accommodation_data = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM tblflight")
+        flight_data = cursor.fetchall()
+
+    except Exception as e:
+        print(f"Database Error: {e}")
+        flash(f"Database Error: {e}", "danger")
+        return render_template("error.html", message=f"Database Error: {e}")
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
 
+    # Helper functions to extract and forecast values
     def get_consumption_values(data, key):
-        return [row[key] for row in data if key in row]
+        values = [float(row[key]) for row in data if key in row and row[key] is not None]
+        print(f"Extracted Values for {key}: {values}")
+        return values
 
-    def forecast_consumption(data, periods=12):
-        if len(data) > 0:
+    def forecast_consumption(data, periods=14):
+        if len(data) > 1:
             try:
                 model = ARIMA(data, order=(5, 1, 0))
                 model_fit = model.fit()
                 forecast = model_fit.forecast(steps=periods)
                 return forecast.tolist()
             except Exception as e:
+                print(f"ARIMA Error: {e}")
                 flash(f"ARIMA Error: {e}", "danger")
-                return [0] * periods
+                avg_value = sum(data) / len(data)
+                return [avg_value] * periods
         else:
+            print("Insufficient Data for ARIMA, Returning Zeros")
             return [0] * periods
 
+    # Extract values for forecast
+    electricity_values = get_consumption_values(electricity_data, 'consumption')
+    fuel_values = get_consumption_values(fuel_data, 'quantity_liters')
+    waste_segregation_values = get_consumption_values(waste_segregation_data, 'QuantityInKG')
+    waste_unsegregation_values = get_consumption_values(waste_unsegregation_data, 'QuantityInKG')
+    treated_water_values = get_consumption_values(treated_water_data, 'TreatedWaterVolume')
+    water_values = get_consumption_values(water_data, 'Consumption')
+    lpg_values = get_consumption_values(lpg_data, 'TotalTankVolume')
+    food_waste_values = get_consumption_values(food_waste_data, 'QuantityOfServing')
+    accommodation_values = get_consumption_values(accommodation_data, 'NumOccupiedRoom')
+    flight_values = get_consumption_values(flight_data, 'GHGEmissionKGC02e')
+
+    # Generate forecasts for 14 periods
     forecast_data = {
-        "electricity_forecast": forecast_consumption(get_consumption_values(data['electricity'], 'consumption')),
-        "fuel_forecast": forecast_consumption(get_consumption_values(data['fuel'], 'consumption')),
-        "waste_segregation_forecast": forecast_consumption(get_consumption_values(data['waste_segregation'], 'consumption')),
-        "waste_unsegregation_forecast": forecast_consumption(get_consumption_values(data['waste_unsegregation'], 'consumption')),
-        "treated_water_forecast": forecast_consumption(get_consumption_values(data['treated_water'], 'consumption')),
-        "water_forecast": forecast_consumption(get_consumption_values(data['water'], 'consumption')),
-        "lpg_forecast": forecast_consumption(get_consumption_values(data['lpg'], 'consumption')),
-        "food_waste_forecast": forecast_consumption(get_consumption_values(data['food_waste'], 'consumption')),
-        "accommodation_forecast": forecast_consumption(get_consumption_values(data['accommodation'], 'consumption')),
-        "flight_forecast": forecast_consumption(get_consumption_values(data['flight'], 'consumption'))
+        "electricity_forecast": forecast_consumption(electricity_values, periods=14),
+        "fuel_forecast": forecast_consumption(fuel_values, periods=14),
+        "waste_segregation_forecast": forecast_consumption(waste_segregation_values, periods=14),
+        "waste_unsegregation_forecast": forecast_consumption(waste_unsegregation_values, periods=14),
+        "treated_water_forecast": forecast_consumption(treated_water_values, periods=14),
+        "water_forecast": forecast_consumption(water_values, periods=14),
+        "lpg_forecast": forecast_consumption(lpg_values, periods=14),
+        "food_waste_forecast": forecast_consumption(food_waste_values, periods=14),
+        "accommodation_forecast": forecast_consumption(accommodation_values, periods=14),
+        "flight_forecast": forecast_consumption(flight_values, periods=14)
     }
+
+    # Debugging output for forecast data
+    print("Forecast Data for 14 Periods:")
+    for key, values in forecast_data.items():
+        print(f"{key}: {values}")
 
     return render_template(
         'csd_dashboard.html',
-        username=username,
-        campus=campus,
-        data=data,
+        electricity_data=electricity_data,
+        fuel_data=fuel_data,
+        waste_segregation_data=waste_segregation_data,
+        waste_unsegregation_data=waste_unsegregation_data,
+        treated_water_data=treated_water_data,
+        water_data=water_data,
+        lpg_data=lpg_data,
+        food_waste_data=food_waste_data,
+        accommodation_data=accommodation_data,
+        flight_data=flight_data,
         forecast_data=forecast_data
     )
 
-@app.route('/fetch_forecast_data', methods=['GET'])
-def fetch_csd_forecast_data():
-    campus = request.args.get('campus', 'All Campuses')  # Get the campus from the request
-    year = request.args.get('year', '2023')  # Optional year filtering
-    view_type = request.args.get('view_type', 'monthly')  # View type (monthly/yearly)
-
-    # Initialize forecast data
-    forecast_data = {
-        "electricity_forecast": [],
-        "fuel_forecast": [],
-        "waste_segregation_forecast": [],
-        "waste_unsegregation_forecast": [],
-        "treated_water_forecast": [],
-        "water_forecast": [],
-        "lpg_forecast": [],
-        "food_waste_forecast": [],
-        "accommodation_forecast": [],
-        "flight_forecast": []
-    }
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        queries = {
-            'electricity': "SELECT campus, SUM(consumption) as consumption FROM electricity_consumption",
-            'fuel': "SELECT campus, SUM(consumption) as consumption FROM fuel_emissions",
-            'waste_segregation': "SELECT campus, SUM(segregated_amount) as consumption FROM tblsolidwastesegregated",
-            'waste_unsegregation': "SELECT campus, SUM(unsegregated_amount) as consumption FROM tblsolidwasteunsegregated",
-            'treated_water': "SELECT campus, SUM(treated_water_volume) as consumption FROM tbltreatedwater",
-            'water': "SELECT campus, SUM(consumption) as consumption FROM tblwater",
-            'lpg': "SELECT campus, SUM(consumption) as consumption FROM tbllpg",
-            'food_waste': "SELECT campus, SUM(consumption) as consumption FROM tblfoodwaste",
-            'accommodation': "SELECT campus, SUM(consumption) as consumption FROM tblaccommodation",
-            'flight': "SELECT campus, SUM(ghg_emission) as consumption FROM tblflight"
-        }
-
-        for key, query in queries.items():
-            if campus == 'All Campuses':
-                cursor.execute(query + " GROUP BY campus")
-            else:
-                cursor.execute(query + " WHERE campus = %s GROUP BY campus", (campus,))
-
-            # Fetch and forecast the data
-            data = [row['consumption'] for row in cursor.fetchall()]
-            forecast_data[f"{key}_forecast"] = forecast_consumption(data) or [0] * 12  # Monthly forecast
-
-    except Exception as e:
-        print(f"Error fetching forecast data: {e}")
-        forecast_data = {key: [0] * 12 for key in forecast_data}  # Default to zeros if error
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
-    return jsonify(forecast_data)
 
 
 # Route for the Center for Sustainable Development Report
@@ -1603,13 +1594,19 @@ def export_data():
         flash("An error occurred while exporting the data. Please check server logs.", "danger")
         return render_template("csd_report.html")
     
-
 @app.route('/sdo_dashboard')
 def sdo_dashboard():
     if 'loggedIn' not in session:
         return redirect(url_for('login'))  # Redirect to login if user is not logged in
 
-    campus = session['campus']  # Retrieve the campus from session
+    campus = session.get('campus')  # Use get to avoid KeyError if 'campus' is not set
+
+    # Debugging: Ensure the campus is correctly identified
+    print(f"Fetching data for campus: {campus}")
+    
+    if not campus:
+        flash("Campus not set. Please log in again.", "danger")
+        return redirect(url_for('login'))
 
     # Initialize report data
     electricity_data = []
@@ -1625,6 +1622,9 @@ def sdo_dashboard():
 
     try:
         conn = get_db_connection()
+        if conn is None:
+            raise Exception("Could not establish database connection.")
+        
         cursor = conn.cursor(dictionary=True)
 
         # Fetch electricity data
@@ -1636,90 +1636,102 @@ def sdo_dashboard():
         fuel_data = cursor.fetchall()
 
         # Fetch waste segregation data
-        cursor.execute("SELECT * FROM tblsolidwastesegregated WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tblsolidwastesegregated WHERE Campus = %s", (campus,))
         waste_segregation_data = cursor.fetchall()
 
         # Fetch waste unsegregation data
-        cursor.execute("SELECT * FROM tblsolidwasteunsegregated WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tblsolidwasteunsegregated WHERE Campus = %s", (campus,))
         waste_unsegregation_data = cursor.fetchall()
 
         # Fetch treated water data
-        cursor.execute("SELECT * FROM tbltreatedwater WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tbltreatedwater WHERE Campus = %s", (campus,))
         treated_water_data = cursor.fetchall()
 
         # Fetch water consumption data
-        cursor.execute("SELECT * FROM tblwater WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tblwater WHERE Campus = %s", (campus,))
         water_data = cursor.fetchall()
 
         # Fetch LPG consumption data
-        cursor.execute("SELECT * FROM tbllpg WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tbllpg WHERE Campus = %s", (campus,))
         lpg_data = cursor.fetchall()
 
         # Fetch food waste data
-        cursor.execute("SELECT * FROM tblfoodwaste WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tblfoodwaste WHERE Campus = %s", (campus,))
         food_waste_data = cursor.fetchall()
 
         # Fetch accommodation data
-        cursor.execute("SELECT * FROM tblaccommodation WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tblaccommodation WHERE Campus = %s", (campus,))
         accommodation_data = cursor.fetchall()
 
         # Fetch flight emissions data
-        cursor.execute("SELECT * FROM tblflight WHERE campus = %s", (campus,))
+        cursor.execute("SELECT * FROM tblflight WHERE Campus = %s", (campus,))
         flight_data = cursor.fetchall()
 
-    except mysql.connector.Error as e:
+    except Exception as e:
+        print(f"Database Error: {e}")  # Debugging
         flash(f"Database Error: {e}", "danger")
+        return render_template("error.html", message=f"Database Error: {e}")  # Render an error page if database connection fails
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
 
-    # Function to extract values from the data
+    # Function to extract values from the data and convert to float
     def get_consumption_values(data, key):
-        return [row[key] for row in data if key in row]
+        values = [float(row[key]) for row in data if key in row and row[key] is not None]
+        print(f"Extracted Values for {key}: {values}")  # Debugging
+        return values
 
-    # Function to forecast consumption using ARIMA
-    def forecast_consumption(data, periods=12):
-        if len(data) > 0:
+    # Function to forecast consumption using ARIMA with 14 periods
+    def forecast_consumption(data, periods=14):
+        if len(data) > 1:  # Ensure there is enough data for ARIMA
             try:
                 model = ARIMA(data, order=(5, 1, 0))  # Adjust the ARIMA order based on your data
                 model_fit = model.fit()
                 forecast = model_fit.forecast(steps=periods)
                 return forecast.tolist()
             except Exception as e:
+                print(f"ARIMA Error: {e}")  # Debugging
                 flash(f"ARIMA Error: {e}", "danger")
-                return [0] * periods  # Return a list of zeros instead of Undefined
+                avg_value = sum(data) / len(data)
+                return [avg_value] * periods  # Fallback to average if ARIMA fails
         else:
-            return [0] * periods  # Return a list of zeros if no data is available
+            print("Insufficient Data for ARIMA, Returning Zeros")  # Debugging
+            return [0] * periods  # Fallback to zeros if no data is available
 
     # Extract values for ARIMA forecast
     electricity_values = get_consumption_values(electricity_data, 'consumption')
-    fuel_values = get_consumption_values(fuel_data, 'consumption')
-    waste_segregation_values = get_consumption_values(waste_segregation_data, 'segregated_amount')
-    waste_unsegregation_values = get_consumption_values(waste_unsegregation_data, 'unsegregated_amount')
-    treated_water_values = get_consumption_values(treated_water_data, 'treated_water_volume')
-    water_values = get_consumption_values(water_data, 'consumption')
-    lpg_values = get_consumption_values(lpg_data, 'consumption')
-    food_waste_values = get_consumption_values(food_waste_data, 'consumption')
-    accommodation_values = get_consumption_values(accommodation_data, 'consumption')
-    flight_values = get_consumption_values(flight_data, 'ghg_emission')
+    fuel_values = get_consumption_values(fuel_data, 'quantity_liters')
+    waste_segregation_values = get_consumption_values(waste_segregation_data, 'QuantityInKG')
+    waste_unsegregation_values = get_consumption_values(waste_unsegregation_data, 'QuantityInKG')
+    treated_water_values = get_consumption_values(treated_water_data, 'TreatedWaterVolume')
+    water_values = get_consumption_values(water_data, 'Consumption')
+    lpg_values = get_consumption_values(lpg_data, 'TotalTankVolume')
+    food_waste_values = get_consumption_values(food_waste_data, 'QuantityOfServing')
+    accommodation_values = get_consumption_values(accommodation_data, 'NumOccupiedRoom')
+    flight_values = get_consumption_values(flight_data, 'GHGEmissionKGC02e')
 
-    # Forecast data
+    # Forecast data for 14 periods (12 historical + 2 future)
     forecast_data = {
-        "electricity_forecast": forecast_consumption(electricity_values),
-        "fuel_forecast": forecast_consumption(fuel_values),
-        "waste_segregation_forecast": forecast_consumption(waste_segregation_values),
-        "waste_unsegregation_forecast": forecast_consumption(waste_unsegregation_values),
-        "treated_water_forecast": forecast_consumption(treated_water_values),
-        "water_forecast": forecast_consumption(water_values),
-        "lpg_forecast": forecast_consumption(lpg_values),
-        "food_waste_forecast": forecast_consumption(food_waste_values),
-        "accommodation_forecast": forecast_consumption(accommodation_values),
-        "flight_forecast": forecast_consumption(flight_values)
+        "electricity_forecast": forecast_consumption(electricity_values, periods=14),
+        "fuel_forecast": forecast_consumption(fuel_values, periods=14),
+        "waste_segregation_forecast": forecast_consumption(waste_segregation_values, periods=14),
+        "waste_unsegregation_forecast": forecast_consumption(waste_unsegregation_values, periods=14),
+        "treated_water_forecast": forecast_consumption(treated_water_values, periods=14),
+        "water_forecast": forecast_consumption(water_values, periods=14),
+        "lpg_forecast": forecast_consumption(lpg_values, periods=14),
+        "food_waste_forecast": forecast_consumption(food_waste_values, periods=14),
+        "accommodation_forecast": forecast_consumption(accommodation_values, periods=14),
+        "flight_forecast": forecast_consumption(flight_values, periods=14)
     }
 
-    # Render template and pass data
+    # Print forecast data to the console
+    print("Forecast Data for 14 Periods (12 Historical + 2 Future):")
+    for key, values in forecast_data.items():
+        print(f"{key}: {values}")
+
+    # Render the dashboard template and pass data
     return render_template(
         'sdo_dashboard.html',
         electricity_data=electricity_data,
@@ -1736,95 +1748,6 @@ def sdo_dashboard():
     )
 
 
-# Route to fetch updated forecast data
-@app.route('/fetch_forecast_data', methods=['GET'])
-def fetch_sdo_forecast_data():
-    campus = session.get('campus', 'Lipa')  # Assume 'Lipa' as default campus
-
-    # Initialize forecast data
-    forecast_data = {
-        "electricity_forecast": [],
-        "fuel_forecast": [],
-        "waste_segregation_forecast": [],
-        "waste_unsegregation_forecast": [],
-        "treated_water_forecast": [],
-        "water_forecast": [],
-        "lpg_forecast": [],
-        "food_waste_forecast": [],
-        "accommodation_forecast": [],
-        "flight_forecast": []
-    }
-
-    try:
-        # Connect to the database
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        # Fetch data for electricity
-        cursor.execute("SELECT consumption FROM electricity_consumption WHERE campus = %s", (campus,))
-        electricity_data = [row['consumption'] for row in cursor.fetchall()]
-
-        # Fetch data for fuel consumption
-        cursor.execute("SELECT consumption FROM fuel_emissions WHERE campus = %s", (campus,))
-        fuel_data = [row['consumption'] for row in cursor.fetchall()]
-
-        # Fetch data for waste segregation
-        cursor.execute("SELECT segregated_amount FROM tblsolidwastesegregated WHERE campus = %s", (campus,))
-        waste_segregation_data = [row['segregated_amount'] for row in cursor.fetchall()]
-
-        # Fetch data for waste unsegregation
-        cursor.execute("SELECT unsegregated_amount FROM tblsolidwasteunsegregated WHERE campus = %s", (campus,))
-        waste_unsegregation_data = [row['unsegregated_amount'] for row in cursor.fetchall()]
-
-        # Fetch data for treated water
-        cursor.execute("SELECT treated_water_volume FROM treated_water WHERE campus = %s", (campus,))
-        treated_water_data = [row['treated_water_volume'] for row in cursor.fetchall()]
-
-        # Fetch data for water consumption
-        cursor.execute("SELECT consumption FROM water_consumption WHERE campus = %s", (campus,))
-        water_data = [row['consumption'] for row in cursor.fetchall()]
-
-        # Fetch data for LPG consumption
-        cursor.execute("SELECT consumption FROM tbllpg WHERE campus = %s", (campus,))
-        lpg_data = [row['consumption'] for row in cursor.fetchall()]
-
-        # Fetch data for food waste
-        cursor.execute("SELECT consumption FROM tblfoodwaste WHERE campus = %s", (campus,))
-        food_waste_data = [row['consumption'] for row in cursor.fetchall()]
-
-        # Fetch data for accommodation
-        cursor.execute("SELECT consumption FROM tblaccommodation WHERE campus = %s", (campus,))
-        accommodation_data = [row['consumption'] for row in cursor.fetchall()]
-
-        # Fetch data for flight emissions
-        cursor.execute("SELECT ghg_emission FROM tblflight WHERE campus = %s", (campus,))
-        flight_data = [row['ghg_emission'] for row in cursor.fetchall()]
-
-        # Generate forecast for each data set
-        forecast_data = {
-            "electricity_forecast": forecast_consumption(electricity_data) or [0] * 6,
-            "fuel_forecast": forecast_consumption(fuel_data) or [0] * 6,
-            "waste_segregation_forecast": forecast_consumption(waste_segregation_data) or [0] * 6,
-            "waste_unsegregation_forecast": forecast_consumption(waste_unsegregation_data) or [0] * 6,
-            "treated_water_forecast": forecast_consumption(treated_water_data) or [0] * 6,
-            "water_forecast": forecast_consumption(water_data) or [0] * 6,
-            "lpg_forecast": forecast_consumption(lpg_data) or [0] * 6,
-            "food_waste_forecast": forecast_consumption(food_waste_data) or [0] * 6,
-            "accommodation_forecast": forecast_consumption(accommodation_data) or [0] * 6,
-            "flight_forecast": forecast_consumption(flight_data) or [0] * 6
-        }
-
-    except Exception as e:
-        print(f"Error fetching forecast data: {e}")  # Log the error
-        forecast_data = {key: [0] * 6 for key in forecast_data}  # Default values
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
-    return jsonify(forecast_data)
 
 
 # Route for Manage Account (renamed to manageacc_sdo)
@@ -2440,7 +2363,7 @@ def food_consumption():
     campus = session.get('campus')  # Get the logged-in campus
 
     # Pagination variables
-    page_size = 10  # Number of records per page
+    page_size = 15  # Number of records per page
     current_page = int(request.args.get('page', 1))  # Current page number from the query parameter
     offset = (current_page - 1) * page_size  # Offset for SQL query
 
@@ -2533,6 +2456,32 @@ def food_consumption():
         current_page=current_page
     )
 
+# Route to delete a food record by ID
+@app.route('/delete_food_record/<int:record_id>', methods=['DELETE'])
+def delete_food_record(record_id):
+    if 'loggedIn' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Delete the record from the database by ID
+        cursor.execute("DELETE FROM tblfoodwaste WHERE id = %s", (record_id,))
+        conn.commit()
+
+        # Check if a row was actually deleted
+        if cursor.rowcount == 0:
+            return jsonify({"success": False, "message": "Record not found"}), 404
+
+        return jsonify({"success": True}), 200
+
+    except mysql.connector.Error as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @app.route('/lpg_consumption', methods=['GET', 'POST'])
