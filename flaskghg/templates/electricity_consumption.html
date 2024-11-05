@@ -9,7 +9,169 @@
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-   table {
+   table {table {
+            width: 100%; /* Full width for table */
+            border-collapse: collapse; /* Collapse borders */
+            font-size: 10px; /* Smaller table font */
+        }
+
+        th, td {
+            padding: 4px; /* Smaller cell padding */
+            text-align: center; /* Center align text */
+            border: 1px solid #ddd; /* Add border */
+        }
+
+        th {
+            background-color: #d50000; /* Red background for table headers */
+            color: white; /* White text for better contrast */
+            font-size: 11px; /* Reduce font size for headers to prevent overflow */
+        }
+        #yearFilter, #quarterFilter, #monthFilter {
+        margin: 10px 0; /* Adds top and bottom margin */
+         }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #e0e0e0;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+            z-index: 1;
+            position: relative;
+        }
+
+        .header .logo {
+            width: 50px;
+            height: auto;
+            margin-left: 100px;
+            transition: margin-left 0.5s ease;
+        }
+
+        .header .logo.csd {
+            margin-left: 20px;
+        }
+
+        .header .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .content {
+            flex-grow: 1;
+            background-color: #d50000;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: margin-left 0.5s ease;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+        }
+
+        .filter-container select {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #reportTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #reportTable th, #reportTable td {
+            padding: 10px;
+            border: 1px solid #000;
+        }
+
+        .modal {
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 50px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%; /* Adjust the width to make it smaller */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.container {
+    background-color: #d50000;
+    padding: 15px;
+    width: 100%;
+    border-radius: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.form-container {
+    width: 100%; /* Adjust the width to allow more space for form fields */
+}
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-container form label {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.form-container form select,
+.form-container form input {
+    width: 100%; /* This makes the input/select fill the entire available width */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 14px;
+}
+
     width: 100%; /* Full width for table */
     border-collapse: collapse; /* Collapse borders */
     font-size: 10px; /* Smaller table font */
@@ -97,26 +259,27 @@ th {
             padding: 10px;
             border: 1px solid #000;
         }
-            .modal {
-    display: none; /* Flexbox to center content */
-    justify-content: center; /* Center horizontally */
-    align-items: flex-start; /* Align content at the top */
-    position: fixed; /* Stay in place */
-    z-index: 2; /* Sit above everything */
+        .modal {
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    position: fixed;
+    z-index: 2;
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
-    padding-top: 50px; /* Adjust padding to move content lower */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 50px;
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 2% auto; /* Center it vertically and horizontally */
+    margin: 2% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 50%; /* Could be adjusted based on design */
+    width: 30%; /* Adjusted width for a narrower modal on larger screens */
+    max-width: 400px; /* Maximum width to prevent excessive stretching */
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
@@ -135,36 +298,35 @@ th {
     cursor: pointer;
 }
 
-.modal .container {
+.container {
     background-color: #d50000;
-    padding: 15px; /* Slightly reduced padding */
-    width: 100%; /* Full width within modal */
-    height: auto; /* Adjust based on content */
+    padding: 15px;
+    width: 100%;
     border-radius: 10px;
     color: #fff;
     display: flex;
-    justify-content: space-between; /* Align form and result container side by side */
+    justify-content: space-between;
     box-sizing: border-box;
 }
 
 .form-container {
-    width: 100%; /* Adjust the width to allow more space for form fields */
+    width: 100%;
 }
 
 .form-container form {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Reduced gap between form elements */
+    gap: 10px;
 }
 
 .form-container form label {
-    font-size: 14px; /* Smaller font size for labels */
-    margin-bottom: 5px; /* Minimal space between label and input */
+    font-size: 14px;
+    margin-bottom: 5px;
 }
 
 .form-container form select,
 .form-container form input {
-    width: 100%; /* This makes the input/select fill the entire available width */
+    width: 100%;
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -173,122 +335,79 @@ th {
     font-size: 14px;
 }
 
-.form-container form button {
-    padding: 10px; /* Smaller button padding */
-    background-color: #666;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px; /* Smaller font size for buttons */
-}
-
-.form-container form button:hover {
-    background-color: #555;
-}
-
-.result-container {
-    background-color: #e0e0e0;
-    padding: 15px; /* Smaller padding for result container */
-    border-radius: 10px;
-}
-
-#result {
-    background-color: #fff;
-    color: #333;
-    padding: 15px; /* Reduced padding */
-    border-radius: 10px;
-    margin-top: 15px;
-}
-
-canvas {
-    margin-top: 20px;
-    display: block;
-    width: 100%;
-}
-
 .buttons-container {
     display: flex;
     justify-content: center;
-    gap: 10px; /* Reduced gap between buttons */
+    gap: 10px;
     margin-top: 20px;
 }
 
 button {
-    padding: 10px 15px; /* Reduced button padding */
-    font-size: 14px; /* Smaller button font size */
+    padding: 10px 15px;
+    font-size: 14px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    margin-left: 10px; /* Adds space to move the button to the right */
 }
 
-button:first-child {
+button.btn-primary {
+    background-color: #d50000;
+    color: #fff;
+}
+
+button.btn-secondary {
     background-color: #666;
     color: white;
 }
 
-button:first-child:hover {
+button.btn-secondary:hover {
     background-color: #555;
 }
 
-button:last-child {
+button.btn-danger {
     background-color: #d50000;
     color: white;
 }
 
-button:last-child:hover {
+button.btn-danger:hover {
     background-color: #b71c1c;
 }
 
-.pagination-container {
-    margin-top: 20px; /* Add some margin above the pagination */
+.pagination {
+    margin-top: 10px;
     text-align: center;
 }
 
-.pagination .page-item .page-link {
-    color: black; /* Set font color to black */
+.pagination button {
+    padding: 5px 8px;
+    margin: 2px;
+    font-size: 12px;
+    cursor: pointer;
 }
 
-.pagination .page-item.active .page-link {
-    background-color: #d50000; /* Active page with the same red color */
-    border-color: #d50000;
-    color: white; /* White text for the active page */
+.pagination .page-info {
+    margin: 0 10px;
+    font-size: 14px;
 }
 
-.pagination .page-link:hover {
-    background-color: #b71c1c; /* Darker red on hover */
-    color: white; /* White text on hover */
+.delete-icon {
+    cursor: pointer;
+    color: #fd0808;
 }
 
-
-
-        .delete-icon {
-            cursor: pointer;
-            color: #fd0808;
-        }
-
-        @media screen and (max-width: 768px) {
-    table {
-        font-size: 10px; /* Adjusted font size for smaller screens */
-    }
-
-    th, td {
-        padding: 6px; /* Adjusted padding for smaller screens */
-    }
-
+@media screen and (max-width: 768px) {
     .modal-content {
-        width: 90%; /* Modal width adjusts to smaller screens */
+        width: 90%; /* Full width for smaller screens */
     }
 
     .form-container,
     .result-container {
-        width: 100%; /* Stack form and result container on smaller screens */
+        width: 100%;
     }
 
     .container {
-        padding: 10px; /* Adjust padding for smaller screens */
+        padding: 10px;
     }
 }
     </style>
@@ -296,18 +415,17 @@ button:last-child:hover {
 <body>
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -349,8 +467,9 @@ button:last-child:hover {
 
                     <div class="buttons-container mt-3 text-center">
                         <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
                     </div>
+                    
 
                     <div class="mb-4">
                         <label for="monthFilter">Filter by Month:</label>
@@ -488,7 +607,7 @@ button:last-child:hover {
                                         <input type="number" id="tCO2PerKwh" name="tCO2PerKwh" step="0.01" readonly>
 
                                         <button type="button" onclick="calculateConsumption()">Calculate</button>
-                                        <button type="submit">Submit</button>
+                                        <button type="submit">Generate Report</button>
                                     </form>
                                 </div>
 

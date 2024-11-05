@@ -175,6 +175,7 @@
 }
 
 
+
 .buttons-container {
     display: flex;
     justify-content: center;
@@ -320,18 +321,17 @@ button:last-child:hover {
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU</a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -344,18 +344,13 @@ button:last-child:hover {
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">OFFICES</div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
-                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                            EMU
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                                <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
-                            </nav>
-                        </div>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
                     </div>
                 </div>
             </nav>
@@ -383,7 +378,7 @@ button:last-child:hover {
                         <h2>Treated Water Consumption Report</h2>
                         <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
                     </div>
-        
+                    <br>
                     <table id="reportTable">
                         <thead>
                             <tr>
@@ -416,12 +411,8 @@ button:last-child:hover {
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-            </main>
-        </div>
-    </div>
 
-    <!-- Pagination controls -->
+                    <!-- Pagination controls -->
     <div class="pagination-container">
         <nav aria-label="Page navigation example">
             <ul class="pagination justify-content-center">
@@ -440,6 +431,11 @@ button:last-child:hover {
                 {% endif %}
             </ul>
         </nav>
+    </div>
+
+                </div>
+            </main>
+        </div>
     </div>
 
     <div id="myModal" class="modal">
@@ -512,7 +508,6 @@ button:last-child:hover {
     </div>
     
    
-
     <script>
         function deleteRow(id) {
         if (confirm("Are you sure you want to delete this record?")) {

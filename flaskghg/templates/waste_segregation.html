@@ -9,297 +9,421 @@
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        table {
-         width: 200%; /* Full width for table */
+        table {table {
+                 width: 100%; /* Full width for table */
+                 border-collapse: collapse; /* Collapse borders */
+                 font-size: 10px; /* Smaller table font */
+             }
+     
+             th, td {
+                 padding: 4px; /* Smaller cell padding */
+                 text-align: center; /* Center align text */
+                 border: 1px solid #ddd; /* Add border */
+             }
+     
+             th {
+                 background-color: #d50000; /* Red background for table headers */
+                 color: white; /* White text for better contrast */
+                 font-size: 11px; /* Reduce font size for headers to prevent overflow */
+             }
+             #yearFilter, #quarterFilter, #monthFilter {
+             margin: 10px 0; /* Adds top and bottom margin */
+              }
+     
+             body {
+                 font-family: 'Roboto', sans-serif;
+                 height: 100vh;
+                 display: flex;
+                 flex-direction: column;
+             }
+     
+             .header {
+                 display: flex;
+                 justify-content: space-between;
+                 align-items: center;
+                 background-color: #e0e0e0;
+                 padding-top: 10px;
+                 padding-bottom: 10px;
+                 border-bottom: 2px solid #ccc;
+                 z-index: 1;
+                 position: relative;
+             }
+     
+             .header .logo {
+                 width: 50px;
+                 height: auto;
+                 margin-left: 100px;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .header .logo.csd {
+                 margin-left: 20px;
+             }
+     
+             .header .title {
+                 font-size: 28px;
+                 font-weight: bold;
+                 color: #333;
+                 text-align: center;
+                 flex-grow: 1;
+             }
+     
+             .content {
+                 flex-grow: 1;
+                 background-color: #d50000;
+                 padding: 40px;
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .filter-container {
+                 margin-bottom: 20px;
+             }
+     
+             .filter-container select {
+                 padding: 10px;
+                 font-size: 16px;
+             }
+     
+             #reportTable {
+                 width: 100%;
+                 border-collapse: collapse;
+             }
+     
+             #reportTable th, #reportTable td {
+                 padding: 10px;
+                 border: 1px solid #000;
+             }
+     
+             .modal {
+         display: none;
+         justify-content: center;
+         align-items: flex-start;
+         position: fixed;
+         z-index: 2;
+         left: 0;
+         top: 0;
+         width: 100%;
+         height: 100%;
+         background-color: rgba(0, 0, 0, 0.5);
+         padding-top: 50px;
+     }
+     
+     .modal-content {
+         background-color: #fefefe;
+         margin: 2% auto;
+         padding: 20px;
+         border: 1px solid #888;
+         width: 30%; /* Adjust the width to make it smaller */
+         border-radius: 10px;
+         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+     }
+     
+     
+     .close {
+         color: #aaa;
+         float: right;
+         font-size: 28px;
+         font-weight: bold;
+     }
+     
+     .close:hover,
+     .close:focus {
+         color: #000;
+         text-decoration: none;
+         cursor: pointer;
+     }
+     
+     .container {
+         background-color: #d50000;
+         padding: 15px;
+         width: 100%;
+         border-radius: 10px;
+         color: #fff;
+         display: flex;
+         justify-content: space-between;
+         box-sizing: border-box;
+     }
+     
+     .form-container {
+         width: 100%; /* Adjust the width to allow more space for form fields */
+     }
+     .form-container form {
+         display: flex;
+         flex-direction: column;
+         gap: 10px;
+     }
+     
+     .form-container form label {
+         font-size: 14px;
+         margin-bottom: 5px;
+     }
+     
+     .form-container form select,
+     .form-container form input {
+         width: 100%; /* This makes the input/select fill the entire available width */
+         padding: 8px;
+         border: 1px solid #ccc;
+         border-radius: 5px;
+         background-color: #f9f9f9;
+         color: #333;
+         font-size: 14px;
+     }
+     
+         width: 100%; /* Full width for table */
          border-collapse: collapse; /* Collapse borders */
          font-size: 10px; /* Smaller table font */
      }
-
+     
      th, td {
          padding: 4px; /* Smaller cell padding */
          text-align: center; /* Center align text */
          border: 1px solid #ddd; /* Add border */
      }
-
+     
      th {
-         background-color: #d50000; /* Red background for table headers */
-         color: white; /* White text for better contrast */
+         background-color:  #d50000 !important; /* Background color */
+         color: #fff; /* Red text color with !important */
          font-size: 11px; /* Reduce font size for headers to prevent overflow */
      }
-     #yearFilter, #quarterFilter, #monthFilter {
-     margin: 10px 0; /* Adds top and bottom margin */
-      }
-
-     body {
-         font-family: 'Roboto', sans-serif;
-         height: 100vh;
-         display: flex;
-         flex-direction: column;
+     
+             #yearFilter, #quarterFilter, #monthFilter {
+             margin: 10px 0; /* Adds top and bottom margin */
+              }
+     
+             body {
+                 font-family: 'Roboto', sans-serif;
+                 height: 100vh;
+                 display: flex;
+                 flex-direction: column;
+             }
+     
+             .header {
+                 display: flex;
+                 justify-content: space-between;
+                 align-items: center;
+                 background-color: #e0e0e0;
+                 padding-top: 10px;
+                 padding-bottom: 10px;
+                 border-bottom: 2px solid #ccc;
+                 z-index: 1;
+                 position: relative;
+             }
+     
+             .header .logo {
+                 width: 50px;
+                 height: auto;
+                 margin-left: 100px;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .header .logo.csd {
+                 margin-left: 20px;
+             }
+     
+             .header .title {
+                 font-size: 28px;
+                 font-weight: bold;
+                 color: #333;
+                 text-align: center;
+                 flex-grow: 1;
+             }
+     
+             .content {
+                 flex-grow: 1;
+                 background-color: #d50000;
+                 padding: 40px;
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .filter-container {
+                 margin-bottom: 20px;
+             }
+     
+             .filter-container select {
+                 padding: 10px;
+                 font-size: 16px;
+             }
+     
+             #reportTable {
+                 width: 100%;
+                 border-collapse: collapse;
+             }
+     
+             #reportTable th, #reportTable td {
+                 padding: 10px;
+                 border: 1px solid #000;
+             }
+             .modal {
+         display: none;
+         justify-content: center;
+         align-items: flex-start;
+         position: fixed;
+         z-index: 2;
+         left: 0;
+         top: 0;
+         width: 100%;
+         height: 100%;
+         background-color: rgba(0, 0, 0, 0.5);
+         padding-top: 50px;
      }
-
-     .header {
-         display: flex;
-         justify-content: space-between;
-         align-items: center;
-         background-color: #e0e0e0;
-         padding-top: 10px;
-         padding-bottom: 10px;
-         border-bottom: 2px solid #ccc;
-         z-index: 1;
-         position: relative;
+     
+     .modal-content {
+         background-color: #fefefe;
+         margin: 2% auto;
+         padding: 20px;
+         border: 1px solid #888;
+         width: 30%; /* Adjusted width for a narrower modal on larger screens */
+         max-width: 400px; /* Maximum width to prevent excessive stretching */
+         border-radius: 10px;
+         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
      }
-
-     .header .logo {
-         width: 50px;
-         height: auto;
-         margin-left: 100px;
-         transition: margin-left 0.5s ease;
-     }
-
-     .header .logo.csd {
-         margin-left: 20px;
-     }
-
-     .header .title {
+     
+     .close {
+         color: #aaa;
+         float: right;
          font-size: 28px;
          font-weight: bold;
-         color: #333;
-         text-align: center;
-         flex-grow: 1;
      }
-
-     .content {
-         flex-grow: 1;
-         background-color: #d50000;
-         padding: 40px;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         transition: margin-left 0.5s ease;
-     }
-
-     .filter-container {
-         margin-bottom: 20px;
-     }
-
-     .filter-container select {
-         padding: 10px;
-         font-size: 16px;
-     }
-
-     #reportTable {
-         width: 100%;
-         border-collapse: collapse;
-     }
-
-     #reportTable th, #reportTable td {
-         padding: 10px;
-         border: 1px solid #000;
-     }
-         .modal {
- display: none; /* Flexbox to center content */
- justify-content: center; /* Center horizontally */
- align-items: flex-start; /* Align content at the top */
- position: fixed; /* Stay in place */
- z-index: 2; /* Sit above everything */
- left: 0;
- top: 0;
- width: 100%; /* Full width */
- height: 100%; /* Full height */
- background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
- padding-top: 50px; /* Adjust padding to move content lower */
-}
-
-.modal-content {
- background-color: #fefefe;
- margin: 4% auto; /* Center it vertically and horizontally */
- padding: 20px;
- border: 1px solid #888;
- width: 50%; /* Could be adjusted based on design */
- border-radius: 10px;
- box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.close {
- color: #aaa;
- float: right;
- font-size: 28px;
- font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
- color: #000;
- text-decoration: none;
- cursor: pointer;
-}
-
-.modal .container {
- background-color: #d50000;
- padding: 15px; /* Slightly reduced padding */
- width: 100%; /* Full width within modal */
- height: auto; /* Adjust based on content */
- border-radius: 10px;
- color: #fff;
- display: flex;
- justify-content: space-between; /* Align form and result container side by side */
- box-sizing: border-box;
-}
-
-.form-container,
-.result-container {
- width: 48%; /* Make both form and result container take equal space */
- margin: 0; /* Remove extra margins */
-}
-
-.form-container form {
- display: flex;
- flex-direction: column;
- gap: 10px; /* Reduced gap between form elements */
-}
-
-.form-container form label {
- font-size: 14px; /* Smaller font size for labels */
- margin-bottom: 5px; /* Minimal space between label and input */
-}
-
-.form-container form input,
-.form-container form select {
- padding: 8px; /* Reduced padding inside input fields */
- border: 1px solid #ccc;
- border-radius: 5px;
- background-color: #f9f9f9;
- color: #333;
- font-size: 14px; /* Smaller font size for inputs */
-}
-
-.form-container form button {
- padding: 10px; /* Smaller button padding */
- background-color: #666;
- color: #fff;
- border: none;
- border-radius: 5px;
- cursor: pointer;
- font-size: 14px; /* Smaller font size for buttons */
-}
-
-.form-container form button:hover {
- background-color: #555;
-}
-
-.result-container {
- background-color: #e0e0e0;
- padding: 15px; /* Smaller padding for result container */
- border-radius: 10px;
-}
-
-#result {
- background-color: #fff;
- color: #333;
- padding: 15px; /* Reduced padding */
- border-radius: 10px;
- margin-top: 15px;
-}
-
-canvas {
- margin-top: 20px;
- display: block;
- width: 100%;
-}
-
-.buttons-container {
- display: flex;
- justify-content: center;
- gap: 10px; /* Reduced gap between buttons */
- margin-top: 20px;
-}
-
-button {
- padding: 10px 15px; /* Reduced button padding */
- font-size: 14px; /* Smaller button font size */
- border: none;
- border-radius: 5px;
- cursor: pointer;
- transition: background-color 0.3s ease;
-}
-
-button:first-child {
- background-color: #666;
- color: white;
-}
-
-button:first-child:hover {
- background-color: #555;
-}
-
-button:last-child {
- background-color: #d50000;
- color: white;
-}
-
-button:last-child:hover {
- background-color: #b71c1c;
-}
-
-     .pagination {
-         margin-top: 10px; /* Adjust spacing */
-         text-align: center;
-     }
-
-     .pagination button {
-         padding: 5px 8px; /* Smaller button size */
-         margin: 2px; /* Adjust margin */
-         font-size: 12px; /* Smaller font size */
+     
+     .close:hover,
+     .close:focus {
+         color: #000;
+         text-decoration: none;
          cursor: pointer;
      }
-
+     
+     .container {
+         background-color: #ffffff;
+         padding: 15px;
+         width: 100%;
+         border-radius: 10px;
+         color: #000000;
+         display: flex;
+         justify-content: space-between;
+         box-sizing: border-box;
+     }
+     
+     .form-container {
+         width: 100%;
+     }
+     
+     .form-container form {
+         display: flex;
+         flex-direction: column;
+         gap: 10px;
+     }
+     
+     .form-container form label {
+         font-size: 14px;
+         margin-bottom: 5px;
+     }
+     
+     .form-container form select,
+     .form-container form input {
+         width: 100%;
+         padding: 8px;
+         border: 1px solid #ccc;
+         border-radius: 5px;
+         background-color: #f9f9f9;
+         color: #333;
+         font-size: 14px;
+     }
+     
+     .buttons-container {
+         display: flex;
+         justify-content: center;
+         gap: 10px;
+         margin-top: 20px;
+     }
+     
+     button {
+         padding: 10px 15px;
+         font-size: 14px;
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         transition: background-color 0.3s ease;
+     }
+     
+     button.btn-primary {
+         background-color: #d50000;
+         color: #fff;
+     }
+     
+     button.btn-secondary {
+         background-color: #666;
+         color: white;
+     }
+     
+     button.btn-secondary:hover {
+         background-color: #555;
+     }
+     
+     button.btn-danger {
+         background-color: #d50000;
+         color: white;
+     }
+     
+     button.btn-danger:hover {
+         background-color: #b71c1c;
+     }
+     
+     .pagination {
+         margin-top: 10px;
+         text-align: center;
+     }
+     
+     .pagination button {
+         padding: 5px 8px;
+         margin: 2px;
+         font-size: 12px;
+         cursor: pointer;
+     }
+     
      .pagination .page-info {
          margin: 0 10px;
          font-size: 14px;
      }
-
+     
      .delete-icon {
          cursor: pointer;
          color: #fd0808;
      }
+     
      @media screen and (max-width: 768px) {
- table {
-     font-size: 10px; /* Adjusted font size for smaller screens */
- }
-
- th, td {
-     padding: 6px; /* Adjusted padding for smaller screens */
- }
-
- .modal-content {
-     width: 90%; /* Modal width adjusts to smaller screens */
- }
-
- .form-container,
- .result-container {
-     width: 100%; /* Stack form and result container on smaller screens */
- }
-
- .container {
-     padding: 10px; /* Adjust padding for smaller screens */
- }
+         .modal-content {
+             width: 90%; /* Full width for smaller screens */
+         }
+     
+         .form-container,
+         .result-container {
+             width: 100%;
+         }
+     
+         .container {
+             padding: 10px;
+         }
      }
-
-</style>
+         </style>
 </head>
 <body>
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
+        <!-- Spacer to push "Sign-out" to the right -->
+        <div class="ms-auto"></div>
+    
+        <!-- Sign-out Icon and Link -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
             </li>
         </ul>
     </nav>
@@ -314,8 +438,13 @@ button:last-child:hover {
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Waste Management</div>
-                        <a class="nav-link active" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
                     </div>
                 </div>
             </nav>
@@ -455,7 +584,16 @@ button:last-child:hover {
                                         <label for="quantity">Quantity (in kg):</label>
                                         <input type="number" id="quantity" name="quantity" step="0.01" required>
 
-                                        <button type="submit">Calculate</button>
+                                         <!-- GHG Emission fields -->
+                                        <label for="ghgEmissionKg">GHG Emission (kg CO₂-e):</label>
+                                        <input type="number" id="ghgEmissionKg" name="ghgEmissionKg" step="0.01" readonly>
+
+                                        <label for="ghgEmissionT">GHG Emission (t CO₂-e):</label>
+                                        <input type="number" id="ghgEmissionT" name="ghgEmissionT" step="0.0001" readonly>
+
+                                        <!-- Calculate and Generate Report Buttons -->
+                                        <button type="submit" id="calculateBtn">Calculate</button>
+                                        <button type="submit">Generate Report</button>
                                     </form>
                                 </div>
                             </div>
@@ -498,7 +636,7 @@ button:last-child:hover {
                                     <td>{{ report.Year }}</td>
                                     <td>{{ report.Quarter }}</td>
                                     <td>{{ report.Month }}</td>
-                                    <td>{{ report['Main Category'] }}</td>
+                                    <td>{{ report['MainCategory'] }}</td>
                                     <td>{{ report.SubCategory }}</td>
                                     <td>{{ report.QuantityInKG }}</td>
                                     <td>{{ report.GHGEmissionKGCO2e }}</td>
@@ -511,15 +649,28 @@ button:last-child:hover {
                             </tbody>
                         </table>
                     </div>
-x
+
                     <!-- Pagination controls -->
-                    <div class="pagination" id="paginationControls">
-                        {% for i in range(1, total_pages + 1) %}
-                            <span class="page-item">
-                                <a href="{{ url_for('waste_segregation', page=i) }}" class="{% if i == current_page %}active{% endif %}">{{ i }}</a>
-                            </span>
-                        {% endfor %}
-                    </div>
+    <div class="pagination-container">
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                {% if total_pages > 1 %}
+                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('waste_segregation', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                    </li>
+                    {% for i in range(1, total_pages + 1) %}
+                        <li class="page-item {% if i == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('waste_segregation', page=i) }}">{{ i }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('waste_segregation', page=current_page + 1) }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
                 </div>
             </main>
 
@@ -539,6 +690,7 @@ x
     </div>
 
     <script>
+        // Open and close the modal
         function openCalculatorModal() {
             const modal = document.getElementById('myModal');
             modal.style.display = 'block'; // Show the modal
@@ -549,7 +701,57 @@ x
             modal.style.display = 'none'; // Hide the modal
         }
     
-        // Close modal automatically after form submission
+        // Function to calculate GHG emissions and update fields
+        function calculateEmissions() {
+            // Get values from form inputs
+            const quantity = parseFloat(document.getElementById('quantity').value);
+            const mainCategory = document.getElementById('mainCategory').value.toLowerCase();
+            const subCategory = document.getElementById('subCategory').value;
+    
+            // Define emission factors
+            const emissionFactors = {
+                biodegradable: {
+                    "Garden Waste": 0.57896,
+                    "Food Waste": 0.62687,
+                    "Mixed Food & Garden Waste": 0.58734
+                },
+                recyclable: {
+                    "Mixed Plastic": 0.00890,
+                    "Mixed Metal": 0.00890,
+                    "Mixed Paper": 1.04180,
+                    "Mixed Glass": 0.00890
+                },
+                residual: {
+                    "Residual Waste": 0.44624
+                },
+                special: {
+                    "Special Waste": 0.00890
+                }
+            };
+    
+            // Check if the selected category and subcategory have a defined emission factor
+            const emissionFactor = (emissionFactors[mainCategory] || {})[subCategory];
+            if (emissionFactor === undefined) {
+                alert("Invalid category or subcategory. Please select valid options.");
+                return;
+            }
+    
+            // Calculate GHG Emissions
+            const ghgEmissionKg = quantity * emissionFactor; // in kg CO₂-e
+            const ghgEmissionT = ghgEmissionKg / 1000; // convert kg to metric tons
+    
+            // Display calculated values in the form fields
+            document.getElementById('ghgEmissionKg').value = ghgEmissionKg.toFixed(2); // Rounded to 2 decimal places
+            document.getElementById('ghgEmissionT').value = ghgEmissionT.toFixed(6); // More precision for tons
+        }
+    
+        // Event listener for Calculate button
+        document.getElementById('calculateBtn').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent form submission
+            calculateEmissions(); // Perform the calculation without closing the modal
+        });
+    
+        // Handle form submission for Generate Report button
         document.getElementById('wasteForm').addEventListener('submit', function (e) {
             e.preventDefault();  // Prevent default form submission to manually handle it
             const form = this;
@@ -560,61 +762,65 @@ x
             })
             .then(response => {
                 if (response.ok) {
-                    closeModal();  // Close the modal
+                    closeModal();  // Close the modal only when "Generate Report" is clicked
                     location.reload();  // Reload the page to show the updated table
                 }
             })
             .catch(error => console.error('Form submit error:', error));
         });
         
-        // Define subcategories for each main category
-const categories = {
-    "Biodegradable": [
-        { value: "Garden Waste", label: "Garden Waste" },
-        { value: "Food Waste", label: "Food Waste" },
-        { value: "Mixed Food & Garden Waste", label: "Mixed Food & Garden Waste" }
-    ],
-    "Recyclable": [
-        { value: "Plastic Waste", label: "Plastic Waste" },
-        { value: "Metal Waste", label: "Metal Waste" },
-        { value: "Paper Waste", label: "Paper Waste" },
-        { value: "Glass Waste", label: "Glass Waste" }
-    ],
-    "Residual": [
-        { value: "Residual Waste", label: "Residual Waste" }
-    ],
-    "Special": [
-        { value: "Hazardous Waste", label: "Hazardous Waste" }
-    ]
-};
-
-// Populate subcategories based on main category selection
-document.getElementById('mainCategory').addEventListener('change', function(event) {
-    const subCategorySelect = document.getElementById('subCategory');
-    const mainCategoryValue = event.target.value;
-    subCategorySelect.innerHTML = '<option value="">Select a subcategory</option>'; // Reset options
-
-    if (categories[mainCategoryValue]) {
-        // Add corresponding subcategories to the dropdown
-        categories[mainCategoryValue].forEach(subCat => {
-            const option = document.createElement('option');
-            option.value = subCat.value;
-            option.textContent = subCat.label;
-            subCategorySelect.appendChild(option);
+        // Define categories for subcategory selection
+        const categories = {
+            biodegradable: [
+                { value: "Garden Waste", label: "Garden Waste" },
+                { value: "Food Waste", label: "Food Waste" },
+                { value: "Mixed Food & Garden Waste", label: "Mixed Food & Garden Waste" }
+            ],
+            recyclable: [
+                { value: "Mixed Plastic", label: "Mixed Plastic" },
+                { value: "Mixed Metal", label: "Mixed Metal" },
+                { value: "Mixed Paper", label: "Mixed Paper" },
+                { value: "Mixed Glass", label: "Mixed Glass" }
+            ],
+            residual: [
+                { value: "Residual Waste", label: "Residual Waste" }
+            ],
+            special: [
+                { value: "Special Waste", label: "Special Waste" }
+            ]
+        };
+    
+        // Function to populate subcategories based on the selected main category
+        document.getElementById('mainCategory').addEventListener('change', function(event) {
+            const mainCategoryValue = event.target.value.toLowerCase(); // Convert selection to lowercase
+            const subCategorySelect = document.getElementById('subCategory');
+            
+            // Clear any existing options
+            subCategorySelect.innerHTML = '<option value="">Select a subcategory</option>';
+    
+            // Get the relevant subcategories from the categories object
+            const selectedSubcategories = categories[mainCategoryValue] || [];
+    
+            // Populate the subcategory dropdown
+            selectedSubcategories.forEach(subCat => {
+                const option = document.createElement('option');
+                option.value = subCat.value;
+                option.textContent = subCat.label;
+                subCategorySelect.appendChild(option);
+            });
         });
-    }
-});
-
+    
+        // Pagination and filter functionality
         let currentPage = 1;
         const rowsPerPage = 15;
-
+    
         function renderTable() {
             const rows = document.querySelectorAll('#reportData tr');
             const totalRows = rows.length;
             const totalPages = Math.ceil(totalRows / rowsPerPage);
             const startIndex = (currentPage - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
-
+    
             rows.forEach((row, index) => {
                 if (index >= startIndex && index < endIndex) {
                     row.style.display = ''; // Show the row
@@ -623,14 +829,14 @@ document.getElementById('mainCategory').addEventListener('change', function(even
                 }
             });
         }
-
+    
         function prevPage() {
             if (currentPage > 1) {
                 currentPage--;
                 renderTable();
             }
         }
-
+    
         function nextPage() {
             const totalRows = document.querySelectorAll('#reportData tr').length;
             const totalPages = Math.ceil(totalRows / rowsPerPage);
@@ -639,12 +845,12 @@ document.getElementById('mainCategory').addEventListener('change', function(even
                 renderTable();
             }
         }
-
+    
         function applyFilter() {
             const monthFilter = document.getElementById('monthFilter').value;
             const quarterFilter = document.getElementById('quarterFilter').value;
             const yearFilter = document.getElementById('yearFilter').value;
-
+    
             // Build the query string with the selected filters
             let query = '?';
             if (monthFilter) {
@@ -656,21 +862,11 @@ document.getElementById('mainCategory').addEventListener('change', function(even
             if (yearFilter) {
                 query += `year=${yearFilter}&`;
             }
-
+    
             // Redirect to the same page with the selected filters as query parameters
             window.location.href = `/waste_segregation${query}`;
         }
-
-        function openCalculatorModal() {
-            const modal = document.getElementById('myModal');
-            modal.style.display = 'block'; // Show the modal
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('myModal');
-            modal.style.display = 'none'; // Hide the modal
-        }
-
+    
         function deleteRow(id) {
             fetch(`/delete_waste_record/${id}`, {
                 method: 'DELETE',
@@ -690,12 +886,11 @@ document.getElementById('mainCategory').addEventListener('change', function(even
                 console.error('Delete error:', error);
             });
         }
-
+    
         // Function to print the report
         function printReport() {
-            const originalContents = document.body.innerHTML; // Save the original content
-
-            // Get the table header (excluding the "Actions" column)
+            const originalContents = document.body.innerHTML;
+    
             const tableHeader = `
                 <thead>
                     <tr>
@@ -710,16 +905,14 @@ document.getElementById('mainCategory').addEventListener('change', function(even
                         <th>GHG Emission (t CO₂-e)</th>
                     </tr>
                 </thead>`;
-
-            // Get the table body without the "Actions" column
+            
             const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
                 .map(row => {
-                    const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
+                    const cells = Array.from(row.querySelectorAll('td')).slice(0, -1);
                     return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
                 })
                 .join('');
-
-            // Create a print layout
+    
             const printContents = `
                 <div class="header">
                     <h2>WASTE SEGREGATION REPORT</h2>
@@ -731,18 +924,18 @@ document.getElementById('mainCategory').addEventListener('change', function(even
                     </tbody>
                 </table>
             `;
-
-            document.body.innerHTML = printContents; // Replace body content with table
-            window.print(); // Print the current window
-            document.body.innerHTML = originalContents; // Restore original content
+    
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
         }
-
+    
         // Function to download the data as an Excel file
         function downloadExcel() {
             const table = document.querySelector('table');
             let csv = [];
             const rows = table.querySelectorAll('tr');
-
+    
             for (let row of rows) {
                 const cols = row.querySelectorAll('td, th');
                 const csvRow = [];
@@ -751,7 +944,7 @@ document.getElementById('mainCategory').addEventListener('change', function(even
                 }
                 csv.push(csvRow.join(','));
             }
-
+    
             const csvString = csv.join('\n');
             const blob = new Blob([csvString], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
@@ -761,12 +954,12 @@ document.getElementById('mainCategory').addEventListener('change', function(even
             a.click();
             URL.revokeObjectURL(url); // Clean up
         }
-
+    
         // Call renderTable() initially to display the first page
         document.addEventListener('DOMContentLoaded', () => {
             renderTable();
         });
-
+    
         // Close modal when clicking outside of it
         window.onclick = function(event) {
             const modal = document.getElementById('myModal');
@@ -775,6 +968,7 @@ document.getElementById('mainCategory').addEventListener('change', function(even
             }
         };
     </script>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>

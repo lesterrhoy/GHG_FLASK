@@ -24,14 +24,16 @@
     </style>
 </head>
 <body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="#">EXTERNAL <span style="text-transform: uppercase; font-style: italic;">{{ campus }}</span></a>
-        <ul class="navbar-nav ms-auto me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
+      <!-- Navbar -->
+      <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">FLIGHT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+
+        <!-- Sign-out -->
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
             </li>
         </ul>
     </nav>
@@ -56,14 +58,8 @@
                         </a>
                         <div class="collapse" id="collapseExternal" aria-labelledby="headingExternal" data-bs-parent="#sidenavAccordion">
                             <nav class="sb-sidenav-menu-nested nav">
-                                <!-- Conditionally disable Flight and Accommodation links based on campus -->
-                                {% if session['campus'] == 'Lipa' or session['campus'] == 'JPLPC-Malvar' %}
-                                    <a class="nav-link disabled-link">Flight (Disabled)</a>
-                                    <a class="nav-link disabled-link">Accommodation (Disabled)</a>
-                                {% else %}
                                     <a class="nav-link" href="{{ url_for('flight') }}">Flight</a>
                                     <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
-                                {% endif %}
                             </nav>
                         </div>
 
