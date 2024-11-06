@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Treated Water Consumption</title>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+     table {
+            width: 100%; /* Full width for table */
+            border-collapse: collapse; /* Collapse borders */
+            font-size: 10px; /* Smaller table font */
+        }
+
+        th, td {
+            padding: 4px; /* Smaller cell padding */
+            text-align: center; /* Center align text */
+            border: 1px solid #ddd; /* Add border */
+        }
+
+        th {
+            background-color: #d50000; /* Red background for table headers */
+            color: white; /* White text for better contrast */
+            font-size: 11px; /* Reduce font size for headers to prevent overflow */
+        }
+        #yearFilter, #quarterFilter, #monthFilter {
+        margin: 10px 0; /* Adds top and bottom margin */
+         }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #e0e0e0;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+            z-index: 1;
+            position: relative;
+        }
+
+        .header .logo {
+            width: 50px;
+            height: auto;
+            margin-left: 100px;
+            transition: margin-left 0.5s ease;
+        }
+
+        .header .logo.csd {
+            margin-left: 20px;
+        }
+
+        .header .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .content {
+            flex-grow: 1;
+            background-color: #d50000;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: margin-left 0.5s ease;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+        }
+
+        .filter-container select {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #reportTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #reportTable th, #reportTable td {
+            padding: 10px;
+            border: 1px solid #000;
+        }
+
+        .modal {
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 50px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%; /* Adjust the width to make it smaller */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.container {
+    background-color: #d50000;
+    padding: 15px;
+    width: 100%;
+    border-radius: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.form-container {
+    width: 100%; /* Adjust the width to allow more space for form fields */
+}
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-container form label {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.form-container form select,
+.form-container form input {
+    width: 100%; /* This makes the input/select fill the entire available width */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 14px;
+}
+
+
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.result-container {
+    background-color: #e0e0e0;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+#result {
+    background-color: #fff;
+    color: #333;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+button.btn-primary {
+    background-color: #d50000;
+    color: #fff;
+    margin-top: 15px;
+}
+
+button.btn-secondary {
+    background-color: #666;
+    color: white;
+}
+
+button.btn-secondary:hover {
+    background-color: #555;
+}
+
+button.btn-danger {
+    background-color: #d50000;
+    color: white;
+}
+
+button.btn-danger:hover {
+    background-color: #b71c1c;
+}
+
+
+canvas {
+    margin-top: 20px;
+    display: block;
+    width: 100%;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Reduced gap between buttons */
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 15px; /* Reduced button padding */
+    font-size: 14px; /* Smaller button font size */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-left: 10px; /* Adds space to move the button to the right */
+}
+
+button:first-child {
+    background-color: #666;
+    color: white;
+}
+
+button:first-child:hover {
+    background-color: #555;
+}
+
+button:last-child {
+    background-color: #d50000;
+    color: white;
+}
+
+button:last-child:hover {
+    background-color: #b71c1c;
+}
+
+        .pagination {
+            margin-top: 10px; /* Adjust spacing */
+            text-align: center;
+        }
+
+        .pagination button {
+            padding: 5px 8px; /* Smaller button size */
+            margin: 2px; /* Adjust margin */
+            font-size: 12px; /* Smaller font size */
+            cursor: pointer;
+        }
+
+        .pagination .page-info {
+            margin: 0 10px;
+            font-size: 14px;
+        }
+
+        .delete-icon {
+            cursor: pointer;
+            color: #fd0808;
+        }
+
+        @media screen and (max-width: 768px) {
+    table {
+        font-size: 10px; /* Adjusted font size for smaller screens */
+    }
+
+    th, td {
+        padding: 6px; /* Adjusted padding for smaller screens */
+    }
+
+    .modal-content {
+        width: 90%; /* Modal width adjusts to smaller screens */
+    }
+
+    .form-container,
+    .result-container {
+        width: 100%; /* Stack form and result container on smaller screens */
+    }
+
+    .container {
+        padding: 10px; /* Adjust padding for smaller screens */
+    }
+}
+    </style>
+</head>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU</a>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('emu_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Treated Water Consumption</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="{{ url_for('emu_dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Treated Water</li>
+                    </ol>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Treated water refers to water that has undergone processes to remove contaminants and impurities, making it safe for consumption, irrigation, or other uses.
+                        </div>
+                    </div>
+
+                    <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+
+                    <div class="header text-center mt-4">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                        <h2>Treated Water Consumption Report</h2>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                    </div>
+                    <br>
+                    <table id="reportTable">
+                        <thead>
+                            <tr>
+                                <th>Campus</th>
+                                <th>Month</th>
+                                <th>Treated Water Volume (m³)</th>
+                                <th>Reused Treated Water Volume (m³)</th>
+                                <th>Effluent Volume (m³)</th>
+                                <th>Price per Liter</th>
+                                <th>Factor (kg CO₂-e/m³)</th>
+                                <th>Factor (t CO₂-e/m³)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                            <tr id="row-{{ report.id }}">
+                                <td>{{ report.Campus }}</td>
+                                <td>{{ report.Month }}</td>
+                                <td>{{ report.TreatedWaterVolume }}</td>
+                                <td>{{ report.ReusedTreatedWaterVolume }}</td>
+                                <td>{{ report.EffluentVolume }}</td>
+                                <td>{{ report.PricePerLiter }}</td>
+                                <td>{{ report.FactorKGCO2e }}</td>
+                                <td>{{ report.FactorTCO2e }}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteRow({{ report.id }})">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination controls -->
+    <div class="pagination-container">
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                {% if total_pages > 1 %}
+                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('treated_water', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                    </li>
+                    {% for i in range(1, total_pages + 1) %}
+                        <li class="page-item {% if i == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('treated_water', page=i) }}">{{ i }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('treated_water', page=current_page + 1) }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="container">
+                <div class="form-container">
+                    <form id="treatedForm" method="POST" action="{{ url_for('treated_water') }}">
+                        <label for="campus">Campus:</label>
+                        <select id="campus" name="campus" required>
+                            <option value=""></option>
+                            <option value="Alangilan">Alangilan</option>
+                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                            <option value="Balayan">Balayan</option>
+                            <option value="Central">Central</option>
+                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                            <option value="Lemery">Lemery</option>
+                            <option value="Lipa">Lipa</option>
+                            <option value="Lobo">Lobo</option>
+                            <option value="Mabini">Mabini</option>
+                            <option value="Pablo Borbon">Pablo Borbon</option>
+                            <option value="Rosario">Rosario</option>
+                            <option value="San Juan">San Juan</option>
+                        </select>
+                        
+                        <label for="month">Month:</label>
+                        <select id="month" name="month" required>
+                            <option value=""></option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                        
+    
+                        <label for="treatedVolume">Treated Water Volume (m³):</label>
+                        <input type="number" id="treatedVolume" name="treatedVolume" step="0.01" required>
+    
+                        <label for="reusedVolume">Reused Treated Water Volume (m³):</label>
+                        <input type="number" id="reusedVolume" name="reusedVolume" step="0.01" required>
+    
+                        <!-- Auto-calculated fields -->
+                        <label for="effluentVolume">Effluent Volume (m³):</label>
+                        <input type="number" id="effluentVolume" name="effluentVolume" step="0.01" readonly>
+    
+                        <label for="pricePerLiter">Price per Liter (kg CO₂-e/m³):</label>
+                        <input type="number" id="pricePerLiter" name="pricePerLiter" step="0.01" readonly>
+    
+                        <!-- New fields for Factor (kg CO₂-e/m³) and Factor (t CO₂-e/m³) -->
+                        <label for="factorKgCO2e">Factor (kg CO₂-e/m³):</label>
+                        <input type="number" id="factorKgCO2e" name="factorKgCO2e" step="0.01" readonly>
+    
+                        <label for="factorTCO2e">Factor (t CO₂-e/m³):</label>
+                        <input type="number" id="factorTCO2e" name="factorTCO2e" step="0.000001" readonly>
+    
+                        <button type="button" class="btn btn-primary" onclick="calculateValues()">Calculate</button>
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+   
+    <script>
+        function deleteRow(id) {
+        if (confirm("Are you sure you want to delete this record?")) {
+            fetch(`/delete_report/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove the row from the table
+                    const row = document.getElementById(`row-${id}`);
+                    row.remove();
+                    alert(data.message);
+                } else {
+                    alert("Error deleting record: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred while deleting the record.");
+            });
+        }
+    }
+        function openCalculatorModal() {
+            document.getElementById("myModal").style.display = "block"; 
+        }
+
+        function closeModal() {
+            document.getElementById("myModal").style.display = "none"; 
+        }
+
+        // Pagination logic
+        let currentPage = {{ current_page }};
+        const totalPages = {{ total_pages }};
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePageInfo();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePageInfo();
+            }
+        }
+
+        function updatePageInfo() {
+            document.getElementById("page-info").innerText = `Page ${currentPage} of ${totalPages}`;
+        }
+        function calculateValues() {
+    // Get input values
+    let treatedVolume = parseFloat(document.getElementById('treatedVolume').value);
+    let reusedVolume = parseFloat(document.getElementById('reusedVolume').value);
+
+    // Ensure both volumes are valid numbers
+    if (isNaN(treatedVolume) || isNaN(reusedVolume)) {
+        alert("Please enter valid values for treated and reused water volumes.");
+        return;
+    }
+
+    // Calculate effluent volume and price per liter
+    let effluentVolume = treatedVolume - reusedVolume;
+    let co2Factor = 0.272; // kg CO₂-e per m³
+    let pricePerLiter = effluentVolume * co2Factor;
+
+    // Calculate Factor (kg CO₂-e/m³) and Factor (t CO₂-e/m³)
+    let factorKgCO2e = effluentVolume * co2Factor; // kg CO₂-e/m³
+    let factorTCO2e = factorKgCO2e / 1000; // t CO₂-e/m³
+
+    // Set calculated values in the fields
+    document.getElementById('effluentVolume').value = effluentVolume.toFixed(2);
+    document.getElementById('pricePerLiter').value = pricePerLiter.toFixed(2);
+    document.getElementById('factorKgCO2e').value = factorKgCO2e.toFixed(2);
+    document.getElementById('factorTCO2e').value = factorTCO2e.toFixed(6); // More precision for tons
+}
+
+    </script>
+</body>
+</html>
