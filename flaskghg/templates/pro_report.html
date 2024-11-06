@@ -8,131 +8,172 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <style>
-        /* Layout and Sidenav Styling */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #000000;
+            margin: 0;
+        }
+        
         #layoutSidenav {
             display: flex;
             min-height: 100vh;
-            overflow: hidden;
         }
-    
+
         #layoutSidenav_nav {
             width: 250px;
             background-color: #495057;
+            color: #fff;
         }
-    
+
         #layoutSidenav_nav .nav-link {
-            color: #fff;
+            color: #e9ecef;
             font-weight: 500;
+            padding: 12px 20px;
         }
-    
+
         #layoutSidenav_nav .nav-link:hover {
-            color: #fff;
-            background-color: #495057;
+            color: #ced4da;
+            background-color: #343a40;
         }
-    
+
         #layoutSidenav_content {
             flex-grow: 1;
             padding: 20px;
-            background-color: #f8f9fa;
+            background-color: #ffffff;
         }
-    
-        /* Header Styling */
+
         .header {
-            background-color: #495057;
-            color: #ffffff;
-            padding: 25px;
+            background-color: #c2ccd5;
+            color: #000000;
+            padding: 20px 0;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
-    
+
         .header h1 {
-            font-size: 1.5rem;
+            font-size: 24px;
             margin: 0;
-            color: #fff;
+            text-align: center;
+            flex-grow: 1;
         }
-    
+
         .header img {
             height: 80px;
+            width: auto;
         }
 
-        /* Filter container styling */
-        .filter-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 10px;
-        }
-
-        /* Compact dropdown styling */
-        .filter-container select {
-            width: 150px; /* Smaller width for compact design */
-            padding: 5px;
-            font-size: 0.9rem;
-            border-radius: 4px;
-            margin-left: auto;
-        }
-
-        /* Table Styling */
         .container {
             margin-top: 20px;
         }
-    
+
+        h2, h3 {
+            color: #333333;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .filter-container select {
+            width: 160px;
+            padding: 5px;
+            font-size: 14px;
+            margin: 0 10px;
+        }
+
+        /* Table Styling */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 14px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-    
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #000000;
+            text-align: center;
+        }
+
         th {
-            background-color: #f2f2f2;
-            color: #000;
-            border: 1px solid #ddd;
-            padding: 8px;
+            background-color: #fafafa;
+            color: rgb(0, 0, 0);
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .pagination-container {
             text-align: center;
+            margin-top: 20px;
         }
-    
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-    
-        .footer {
-            text-align: center;
-            padding: 10px;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-    
-        @media print {
-            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
-                display: none !important;
-            }
-            body, .container, .header, .card, .card-header, .card-body, table {
-                background-color: white !important;
-                color: black !important;
-                box-shadow: none !important;
-            }
-        }
-    
-        /* Button styling */
-        .btn {
-            width: 100px;
-            padding: 5px 10px;
-            font-size: 12px;
-            border-radius: 4px;
-        }
-    
+
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
             color: white;
         }
-    
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
+
+        .modal-content {
+            border-radius: 8px;
+        }
+
+        /* Export button styling */
+        .btn-export {
+            background-color: #28a745;
             color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        .btn-export:hover {
+            background-color: #218838;
+        }
+
+        .modal-header, .modal-footer {
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            #layoutSidenav {
+                flex-direction: column;
+            }
+
+            #layoutSidenav_nav {
+                width: 100%;
+                height: auto;
+            }
+
+            #layoutSidenav_content {
+                padding: 10px;
+            }
+
+            .filter-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-container select {
+                margin: 5px 0;
+            }
         }
     </style>
 </head>
@@ -174,14 +215,17 @@
         </div>
 
         <!-- Main Content -->
+        <!-- Main Content -->
         <div id="layoutSidenav_content">
             <main>
-                <div class="container-fluid px-4">
-                    <div class="header d-flex justify-content-between align-items-center my-4">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                        <h1 class="text-center">Consumption Report</h1>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                <body class="sb-nav-fixed">
+                    <!-- Header -->
+                    <div class="header">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" class="logo">
+                        <h1>Procurement Consumption Report</h1>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" class="logo">
                     </div>
+                    <br>
 
                    
 
@@ -189,7 +233,7 @@
                     <div class="filter-container mb-3">
                         <label for="monthFilter">Month: </label>
                         <select id="monthFilter" onchange="filterTables()">
-                            <option value="">--Select--</option>
+                            <option value="">All Months</option>
                             <option value="January">January</option>
                             <option value="February">February</option>
                             <option value="March">March</option>
@@ -206,7 +250,7 @@
 
                         <label for="yearFilter">Year: </label>
                         <select id="yearFilter" onchange="filterTables()">
-                            <option value="">--Select--</option>
+                            <option value="">All Years</option>
                             <option value="2021">2021</option>
                             <option value="2022">2022</option>
                             <option value="2023">2023</option>
@@ -215,14 +259,10 @@
                     </div>
 
                     <!-- Food Waste Table -->
-                    <div id="foodWasteTable" class="office-tables">
-                        <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h2 class="h5">Food Waste</h2>
-                            </div>
-                            <div class="card-body">
+             
+                                <h3>Food Consumption</h3>
                                 <table class="table table-sm table-striped table-bordered" id="foodWasteData">
-                                    <thead class="thead-dark">
+                                    <thead>
                                         <tr>
                                             <th>Campus</th>
                                             <th>Year</th>
@@ -249,9 +289,8 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
-                            </div>
-                        </div>
-                    </div>
+                    
+              
 
                     <!-- Pagination for Food Waste -->
                     <nav aria-label="Food Waste pagination">
@@ -273,14 +312,9 @@
                     </nav>
 
                     <!-- LPG Consumption Table -->
-                    <div id="lpgTable" class="office-tables">
-                        <div class="card mb-4">
-                            <div class="card-header bg-info text-white">
-                                <h2 class="h5">LPG Consumption</h2>
-                            </div>
-                            <div class="card-body">
+                            <h3>LPG Consumption</h3>
                                 <table class="table table-sm table-striped table-bordered" id="lpgData">
-                                    <thead class="thead-dark">
+                                    <thead>
                                         <tr>
                                             <th>Campus</th>
                                             <th>Year</th>
@@ -313,9 +347,6 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Pagination for LPG -->
                     <nav aria-label="LPG pagination">

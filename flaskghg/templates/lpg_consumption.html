@@ -9,6 +9,7 @@
     <title>LPG Consumption</title>
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -379,6 +380,18 @@
                     <div class="mb-4">
                         <button id="openModalBtn" class="btn btn-primary" style="background-color:#0076CE; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
                     </div>
+                       <!-- Buttons to Print and Download above the table -->
+                       <div class="buttons-container mb-3" style="display: flex; justify-content: center; gap: 10px;">
+                        <button onclick="printLPGReport()">Print Report</button>
+                        <button onclick="downloadLPGExcel()">Export to Excel</button>
+                    </div>
+
+                    <div class="header">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
+                        <div class="title">LPG Consumption Report</div>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
+                    </div>
+                    <br>
 
                     <table id="reportTable" class="table table-bordered">
                         <thead>
@@ -523,7 +536,14 @@
                         <label for="tankWeight">Tank weight (in kg):</label>
                         <input type="number" id="tankWeight" name="tankWeight" step="0.01" required>
 
-                        <button type="submit">Calculate CO2 Emission</button>
+                        <label for="GHGEmissionKGCO2e">GHG Emission (KG CO2e):</label>
+                        <input type="number" id="GHGEmissionKGCO2e" name="GHGEmissionKGCO2e" readonly>
+    
+                        <label for="GHGEmissionTCO2e">GHG Emission (T CO2e):</label>
+                        <input type="number" id="GHGEmissionTCO2e" name="GHGEmissionTCO2e" readonly>
+    
+                        <button type="button" onclick="calculateEmissions()">Calculate CO2 Emission</button>
+                        <button type="submit" onclick="closeModal()">Generate Report</button>
                     </form>
                 </div>
 
@@ -532,6 +552,25 @@
     </div>
 
     <script>
+       function deleteRow(recordId) {
+    if (!confirm("Are you sure you want to delete this record?")) return; // Confirm deletion
+
+    fetch(`/delete_lpg/${recordId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Record deleted successfully.");
+            location.reload(); // Reload the page after successful deletion
+        } else {
+            alert("An error occurred while trying to delete the record.");
+        }
+    })
+}
+
+
+
         function openCalculatorModal() {
             document.getElementById('myModal').style.display = 'block';
         }
@@ -540,8 +579,86 @@
             document.getElementById('myModal').style.display = 'none';
         }
 
+        // Calculate CO2 Emission based on input
+        function calculateEmissions() {
+            const tankWeight = parseFloat(document.getElementById('tankWeight').value);
+            const qty = parseFloat(document.getElementById('qty').value);
+            const concessionaires = document.getElementById('concessionaires').value;
+
+            if (!tankWeight || !qty || !concessionaires) {
+                alert("Please fill in all fields before calculating.");
+                return;
+            }
+
+            const factor = concessionaires === 'Fuel' || concessionaires === 'Diesel' ? 2.95795 : 0;
+            const kgCO2e = factor * tankWeight;
+            const tCO2e = kgCO2e / 1000;
+
+            document.getElementById('GHGEmissionKGCO2e').value = kgCO2e.toFixed(2);
+            document.getElementById('GHGEmissionTCO2e').value = tCO2e.toFixed(2);
+        }
+
+
         // Dummy data for pagination and filters
         const reportData = {{ lpg_data | safe }};
+
+        // Function to print the LPG consumption report
+    function printLPGReport() {
+        const originalContents = document.body.innerHTML; // Save the original content
+
+        // Get the table header (excluding the "Actions" column)
+        const tableHeader = `
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Office</th>
+                    <th>Concessionaire Type</th>
+                    <th>Qty (no. of tanks)</th>
+                    <th>Tank Weight</th>
+                    <th>Tank Volume</th>
+                    <th>Total Tank Volume</th>
+                    <th>GHG Emission (KG CO2e)</th>
+                    <th>GHG Emission (T CO2e)</th>
+                </tr>
+            </thead>`;
+
+        // Get the table body without the "Actions" column
+        const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
+            .map(row => {
+                const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
+                return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
+            })
+            .join('');
+
+        // Create a print layout
+        const printContents = `
+            <div class="header" style="text-align: center; margin-bottom: 20px;">
+                <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                <h2>LPG Consumption Report</h2>
+                <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+            </div>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                ${tableHeader}
+                <tbody>
+                    ${tableBody}
+                </tbody>
+            </table>
+        `;
+
+        document.body.innerHTML = printContents; // Replace body content with table
+        window.print(); // Print the current window
+        document.body.innerHTML = originalContents; // Restore original content
+    }
+
+    // Function to export the LPG consumption table to Excel
+    function downloadLPGExcel() {
+        const table = document.getElementById("reportTable");
+        const workbook = XLSX.utils.table_to_book(table, { sheet: "LPG Consumption" });
+        XLSX.writeFile(workbook, "LPGConsumptionReport.xlsx");
+    }
+
     </script>
 </body>
 </html>

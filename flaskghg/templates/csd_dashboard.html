@@ -65,18 +65,12 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
                             Manage Account
                         </a>
-                       
-                        <!-- CSD Report Link -->
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
-                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                                       
+                        <a class="nav-link" href="{{ url_for('csd_report') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-line"></i> </div>
+                            Consumption Report
                         </a>
-                        <div class="collapse" id="collapsePages">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="{{ url_for('csd_report') }}">Consumption Report</a>
-                            </nav>
-                    </div>
+                        
                 </div>
             </nav>
         </div>

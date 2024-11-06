@@ -7,136 +7,172 @@
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <style>
-        /* Layout and Sidenav Styling */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #000000;
+            margin: 0;
+        }
+        
         #layoutSidenav {
             display: flex;
             min-height: 100vh;
-            overflow: hidden;
         }
-    
+
         #layoutSidenav_nav {
             width: 250px;
             background-color: #495057;
+            color: #fff;
         }
-    
+
         #layoutSidenav_nav .nav-link {
-            color: #fff;
+            color: #e9ecef;
             font-weight: 500;
+            padding: 12px 20px;
         }
-    
+
         #layoutSidenav_nav .nav-link:hover {
-            color: #fff;
-            background-color: #495057;
+            color: #ced4da;
+            background-color: #343a40;
         }
-    
+
         #layoutSidenav_content {
             flex-grow: 1;
             padding: 20px;
-            background-color: #f8f9fa;
+            background-color: #ffffff;
         }
-    
-        /* Header Styling */
+
         .header {
-            background-color: #495057;
-            color: #ffffff;
-            padding: 25px;
+            background-color: #c2ccd5;
+            color: #000000;
+            padding: 20px 0;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
-    
+
         .header h1 {
-            font-size: 1.5rem;
+            font-size: 24px;
             margin: 0;
-            color: #fff;
+            text-align: center;
+            flex-grow: 1;
         }
-    
+
         .header img {
             height: 80px;
+            width: auto;
         }
 
-        /* Filter container styling */
-        .filter-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 10px;
-        }
-
-        /* Compact dropdown styling */
-        .filter-container select {
-            width: 150px; /* Smaller width for compact design */
-            padding: 5px;
-            font-size: 0.9rem;
-            border-radius: 4px;
-            margin-left: auto;
-        }
-
-        /* Table Styling */
         .container {
             margin-top: 20px;
         }
-    
+
+        h2, h3 {
+            color: #333333;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .filter-container select {
+            width: 160px;
+            padding: 5px;
+            font-size: 14px;
+            margin: 0 10px;
+        }
+
+        /* Table Styling */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 14px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-    
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #000000;
+            text-align: center;
+        }
+
         th {
-            background-color: #f2f2f2;
-            color: #000;
-            border: 1px solid #ddd;
-            padding: 8px;
+            background-color: #ffffff;
+            color: rgb(0, 0, 0);
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .pagination-container {
             text-align: center;
+            margin-top: 20px;
         }
-    
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-    
-        .footer {
-            text-align: center;
-            padding: 10px;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-    
-        @media print {
-            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
-                display: none !important;
-            }
-            body, .container, .header, .card, .card-header, .card-body, table {
-                background-color: white !important;
-                color: black !important;
-                box-shadow: none !important;
-            }
-        }
-        .logo {
-            height: 100px;
-            width: auto; /* Maintain aspect ratio */
-        }
-        
-    
-        /* Button styling */
-        .btn {
-            width: 100px;
-            padding: 5px 10px;
-            font-size: 12px;
-            border-radius: 4px;
-        }
-    
+
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
             color: white;
         }
-    
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
+
+        .modal-content {
+            border-radius: 8px;
+        }
+
+        /* Export button styling */
+        .btn-export {
+            background-color: #28a745;
             color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        .btn-export:hover {
+            background-color: #218838;
+        }
+
+        .modal-header, .modal-footer {
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            #layoutSidenav {
+                flex-direction: column;
+            }
+
+            #layoutSidenav_nav {
+                width: 100%;
+                height: auto;
+            }
+
+            #layoutSidenav_content {
+                padding: 10px;
+            }
+
+            .filter-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-container select {
+                margin: 5px 0;
+            }
         }
     </style>
 </head>
@@ -180,53 +216,47 @@
         <!-- Main Content -->
         <div id="layoutSidenav_content">
             <main>
-                <div class="container-fluid px-4">
-                    <div class="report-header d-flex justify-content-between align-items-center">
-                        <!-- Left Logo -->
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo" style="height: 60px; width: auto;">
-                        <!-- Center Title -->
-                        <div class="title" style="text-align: center;">EMU Consumption Report</div>
-                        <!-- Right Logo -->
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo" style="height: 60px; width: auto;">
+                <body class="sb-nav-fixed">
+                    <!-- Header -->
+                    <div class="header">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" class="logo">
+                        <h1>EMU Consumption Report</h1>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" class="logo">
                     </div>
-
                     <br>
 
-                    <div class="container mt-4">
-                        <h2 class="text-center">Consumption Report for Lipa Campus</h2>
-
-                        <!-- Filters for Month and Year -->
-                        <div class="filter-container mb-3">
-                            <label for="monthFilter">Month: </label>
-                            <select id="monthFilter">
-                                <option value="">--Select--</option>
-                                <option value="January">January</option>
-                                <option value="February">February</option>
-                                <option value="March">March</option>
-                                <option value="April">April</option>
-                                <option value="May">May</option>
-                                <option value="June">June</option>
-                                <option value="July">July</option>
-                                <option value="August">August</option>
-                                <option value="September">September</option>
-                                <option value="October">October</option>
-                                <option value="November">November</option>
-                                <option value="December">December</option>
-                            </select>
-
-                            <label for="yearFilter">Year: </label>
-                            <select id="yearFilter">
-                                <option value="">--Select--</option>
-                                <option value="2021">2021</option>
-                                <option value="2022">2022</option>
-                                <option value="2023">2023</option>
-                                <option value="2024">2024</option>
-                            </select>
-                        </div>
+                    <div class="filter-container mb-3">
+                        <label for="monthFilter">Month:</label>
+                        <select id="monthFilter" name="month" onchange="applyFilters()">
+                            <option value="">All Months</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    
+                        <label for="yearFilter">Year:</label>
+                        <select id="yearFilter" name="year" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <!-- Add more years as needed -->
+                        </select>
+                    </div>
 
                         <!-- Electricity Consumption Table -->
                         <h3>Electricity Consumption</h3>
-                        <table class="table table-bordered" id="electricityTable">
+                        <table class="table table-sm table-striped table-bordered" id="electricityTable">
                             <thead>
                                 <tr>
                                     <th>Campus</th>
@@ -256,13 +286,13 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-
+                
                         <!-- Pagination for Electricity Consumption -->
                         <nav aria-label="Electricity Consumption pagination">
                             <ul class="pagination justify-content-left">
                                 {% if pagination_info.electricity.current_page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', office=selected_office, campus=selected_campus, electricity_page=pagination_info.electricity.current_page - 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', electricity_page=pagination_info.electricity.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Previous
                                     </a>
                                 </li>
@@ -272,7 +302,7 @@
                                 </li>
                                 {% if pagination_info.electricity.current_page < pagination_info.electricity.total_pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', office=selected_office, campus=selected_campus, electricity_page=pagination_info.electricity.current_page + 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', electricity_page=pagination_info.electricity.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Next
                                     </a>
                                 </li>
@@ -282,7 +312,7 @@
 
                         <!-- Water Consumption Table -->
                         <h3>Water Consumption</h3>
-                        <table class="table table-bordered" id="waterTable">
+                        <table class="table table-sm table-striped table-bordered" id="waterTable">
                             <thead>
                                 <tr>
                                     <th>Campus</th>
@@ -318,25 +348,26 @@
                         <!-- Pagination for Water Consumption -->
                         <nav aria-label="Water Consumption pagination">
                             <ul class="pagination justify-content-left">
-                                {% if pagination_info['water'].current_page > 1 %}
+                                {% if pagination_info.water.current_page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', water_page=pagination_info['water'].current_page - 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', water_page=pagination_info.water.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Previous
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li class="page-item disabled">
-                                    <span class="page-link">Page {{ pagination_info['water'].current_page }} of {{ pagination_info['water'].total_pages }}</span>
+                                    <span class="page-link">Page {{ pagination_info.water.current_page }} of {{ pagination_info.water.total_pages }}</span>
                                 </li>
-                                {% if pagination_info['water'].current_page < pagination_info['water'].total_pages %}
+                                {% if pagination_info.water.current_page < pagination_info.water.total_pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', water_page=pagination_info['water'].current_page + 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', water_page=pagination_info.water.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Next
                                     </a>
                                 </li>
                                 {% endif %}
                             </ul>
                         </nav>
+
 
                         <!-- Fuel Emissions Table -->
                         <h3>Fuel Emissions</h3>
@@ -383,22 +414,22 @@
                             </tbody>
                         </table>
 
-                        <!-- Pagination for Fuel Emissions -->
+                       <!-- Pagination for Fuel Emissions -->
                         <nav aria-label="Fuel Emissions pagination">
                             <ul class="pagination justify-content-left">
-                                {% if pagination_info['fuelEmissions'].current_page > 1 %}
+                                {% if pagination_info.fuelEmissions.current_page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', fuelEmissions_page=pagination_info['fuelEmissions'].current_page - 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', fuelEmissions_page=pagination_info.fuelEmissions.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Previous
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li class="page-item disabled">
-                                    <span class="page-link">Page {{ pagination_info['fuelEmissions'].current_page }} of {{ pagination_info['fuelEmissions'].total_pages }}</span>
+                                    <span class="page-link">Page {{ pagination_info.fuelEmissions.current_page }} of {{ pagination_info.fuelEmissions.total_pages }}</span>
                                 </li>
-                                {% if pagination_info['fuelEmissions'].current_page < pagination_info['fuelEmissions'].total_pages %}
+                                {% if pagination_info.fuelEmissions.current_page < pagination_info.fuelEmissions.total_pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', fuelEmissions_page=pagination_info['fuelEmissions'].current_page + 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', fuelEmissions_page=pagination_info.fuelEmissions.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Next
                                     </a>
                                 </li>
@@ -440,25 +471,26 @@
                         <!-- Pagination for Treated Water -->
                         <nav aria-label="Treated Water pagination">
                             <ul class="pagination justify-content-left">
-                                {% if pagination_info['treatedWater'].current_page > 1 %}
+                                {% if pagination_info.treatedWater.current_page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', treatedWater_page=pagination_info['treatedWater'].current_page - 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', treatedWater_page=pagination_info.treatedWater.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Previous
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li class="page-item disabled">
-                                    <span class="page-link">Page {{ pagination_info['treatedWater'].current_page }} of {{ pagination_info['treatedWater'].total_pages }}</span>
+                                    <span class="page-link">Page {{ pagination_info.treatedWater.current_page }} of {{ pagination_info.treatedWater.total_pages }}</span>
                                 </li>
-                                {% if pagination_info['treatedWater'].current_page < pagination_info['treatedWater'].total_pages %}
+                                {% if pagination_info.treatedWater.current_page < pagination_info.treatedWater.total_pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', treatedWater_page=pagination_info['treatedWater'].current_page + 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', treatedWater_page=pagination_info.treatedWater.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Next
                                     </a>
                                 </li>
                                 {% endif %}
                             </ul>
                         </nav>
+
 
                         <!-- Segregated Solid Waste Table -->
                         <h3>Segregated Solid Waste</h3>
@@ -496,19 +528,19 @@
                         <!-- Pagination for Segregated Solid Waste -->
                         <nav aria-label="Segregated Solid Waste pagination">
                             <ul class="pagination justify-content-left">
-                                {% if pagination_info['segWaste'].current_page > 1 %}
+                                {% if pagination_info.segWaste.current_page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', segWaste_page=pagination_info['segWaste'].current_page - 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', segWaste_page=pagination_info.segWaste.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Previous
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li class="page-item disabled">
-                                    <span class="page-link">Page {{ pagination_info['segWaste'].current_page }} of {{ pagination_info['segWaste'].total_pages }}</span>
+                                    <span class="page-link">Page {{ pagination_info.segWaste.current_page }} of {{ pagination_info.segWaste.total_pages }}</span>
                                 </li>
-                                {% if pagination_info['segWaste'].current_page < pagination_info['segWaste'].total_pages %}
+                                {% if pagination_info.segWaste.current_page < pagination_info.segWaste.total_pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', segWaste_page=pagination_info['segWaste'].current_page + 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', segWaste_page=pagination_info.segWaste.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Next
                                     </a>
                                 </li>
@@ -552,25 +584,26 @@
                         <!-- Pagination for Unsegregated Solid Waste -->
                         <nav aria-label="Unsegregated Solid Waste pagination">
                             <ul class="pagination justify-content-left">
-                                {% if pagination_info['unsegWaste'].current_page > 1 %}
+                                {% if pagination_info.unsegWaste.current_page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', unsegWaste_page=pagination_info['unsegWaste'].current_page - 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', unsegWaste_page=pagination_info.unsegWaste.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Previous
                                     </a>
                                 </li>
                                 {% endif %}
                                 <li class="page-item disabled">
-                                    <span class="page-link">Page {{ pagination_info['unsegWaste'].current_page }} of {{ pagination_info['unsegWaste'].total_pages }}</span>
+                                    <span class="page-link">Page {{ pagination_info.unsegWaste.current_page }} of {{ pagination_info.unsegWaste.total_pages }}</span>
                                 </li>
-                                {% if pagination_info['unsegWaste'].current_page < pagination_info['unsegWaste'].total_pages %}
+                                {% if pagination_info.unsegWaste.current_page < pagination_info.unsegWaste.total_pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('report', unsegWaste_page=pagination_info['unsegWaste'].current_page + 1) }}">
+                                    <a class="page-link" href="{{ url_for('report', unsegWaste_page=pagination_info.unsegWaste.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
                                         Next
                                     </a>
                                 </li>
                                 {% endif %}
                             </ul>
                         </nav>
+
 
                         <!-- Save As Button and Modal for Export Options -->
                         <button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
@@ -621,59 +654,45 @@
                         </div>
 
                         <script>
-                            // Filtering function for month and year
-                            document.addEventListener('DOMContentLoaded', () => {
-                                const yearFilter = document.getElementById('yearFilter');
-                                const monthFilter = document.getElementById('monthFilter');
+                            function applyFilters() {
+    const month = document.getElementById('monthFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    const params = new URLSearchParams(window.location.search);
 
-                                // Add event listeners for the filters
-                                yearFilter.addEventListener('change', filterTables);
-                                monthFilter.addEventListener('change', filterTables);
+    if (month) {
+        params.set('month', month);
+    } else {
+        params.delete('month'); // Remove month filter to display all months
+    }
 
-                                function filterTables() {
-                                    const selectedYear = yearFilter.value;
-                                    const selectedMonth = monthFilter.value.toLowerCase();
+    if (year) {
+        params.set('year', year);
+    } else {
+        params.delete('year'); // Remove year filter to display all years
+    }
 
-                                    const tables = {
-                                        electricityTable: { yearIndex: 3, monthIndex: 2 },
-                                        waterTable: { yearIndex: null, monthIndex: 2 }, // Assuming water data uses date instead of month
-                                        fuelEmissionsTable: { yearIndex: null, monthIndex: 1 },
-                                        treatedWaterTable: { yearIndex: null, monthIndex: 1 },
-                                        segWasteTable: { yearIndex: 1, monthIndex: 3 },
-                                        unsegWasteTable: { yearIndex: 1, monthIndex: 2 }
-                                    };
+    // Update the page URL with the new filters
+    window.location.search = params.toString();
+}
 
-                                    for (const [tableId, columns] of Object.entries(tables)) {
-                                        const table = document.getElementById(tableId);
-                                        const rows = table.querySelectorAll('tbody tr');
-                                        let showTable = false;
+// Set selected values from the URL parameters
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const selectedMonth = params.get('month');
+    const selectedYear = params.get('year');
 
-                                        rows.forEach(row => {
-                                            const yearCell = columns.yearIndex !== null ? row.querySelector(`td:nth-child(${columns.yearIndex + 1})`) : null;
-                                            const monthCell = columns.monthIndex !== null ? row.querySelector(`td:nth-child(${columns.monthIndex + 1})`) : null;
+    if (selectedMonth) {
+        document.getElementById('monthFilter').value = selectedMonth;
+    }
+    if (selectedYear) {
+        document.getElementById('yearFilter').value = selectedYear;
+    }
+});
 
-                                            const rowYear = yearCell ? yearCell.textContent.trim() : '';
-                                            const rowMonth = monthCell ? monthCell.textContent.trim().toLowerCase() : '';
 
-                                            const yearMatch = selectedYear === '' || rowYear === selectedYear;
-                                            const monthMatch = selectedMonth === '' || rowMonth.includes(selectedMonth);
-
-                                            if (yearMatch && monthMatch) {
-                                                row.style.display = ''; // Show the row
-                                                showTable = true; // Indicate that the table should be shown
-                                            } else {
-                                                row.style.display = 'none'; // Hide the row
-                                            }
-                                        });
-
-                                        // Hide the table if no rows are visible
-                                        table.style.display = showTable ? '' : 'none';
-                                    }
-                                }
-                            });
-
-                            // Functions for PDF and Excel export
-                            function generatePDF() {
+                            
+                             // Functions for PDF and Excel export
+                             function generatePDF() {
                                 const tableId = document.getElementById('tableSelect').value;
                                 const dataType = document.getElementById('dataSelection').value; // Get selected data type
                                 const tableElement = document.getElementById(tableId);
@@ -807,6 +826,7 @@
                                 link.click();
                                 document.body.removeChild(link);
                             }
+
                         </script>
 
                     </div>

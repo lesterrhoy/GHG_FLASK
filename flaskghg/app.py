@@ -100,7 +100,7 @@ def change_password():
     alert_message = ''  # Initialize alert message
 
     if request.method == 'POST':
-        username = request.form['username']  # Capture the username from the form
+        username = request.form['username']
         new_password = request.form['new-password']
         confirm_password = request.form['confirm-password']
 
@@ -112,25 +112,29 @@ def change_password():
                 conn = get_db_connection()
                 cursor = conn.cursor()
 
-                # Hash the new password for security
-                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                # Check if the username exists in the database
+                query = "SELECT * FROM tblsignin WHERE username = %s"
+                cursor.execute(query, (username,))
+                user = cursor.fetchone()
 
-                # Update the password based on the username
-                update_query = "UPDATE tblsignin SET password = %s WHERE username = %s"
-                cursor.execute(update_query, (hashed_password, username))
-                conn.commit()
-
-                # Check if any rows were affected (to confirm the update)
-                if cursor.rowcount > 0:
-                    flash("Password updated successfully!", "success")
-                    return redirect(url_for('login'))  # Redirect to the login page
+                if not user:
+                    alert_message = "Username does not exist."
                 else:
-                    alert_message = "Password update failed. Username may not exist or no changes were made."
+                    # Update the password in the database (in plaintext)
+                    update_query = "UPDATE tblsignin SET password = %s WHERE username = %s"
+                    cursor.execute(update_query, (new_password, username))
+                    conn.commit()
+
+                    if cursor.rowcount > 0:
+                        flash("Password updated successfully!", "success")
+                        return redirect(url_for('login'))
+                    else:
+                        alert_message = "Password update failed. No changes were made."
 
             except mysql.connector.Error as e:
-                alert_message = f"Database error: {str(e)}"
+                alert_message = f"Database Error: {e}"
             except Exception as e:
-                alert_message = f"An error occurred: {str(e)}"
+                alert_message = f"An error occurred: {e}"
 
             finally:
                 cursor.close()
@@ -147,6 +151,10 @@ def report():
     if 'campus' not in session:
         flash("Campus information is missing from your session. Please select a campus.", "warning")
         return redirect(url_for('select_campus'))  # Redirect to a page where user can select a campus
+
+    # Retrieve selected filters from query parameters
+    selected_month = request.args.get('month', '')
+    selected_year = request.args.get('year', '')
 
     results = {
         'electricity': [],
@@ -166,88 +174,132 @@ def report():
     }
     
     items_per_page = 15  # Number of items per page
-    
+    all_data = request.args.get('all_data', 'false').lower() == 'true'
+
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
 
-        # Fetching total items and calculating total pages for electricity
-        cursor.execute("SELECT COUNT(*) AS count FROM electricity_consumption WHERE campus = %s", (session['campus'],))
-        total_items = cursor.fetchone()['count']
-        total_pages = math.ceil(total_items / items_per_page)
+        def fetch_data_with_filters(table, campus, month_column, year_column, current_page, items_per_page, date_format=None):
+            query = f"SELECT * FROM {table} WHERE campus = %s"
+            params = [campus]
+
+            # Apply month and year filters if provided
+            if selected_month:
+                if date_format:
+                    query += f" AND MONTH({month_column}) = %s"
+                else:
+                    query += f" AND {month_column} = %s"
+                params.append(selected_month)
+
+            if selected_year:
+                if date_format:
+                    query += f" AND YEAR({year_column}) = %s"
+                else:
+                    query += f" AND {year_column} = %s"
+                params.append(selected_year)
+
+            # Count total items for pagination
+            count_query = f"SELECT COUNT(*) AS count FROM ({query}) AS filtered_query"
+            with conn.cursor(dictionary=True) as cursor:
+                cursor.execute(count_query, tuple(params))
+                total_items = cursor.fetchone()['count']
+                total_pages = math.ceil(total_items / items_per_page)
+                offset = (current_page - 1) * items_per_page
+                pagination = {'current_page': current_page, 'total_pages': total_pages}
+
+            # Adjust query for pagination
+            if all_data:
+                paginated_query = query
+            else:
+                paginated_query = f"{query} LIMIT %s OFFSET %s"
+                params.extend([items_per_page, offset])
+
+            # Fetch paginated results
+            with conn.cursor(dictionary=True) as cursor:
+                cursor.execute(paginated_query, tuple(params))
+                data = cursor.fetchall()
+
+            return data, pagination
+
+        # Fetch and paginate data for each table
         current_page = int(request.args.get('electricity_page', 1))
-        offset = (current_page - 1) * items_per_page
-        pagination_info['electricity'] = {'current_page': current_page, 'total_pages': total_pages}
+        results['electricity'], pagination_info['electricity'] = fetch_data_with_filters(
+            'electricity_consumption', session['campus'], 'month', 'year', current_page, items_per_page
+        )
 
-        cursor.execute("SELECT * FROM electricity_consumption WHERE campus = %s LIMIT %s OFFSET %s", (session['campus'], items_per_page, offset))
-        results['electricity'] = cursor.fetchall()
-
-        # Repeat similar process for each table with pagination
-
-        # Water Consumption
-        cursor.execute("SELECT COUNT(*) AS count FROM tblwater WHERE Campus = %s", (session['campus'],))
-        total_items = cursor.fetchone()['count']
-        total_pages = math.ceil(total_items / items_per_page)
         current_page = int(request.args.get('water_page', 1))
-        offset = (current_page - 1) * items_per_page
-        pagination_info['water'] = {'current_page': current_page, 'total_pages': total_pages}
+        results['water'], pagination_info['water'] = fetch_data_with_filters(
+            'tblwater', session['campus'], 'Date', 'Date', current_page, items_per_page, date_format=True
+        )
 
-        cursor.execute("SELECT * FROM tblwater WHERE Campus = %s LIMIT %s OFFSET %s", (session['campus'], items_per_page, offset))
-        results['water'] = cursor.fetchall()
-
-        # Unsegregated Solid Waste
-        cursor.execute("SELECT COUNT(*) AS count FROM tblsolidwasteunsegregated WHERE Campus = %s", (session['campus'],))
-        total_items = cursor.fetchone()['count']
-        total_pages = math.ceil(total_items / items_per_page)
         current_page = int(request.args.get('unsegWaste_page', 1))
-        offset = (current_page - 1) * items_per_page
-        pagination_info['unsegWaste'] = {'current_page': current_page, 'total_pages': total_pages}
+        results['unsegWaste'], pagination_info['unsegWaste'] = fetch_data_with_filters(
+            'tblsolidwasteunsegregated', session['campus'], 'Month', 'Year', current_page, items_per_page
+        )
 
-        cursor.execute("SELECT * FROM tblsolidwasteunsegregated WHERE Campus = %s LIMIT %s OFFSET %s", (session['campus'], items_per_page, offset))
-        results['unsegWaste'] = cursor.fetchall()
-
-        # Segregated Solid Waste
-        cursor.execute("SELECT COUNT(*) AS count FROM tblsolidwastesegregated WHERE Campus = %s", (session['campus'],))
-        total_items = cursor.fetchone()['count']
-        total_pages = math.ceil(total_items / items_per_page)
         current_page = int(request.args.get('segWaste_page', 1))
-        offset = (current_page - 1) * items_per_page
-        pagination_info['segWaste'] = {'current_page': current_page, 'total_pages': total_pages}
+        results['segWaste'], pagination_info['segWaste'] = fetch_data_with_filters(
+            'tblsolidwastesegregated', session['campus'], 'Month', 'Year', current_page, items_per_page
+        )
 
-        cursor.execute("SELECT * FROM tblsolidwastesegregated WHERE Campus = %s LIMIT %s OFFSET %s", (session['campus'], items_per_page, offset))
-        results['segWaste'] = cursor.fetchall()
-
-        # Treated Water
-        cursor.execute("SELECT COUNT(*) AS count FROM tbltreatedwater WHERE Campus = %s", (session['campus'],))
-        total_items = cursor.fetchone()['count']
-        total_pages = math.ceil(total_items / items_per_page)
         current_page = int(request.args.get('treatedWater_page', 1))
-        offset = (current_page - 1) * items_per_page
-        pagination_info['treatedWater'] = {'current_page': current_page, 'total_pages': total_pages}
+        results['treatedWater'], pagination_info['treatedWater'] = fetch_data_with_filters(
+            'tbltreatedwater', session['campus'], 'Month', 'Month', current_page, items_per_page
+        )
 
-        cursor.execute("SELECT * FROM tbltreatedwater WHERE Campus = %s LIMIT %s OFFSET %s", (session['campus'], items_per_page, offset))
-        results['treatedWater'] = cursor.fetchall()
-
-        # Fuel Emissions
-        cursor.execute("SELECT COUNT(*) AS count FROM fuel_emissions WHERE Campus = %s", (session['campus'],))
-        total_items = cursor.fetchone()['count']
-        total_pages = math.ceil(total_items / items_per_page)
         current_page = int(request.args.get('fuelEmissions_page', 1))
-        offset = (current_page - 1) * items_per_page
-        pagination_info['fuelEmissions'] = {'current_page': current_page, 'total_pages': total_pages}
-
-        cursor.execute("SELECT * FROM fuel_emissions WHERE Campus = %s LIMIT %s OFFSET %s", (session['campus'], items_per_page, offset))
-        results['fuelEmissions'] = cursor.fetchall()
+        results['fuelEmissions'], pagination_info['fuelEmissions'] = fetch_data_with_filters(
+            'fuel_emissions', session['campus'], 'date', 'date', current_page, items_per_page, date_format=True
+        )
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
-
     finally:
-        cursor.close()
         conn.close()
 
     # Pass the results dictionary and pagination info to the template
     return render_template('report.html', results=results, pagination_info=pagination_info)
+
+
+
+    @app.route('/fetch_all_data')
+    def fetch_all_data():
+        table = request.args.get('table')
+
+        # Check if a valid table is selected
+        if table not in ['electricityTable', 'waterTable', 'fuelEmissionsTable', 'treatedWaterTable', 'segWasteTable', 'unsegWasteTable']:
+            print("Error: Invalid table selected.")
+            return jsonify({'error': 'Invalid table selected'}), 400
+
+        # Dictionary mapping table IDs to SQL queries without campus filter
+        queries = {
+            'electricityTable': "SELECT * FROM electricity_consumption",
+            'waterTable': "SELECT * FROM tblwater",
+            'fuelEmissionsTable': "SELECT * FROM fuel_emissions",
+            'treatedWaterTable': "SELECT * FROM tbltreatedwater",
+            'segWasteTable': "SELECT * FROM tblsolidwastesegregated",
+            'unsegWasteTable': "SELECT * FROM tblsolidwasteunsegregated"
+        }
+
+        try:
+            conn = get_db_connection()
+            with conn.cursor(dictionary=True) as cursor:
+                print(f"Executing query for table: {table}")
+                cursor.execute(queries[table])  # No campus filter applied here
+                data = cursor.fetchall()
+                print(f"Fetched {len(data)} records from {table}.")
+        except mysql.connector.Error as e:
+            print(f"Database error: {e}")
+            return jsonify({'error': f'Database error: {e}'}), 500
+        finally:
+            conn.close()
+
+        return jsonify(data)
+
+
+
+
+
 
 
 # Route for the EMU dashboard
@@ -714,8 +766,6 @@ def treated_water():
     # Render the template with the fetched data
     return render_template('treated_water.html', reports=reports, current_page=page, total_pages=total_pages)
 
-
-
 # Route to delete a report
 @app.route('/delete_report/<int:id>', methods=['POST'])
 def delete_report(id):
@@ -733,8 +783,6 @@ def delete_report(id):
         return jsonify({"status": "error", "message": str(e)})
 
 
-
-
 @app.route('/emu_fuel', methods=['GET', 'POST'])
 def emu_fuel():
     # Ensure user is logged in
@@ -746,7 +794,7 @@ def emu_fuel():
         cursor = conn.cursor(dictionary=True)
 
         if request.method == 'POST':
-            # Process form submission and retrieve all the submitted data
+            # Retrieve submitted data from the form
             campus = request.form.get('campus')
             date = request.form.get('date')
             driver = request.form.get('driver')
@@ -758,17 +806,40 @@ def emu_fuel():
             item_description = request.form.get('itemDescription')
             transaction_no = request.form.get('transactionNo')
             odometer = request.form.get('odometer')
-            quantity_liters = request.form.get('quantityLiters')
-            total_amount = request.form.get('totalAmount')
-            co2_emission = request.form.get('co2_emission')
-            nh4_emission = request.form.get('nh4_emission')
-            n2o_emission = request.form.get('n2o_emission')
-            total_emission = request.form.get('total_emission')
-            total_emission_t = request.form.get('total_emission_t')
+            quantity_liters = float(request.form.get('quantityLiters'))
+            total_amount = float(request.form.get('totalAmount'))
 
-            # Validate required fields
-            if not (campus and date and driver and type and vehicle_equipment and plate_no and fuel_type and quantity_liters and total_amount):
-                return jsonify({'success': False, 'message': 'Please fill out all required fields.'})
+            # Define emission factors and GWP for each fuel type
+            emission_factors = {
+                "Diesel": {
+                    "CO2_factor": 2.556,
+                    "NH4_factor": 0.00011,
+                    "N2O_factor": 0.000151,
+                    "GWP_NH4": 25,
+                    "GWP_N2O": 298
+                },
+                "Gasoline": {
+                    "CO2_factor": 2.175,
+                    "NH4_factor": 0.00024,
+                    "N2O_factor": 0.00058,
+                    "GWP_NH4": 25,
+                    "GWP_N2O": 298
+                }
+            }
+
+            # Ensure valid fuel type
+            if fuel_type not in emission_factors:
+                return jsonify({'success': False, 'message': 'Invalid fuel type selected.'})
+
+            # Fetch the factors for the selected fuel type
+            factors = emission_factors[fuel_type]
+
+            # Calculate emissions based on the fuel type and quantity in liters
+            co2_emission = quantity_liters * factors["CO2_factor"]
+            nh4_emission = quantity_liters * factors["NH4_factor"] * factors["GWP_NH4"]  # Convert NH₄ to CO₂-e
+            n2o_emission = quantity_liters * factors["N2O_factor"] * factors["GWP_N2O"]  # Convert N₂O to CO₂-e
+            total_emission = co2_emission + nh4_emission + n2o_emission  # Total in kg CO₂-e
+            total_emission_t = total_emission / 1000  # Convert to tons CO₂-e
 
             # Insert the new record into the database
             insert_query = """
@@ -780,11 +851,12 @@ def emu_fuel():
             cursor.execute(insert_query, (
                 campus, date, driver, type, vehicle_equipment, plate_no, category, fuel_type,
                 item_description, transaction_no, odometer, quantity_liters, total_amount,
-                co2_emission, nh4_emission, n2o_emission, total_emission, total_emission_t
+                round(co2_emission, 2), round(nh4_emission, 2), round(n2o_emission, 2), 
+                round(total_emission, 2), round(total_emission_t, 3)
             ))
             conn.commit()
 
-            # Return the new record as JSON for dynamically adding it to the table on the frontend
+            # Return the new record as JSON to dynamically add it to the frontend table
             new_record = {
                 'campus': campus,
                 'date': date,
@@ -796,11 +868,11 @@ def emu_fuel():
                 'fuel_type': fuel_type,
                 'quantity_liters': quantity_liters,
                 'total_amount': total_amount,
-                'co2_emission': co2_emission,
-                'nh4_emission': nh4_emission,
-                'n2o_emission': n2o_emission,
-                'total_emission': total_emission,
-                'total_emission_t': total_emission_t
+                'co2_emission': round(co2_emission, 2),
+                'nh4_emission': round(nh4_emission, 2),
+                'n2o_emission': round(n2o_emission, 2),
+                'total_emission': round(total_emission, 2),
+                'total_emission_t': round(total_emission_t, 3)
             }
 
             return jsonify({'success': True, 'data': new_record})
@@ -820,11 +892,10 @@ def emu_fuel():
         if not user_campus:
             return redirect(url_for('login'))
 
-        # Prepare SQL query
+        # Prepare SQL query with filters
         sql = "SELECT * FROM fuel_emissions WHERE campus = %s"
         params = [user_campus]
 
-        # Apply filters
         if year_filter:
             sql += " AND YEAR(date) = %s"
             params.append(year_filter)
@@ -851,16 +922,14 @@ def emu_fuel():
         # Render the main template with the reports and pagination data
         return render_template('emu_fuel.html', reports=reports, current_page=page, total_pages=total_pages)
 
-    except Exception as e:
-        print(f"Database Error: {e}")  # Debugging
+    except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
-        return render_template("error.html", message=f"Database Error: {e}")  # Render an error page if database connection fails
-    finally:
-        if 'cursor' in locals() and cursor:
-            cursor.close()
-        if 'conn' in locals() and conn:
-            conn.close()
+        reports = []
+        total_pages = 0
 
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.route('/delete_fuel_record/<int:id>', methods=['DELETE'])
 def delete_fuel_record(id):
@@ -1990,29 +2059,19 @@ def flight():
                            current_page=current_page, selected_year=selected_year)
 
 
-@app.route('/delete_flight/<int:flight_id>', methods=['DELETE'])
-def delete_flight(flight_id):
-    if 'loggedIn' not in session:
-        return redirect(url_for('login'))
-
+@app.route('/delete_flight/<int:id>', methods=['DELETE'])
+def delete_flight(id):
     try:
-        # Connect to the database
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # Execute delete statement
-        cursor.execute("DELETE FROM tblflight WHERE id = %s", (flight_id,))
+        cursor.execute("DELETE FROM tblflight WHERE id = %s", (id,))
         conn.commit()
-
-        # Return success response
-        return jsonify({"message": "Flight record deleted successfully"}), 200
-    except mysql.connector.Error as e:
-        print(f"Database Error: {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
         cursor.close()
         conn.close()
-
+        return jsonify(success=True)  # Success response
+    except Exception as e:
+        print("Error:", e)
+        return jsonify(success=False)  # Failure response
 
 # Function to determine the emission factor based on country and travel type
 def get_factor(country, local_or_international):
@@ -2492,7 +2551,7 @@ def lpg_consumption():
     campus = session.get('campus')  # Get the logged-in campus
 
     # Set the number of items per page
-    items_per_page = 10
+    items_per_page = 15
     current_page = request.args.get('page', 1, type=int)
 
     if request.method == 'POST':
@@ -2569,6 +2628,22 @@ def lpg_consumption():
         total_pages=total_pages
     )
 
+@app.route('/delete_lpg/<int:id>', methods=['DELETE'])
+def delete_lpg(id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM tbllpg WHERE id = %s", (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify(success=True)  # Success response
+    except Exception as e:
+        print("Error:", e)
+        return jsonify(success=False)  # Failure response
+
+
+
 # Route for the accommodation report
 @app.route('/ea_report', methods=['GET'])
 def ea_report():
@@ -2593,13 +2668,16 @@ def ea_report():
         cursor_flight = conn.cursor(dictionary=True)
         cursor_accommodation = conn.cursor(dictionary=True)
 
+        # Fetch unique offices based on campus
         cursor_offices.execute("SELECT DISTINCT Office FROM tblflight WHERE Campus = %s", (campus,))
         offices = [row['Office'] for row in cursor_offices.fetchall()]
 
+        # Base queries
         flight_query = "SELECT * FROM tblflight WHERE Campus = %s"
         accommodation_query = "SELECT * FROM tblaccommodation WHERE Campus = %s"
         params = [campus]
 
+        # Apply year and office filters if selected
         if selected_year:
             flight_query += " AND Year = %s"
             accommodation_query += " AND YearTransact = %s"
@@ -2610,14 +2688,16 @@ def ea_report():
             accommodation_query += " AND Office = %s"
             params.append(selected_office)
 
+        # Fetch total records for pagination
         cursor_flight.execute(flight_query, params)
         total_flight_records = cursor_flight.rowcount
-        cursor_flight.fetchall()
+        cursor_flight.fetchall()  # Clear fetched data for pagination query
 
         cursor_accommodation.execute(accommodation_query, params)
         total_accommodation_records = cursor_accommodation.rowcount
-        cursor_accommodation.fetchall()
+        cursor_accommodation.fetchall()  # Clear fetched data for pagination query
 
+        # Apply pagination to the main query
         flight_query += " LIMIT %s OFFSET %s"
         accommodation_query += " LIMIT %s OFFSET %s"
         flight_offset = (flight_page - 1) * per_page
@@ -2645,12 +2725,15 @@ def ea_report():
         cursor_accommodation.close()
         conn.close()
 
+    # Render template with year and office filtering
     return render_template(
         'ea_report.html', 
         flight_data=flight_data,
         accommodation_data=accommodation_data,
         years=years,
         offices=offices,
+        selected_year=selected_year,
+        selected_office=selected_office,
         pagination_info={
             'flight_data': {
                 'current_page': flight_page,
@@ -2662,6 +2745,7 @@ def ea_report():
             }
         }
     )
+
 
 @app.route('/download_excel')
 def download_excel():

@@ -534,44 +534,51 @@ button.btn-danger:hover {
 
     <script>
      function calculateAndSubmit() {
-    // Get the selected fuel type
     const fuelType = document.getElementById('fuelType').value;
     const quantityLiters = parseFloat(document.getElementById('quantityLiters').value);
 
-    // Check if quantityLiters is a valid number
     if (isNaN(quantityLiters) || quantityLiters <= 0) {
         alert("Please enter a valid quantity in liters.");
         return;
     }
 
-    // Emission factors based on fuel type
-    let co2EmissionFactor, nh4EmissionFactor, n2oEmissionFactor;
+    // Emission factors and GWP multipliers for CO₂-equivalent conversion
+    const emissionFactors = {
+        "Diesel": { 
+            CO2_factor: 2.556, 
+            NH4_factor: 0.00011, 
+            N2O_factor: 0.000151, 
+            GWP_NH4: 25, 
+            GWP_N2O: 298 
+        },
+        "Gasoline": { 
+            CO2_factor: 2.175, 
+            NH4_factor: 0.00024, 
+            N2O_factor: 0.00058, 
+            GWP_NH4: 25, 
+            GWP_N2O: 298 
+        }
+    };
 
-    if (fuelType === "Diesel") {
-        co2EmissionFactor = 2.556;
-        nh4EmissionFactor = 0.00275; // 0.00011 * 25
-        n2oEmissionFactor = 0.044998; // 0.000151 * 298
-    } else if (fuelType === "Gasoline") {
-        co2EmissionFactor = 2.175;
-        nh4EmissionFactor = 0.006; // 0.00024 * 25
-        n2oEmissionFactor = 0.17284; // 0.00058 * 298
-    } else {
+    // Validate fuel type and retrieve relevant emission factors
+    const factors = emissionFactors[fuelType];
+    if (!factors) {
         alert("Please select a valid fuel type.");
         return;
     }
 
-    // Calculate emissions
-    const co2Emission = quantityLiters * co2EmissionFactor;
-    const nh4Emission = quantityLiters * nh4EmissionFactor;
-    const n2oEmission = quantityLiters * n2oEmissionFactor;
-    const totalEmission = co2Emission + nh4Emission + n2oEmission;
-    const totalEmissionT = totalEmission / 1000;
+    // Calculate each emission in kg
+    const co2Emission = quantityLiters * factors.CO2_factor;
+    const nh4Emission = quantityLiters * factors.NH4_factor * factors.GWP_NH4; // Convert NH₄ to CO₂-e using GWP
+    const n2oEmission = quantityLiters * factors.N2O_factor * factors.GWP_N2O; // Convert N₂O to CO₂-e using GWP
+    const totalEmission = co2Emission + nh4Emission + n2oEmission;  // Sum of all emissions in kg CO₂-e
+    const totalEmissionT = totalEmission / 1000;  // Convert kg CO₂-e to tons CO₂-e
 
-    // Populate the calculated emission fields in the modal
+    // Display calculated values in the form
     document.getElementById('totalEmissionKg').value = totalEmission.toFixed(2);
     document.getElementById('totalEmissionTons').value = totalEmissionT.toFixed(3);
 
-    // Get the form data
+    // Prepare form data with calculated emissions
     const formData = new FormData(document.getElementById('fuelForm'));
     formData.append('co2_emission', co2Emission.toFixed(2));
     formData.append('nh4_emission', nh4Emission.toFixed(2));
@@ -579,20 +586,14 @@ button.btn-danger:hover {
     formData.append('total_emission', totalEmission.toFixed(2));
     formData.append('total_emission_t', totalEmissionT.toFixed(3));
 
-    // Submit the form data using fetch API
+    // Submit data via fetch
     fetch('/emu_fuel', {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();  // Convert the response to JSON
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Add the new data to the table
             const newRow = `
                 <tr data-id="${data.data.id}">
                     <td>${data.data.campus}</td>
@@ -615,7 +616,6 @@ button.btn-danger:hover {
                     </td>
                 </tr>
             `;
-            // Append the new row to the report table
             document.getElementById('reportData').insertAdjacentHTML('beforeend', newRow);
         }
     })
@@ -623,6 +623,8 @@ button.btn-danger:hover {
         console.error('Error:', error);
     });
 }
+
+
 
 
 function generateReport() {
