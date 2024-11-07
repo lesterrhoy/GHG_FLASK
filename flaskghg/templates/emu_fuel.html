@@ -195,6 +195,10 @@ button {
     transition: background-color 0.3s ease;
     color: white; /* White text for contrast */
 }
+#openModalBtn {
+    background-color: #d50000;
+}
+
 
 /* Specific Button Styling */
 button.btn-primary {
@@ -315,21 +319,26 @@ button.btn-danger:hover {
                         </div>
                     </div>
                     
+                    <div id="FuelSection">
+                    <div class="mb-4 text-center">
                     <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
-                    
-                    <div class="buttons-container mt-3 text-center">
-                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                    </div>
                     </div>
 
-   
-        <div class="filter-container">
-            <select id="yearFilter" onchange="filterByYear()">
-                <option value="">Select Year</option>
-            </select>
-    
-            
-                    
+                <label for="yearFilter">Filter by Year:</label>
+                <select id="yearFilter" onchange="filterByYear()">
+                    <option value="">All Years</option>
+                    <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
+                    <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
+                    <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+                    <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
+                </select>
+                        
+
+                    <div class="buttons-container mt-3 text-center">
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
+                        <button style="background-color: #d50000; color: white; border: none;"onclick="downloadExcel()">Download Excel</button>
+                    </div>
 
                     <div class="modal" id="myModal" style="display: none;">
                         <div class="modal-content">
@@ -434,7 +443,7 @@ button.btn-danger:hover {
                             </div>
                         </div>
                     </div>
-
+<br>
                     <div class="header">
                         <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
                         <div class="title">Fuel Consumption Report</div>
@@ -718,61 +727,84 @@ function generateReport() {
 }
 
 
-       // Function to print the fuel report
 function printReport() {
-    const originalContents = document.body.innerHTML; // Save the original content
+    // Retrieve filter values
+    const year = document.getElementById('yearFilter').value;
+    const category = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : '';
+    const fuelType = document.getElementById('fuelTypeFilter') ? document.getElementById('fuelTypeFilter').value : '';
 
-    // Get the table header (excluding the "Actions" column)
-    const tableHeader = `
-        <thead>
-            <tr>
-                <th>Campus</th>
-                <th>Date</th>
-                <th>Driver</th>
-                <th>Type</th>
-                <th>Vehicle Type</th>
-                <th>Plate Number</th>
-                <th>Category</th>
-                <th>Fuel Type</th>
-                <th>Quantity (Liters)</th>
-                <th>Total Amount</th>
-                <th>CO₂ Emission (kg)</th>
-                <th>NH₄ Emission (kg CO₂-e)</th>
-                <th>N₂O Emission (kg CO₂-e)</th>
-                <th>Total Emission (kg CO₂-e)</th>
-                <th>Total Emission (t CO₂-e)</th>
-            </tr>
-        </thead>`;
+    // Build the query string based on filters
+    let queryString = '';
+    if (year) queryString += `year=${year}&`;
+    if (category) queryString += `category=${category}&`;
+    if (fuelType) queryString += `fuelType=${fuelType}`;
 
-    // Get the table body without the "Actions" column
-    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-        .map(row => {
-            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
-            return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
+    // Determine fetch URL
+    const fetchUrl = queryString ? `/emu_fuel/all?${queryString}` : `/emu_fuel/all`;
+
+    // Fetch data from the server based on the filters
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Generate table content for printing
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Date</th>
+                        <th>Driver</th>
+                        <th>Type</th>
+                        <th>Vehicle Type</th>
+                        <th>Plate Number</th>
+                        <th>Category</th>
+                        <th>Fuel Type</th>
+                        <th>Quantity (Liters)</th>
+                        <th>Total Amount</th>
+                        <th>CO₂ Emission (kg)</th>
+                        <th>NH₄ Emission (kg CO₂-e)</th>
+                        <th>N₂O Emission (kg CO₂-e)</th>
+                        <th>Total Emission (kg CO₂-e)</th>
+                        <th>Total Emission (t CO₂-e)</th>
+                    </tr>
+                </thead>`;
+
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.campus}</td>
+                    <td>${report.date}</td>
+                    <td>${report.driver}</td>
+                    <td>${report.type}</td>
+                    <td>${report.vehicle_equipment}</td>
+                    <td>${report.plate_no}</td>
+                    <td>${report.category}</td>
+                    <td>${report.fuel_type}</td>
+                    <td>${report.quantity_liters}</td>
+                    <td>${report.total_amount}</td>
+                    <td>${report.co2_emission}</td>
+                    <td>${report.nh4_emission}</td>
+                    <td>${report.n2o_emission}</td>
+                    <td>${report.total_emission}</td>
+                    <td>${report.total_emission_t}</td>
+                </tr>`).join('');
+
+            const printContents = `
+                <div class="header">
+                    <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                    <h2>Fuel Consumption Report</h2>
+                    <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
         })
-        .join('');
-
-    // Create a print layout
-    const printContents = `
-        <div class="header">
-            <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-            <h2>Fuel Consumption Report</h2>
-            <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
-        </div>
-        <table border="1" cellspacing="0" cellpadding="5">
-            ${tableHeader}
-            <tbody>
-                ${tableBody}
-            </tbody>
-        </table>
-    `;
-
-    document.body.innerHTML = printContents; // Replace body content with table
-    window.print(); // Print the current window
-    document.body.innerHTML = originalContents; // Restore original content
+        .catch(error => console.error('Error fetching data:', error));
 }
-
-
         function openExcelSelection() {
             const table = document.getElementById("reportTable");
             const workbook = XLSX.utils.table_to_book(table, { sheet: "Fuel Consumption" });

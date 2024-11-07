@@ -262,16 +262,11 @@ def report():
 
 
 
-    @app.route('/fetch_all_data')
+    @app.route('/fetch_all_data', methods=['GET'])
     def fetch_all_data():
         table = request.args.get('table')
-
-        # Check if a valid table is selected
-        if table not in ['electricityTable', 'waterTable', 'fuelEmissionsTable', 'treatedWaterTable', 'segWasteTable', 'unsegWasteTable']:
-            print("Error: Invalid table selected.")
-            return jsonify({'error': 'Invalid table selected'}), 400
-
-        # Dictionary mapping table IDs to SQL queries without campus filter
+        
+        # Dictionary mapping table IDs to SQL queries
         queries = {
             'electricityTable': "SELECT * FROM electricity_consumption",
             'waterTable': "SELECT * FROM tblwater",
@@ -280,21 +275,23 @@ def report():
             'segWasteTable': "SELECT * FROM tblsolidwastesegregated",
             'unsegWasteTable': "SELECT * FROM tblsolidwasteunsegregated"
         }
-
+        
+        if table not in queries:
+            return jsonify({'error': 'Invalid table selected'}), 400
+        
         try:
             conn = get_db_connection()
             with conn.cursor(dictionary=True) as cursor:
-                print(f"Executing query for table: {table}")
-                cursor.execute(queries[table])  # No campus filter applied here
+                cursor.execute(queries[table])
                 data = cursor.fetchall()
-                print(f"Fetched {len(data)} records from {table}.")
         except mysql.connector.Error as e:
-            print(f"Database error: {e}")
             return jsonify({'error': f'Database error: {e}'}), 500
         finally:
             conn.close()
-
+        
         return jsonify(data)
+
+
 
 
 
@@ -403,7 +400,7 @@ def electricity_consumption():
 
     # Set up pagination parameters
     page = request.args.get('page', 1, type=int)  # Get the current page number from the query string
-    per_page = 15  # Number of records per page
+    per_page = 20  # Number of records per page
     offset = (page - 1) * per_page  # Calculate the offset based on the current page
 
     # Get filter parameters from query string
@@ -519,6 +516,48 @@ def electricity_consumption():
         results=results  # Pass the results for calculations
         )
 
+@app.route('/electricity_consumption/all', methods=['GET'])
+def electricity_consumption_all():
+    if 'loggedIn' not in session:
+        return redirect(url_for('login'))
+
+    selected_month = request.args.get('month', None)
+    selected_quarter = request.args.get('quarter', None)
+    selected_year = request.args.get('year', None)
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Build SQL query with optional filters, but no pagination
+        sql = "SELECT * FROM electricity_consumption WHERE campus = %s"
+        params = [session['campus']]  # Filter by campus
+
+        if selected_month:
+            sql += " AND month = %s"
+            params.append(selected_month)
+        if selected_quarter:
+            sql += " AND quarter = %s"
+            params.append(selected_quarter)
+        if selected_year:
+            sql += " AND year = %s"
+            params.append(selected_year)
+
+        # Execute query to fetch all records
+        cursor.execute(sql, params)
+        all_reports = cursor.fetchall()
+
+    except mysql.connector.Error as e:
+        flash(f"Database Error: {e}", "danger")
+        all_reports = []
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Return data as JSON
+    return jsonify(all_reports)
+
 @app.route('/delete_record/<int:record_id>', methods=['POST'])
 def delete_record(record_id):
     try:
@@ -552,7 +591,7 @@ def water_consumption():
     selected_year = request.args.get('year')  # Get the selected year from query parameters
     selected_category = request.args.get('category')  # Get the selected category from query parameters
     current_page = request.args.get('page', 1, type=int)  # Get the current page, default is 1
-    per_page = 15  # Number of records per page
+    per_page = 20  # Number of records per page
     offset = (current_page - 1) * per_page
 
     if request.method == 'POST':
@@ -639,6 +678,43 @@ def water_consumption():
                            current_page=current_page, 
                            total_pages=total_pages)
 
+# Route to fetch all or filtered water consumption data
+@app.route('/water_consumption/all', methods=['GET'])
+def get_water_consumption_data_for_printing():
+    # Ensure user is logged in
+    if 'loggedIn' not in session:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    campus = session.get('campus')
+    selected_year = request.args.get('year')
+    selected_category = request.args.get('category')
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Base SQL query with filtering
+        sql = "SELECT * FROM tblwater WHERE Campus = %s"
+        params = [campus]
+
+        if selected_year:
+            sql += " AND YEAR(Date) = %s"
+            params.append(selected_year)
+        if selected_category:
+            sql += " AND Category = %s"
+            params.append(selected_category)
+
+        cursor.execute(sql, params)
+        records = cursor.fetchall()
+
+        return jsonify(records)  # Return data as JSON for front-end
+
+    except mysql.connector.Error as e:
+        return jsonify({"error": str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/delete_water_record/<int:id>', methods=['DELETE'])
 def delete_water_record(id):
     if 'loggedIn' not in session:
@@ -680,46 +756,36 @@ def treated_water():
         return redirect(url_for('emu_dashboard'))  # Redirect if campus is missing
 
     page = request.args.get('page', 1, type=int)
-    per_page = 15
+    per_page = 20
     offset = (page - 1) * per_page
 
-    if request.method == 'POST':
-        # Print to confirm form submission
-        print("Form submitted. Processing POST request...")
+    # Get the month filter from the GET request
+    selected_month = request.args.get('month', '')
 
-        # Get form data
+    if request.method == 'POST':
+        # Get form data for new entry
         month = request.form.get('month')
         treated_volume = request.form.get('treatedVolume')
         reused_volume = request.form.get('reusedVolume')
 
-        # Ensure values are provided and are valid numbers
         try:
+            # Ensure numeric values
             treated_volume = float(treated_volume)
             reused_volume = float(reused_volume)
         except ValueError:
             flash("Please enter valid numeric values for volumes.", "danger")
             return redirect(url_for('treated_water'))
 
-        # Calculate additional fields
+        # Calculations
         effluent_volume = treated_volume - reused_volume
         co2_factor = 0.272  # Example emission factor
         kg_co2_e = effluent_volume * co2_factor
         t_co2_e = kg_co2_e / 1000
-
-        # Calculate the price per liter based on kgCO2e/m³
-        price_per_liter = kg_co2_e  # Assign kgCO2e as the price per liter
-
-        # Debugging: print values being inserted
-        print(f"Inserting into DB: Campus={campus}, Month={month}, TreatedVolume={treated_volume}, "
-              f"ReusedVolume={reused_volume}, EffluentVolume={effluent_volume}, "
-              f"CO2 (kg)={kg_co2_e}, CO2 (t)={t_co2_e}, PricePerLiter={price_per_liter}")
+        price_per_liter = kg_co2_e
 
         try:
-            # Attempt to connect to the database
             conn = get_db_connection()
             cursor = conn.cursor()
-
-            # Insert the record into the database
             sql = """INSERT INTO tbltreatedwater 
                      (Campus, Month, TreatedWaterVolume, ReusedTreatedWaterVolume, EffluentVolume, PricePerLiter, FactorKGCO2e, FactorTCO2e) 
                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -734,25 +800,29 @@ def treated_water():
             cursor.close()
             conn.close()
 
-        # Redirect to the same page after insertion
         return redirect(url_for('treated_water'))
 
-    # Fetch existing records for the logged-in campus with pagination
+    # Fetch existing records with filtering and pagination
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Get total record count for the campus
-        cursor.execute("SELECT COUNT(*) FROM tbltreatedwater WHERE Campus = %s", (campus,))
+        # Add filtering for the selected month
+        if selected_month:
+            cursor.execute("SELECT COUNT(*) FROM tbltreatedwater WHERE Campus = %s AND Month = %s", (campus, selected_month))
+        else:
+            cursor.execute("SELECT COUNT(*) FROM tbltreatedwater WHERE Campus = %s", (campus,))
+        
         total_records = cursor.fetchone()['COUNT(*)']
         total_pages = (total_records + per_page - 1) // per_page
 
-        # Fetch records for the campus with pagination
-        cursor.execute("SELECT * FROM tbltreatedwater WHERE Campus = %s LIMIT %s OFFSET %s", (campus, per_page, offset))
+        # Fetch records with the month filter applied
+        if selected_month:
+            cursor.execute("SELECT * FROM tbltreatedwater WHERE Campus = %s AND Month = %s LIMIT %s OFFSET %s", (campus, selected_month, per_page, offset))
+        else:
+            cursor.execute("SELECT * FROM tbltreatedwater WHERE Campus = %s LIMIT %s OFFSET %s", (campus, per_page, offset))
+        
         reports = cursor.fetchall()
-
-        # Debugging: print fetched reports
-        print(f"Reports fetched for campus {campus}: {reports}")
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -763,8 +833,42 @@ def treated_water():
         cursor.close()
         conn.close()
 
-    # Render the template with the fetched data
-    return render_template('treated_water.html', reports=reports, current_page=page, total_pages=total_pages)
+    # Pass the selected month to the template for highlighting the filter
+    return render_template('treated_water.html', reports=reports, current_page=page, total_pages=total_pages, selected_month=selected_month)
+
+@app.route('/treated_water/all', methods=['GET'])
+def get_treated_water_data_for_printing():
+    if 'loggedIn' not in session:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    campus = session.get('campus')
+    if not campus:
+        return jsonify({"error": "No campus found in session"}), 400
+
+    month_filter = request.args.get('month', '')
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Base SQL query with filtering based on month if provided
+        sql = "SELECT * FROM tbltreatedwater WHERE Campus = %s"
+        params = [campus]
+
+        if month_filter:
+            sql += " AND Month = %s"
+            params.append(month_filter)
+
+        cursor.execute(sql, params)
+        records = cursor.fetchall()
+
+        return jsonify(records)  # Send data as JSON
+
+    except mysql.connector.Error as e:
+        return jsonify({"error": str(e)})
+    finally:
+        cursor.close()
+        conn.close()
 
 # Route to delete a report
 @app.route('/delete_report/<int:id>', methods=['POST'])
@@ -879,7 +983,7 @@ def emu_fuel():
 
         # Handle GET request for fetching and displaying data
         page = request.args.get('page', 1, type=int)
-        per_page = 15
+        per_page = 20
         offset = (page - 1) * per_page
 
         # Retrieve filters from query parameters
@@ -931,6 +1035,45 @@ def emu_fuel():
         cursor.close()
         conn.close()
 
+@app.route('/emu_fuel/all', methods=['GET'])
+def get_fuel_data_for_printing():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Retrieve filters from query parameters
+        year_filter = request.args.get('year', '')
+        category_filter = request.args.get('category', '')
+        fuel_type_filter = request.args.get('fuelType', '')
+
+        # Base SQL query
+        sql = "SELECT * FROM fuel_emissions WHERE campus = %s"
+        params = [session.get('campus')]
+
+        # Add filters to SQL query if present
+        if year_filter:
+            sql += " AND YEAR(date) = %s"
+            params.append(year_filter)
+        if category_filter:
+            sql += " AND category = %s"
+            params.append(category_filter)
+        if fuel_type_filter:
+            sql += " AND fuel_type = %s"
+            params.append(fuel_type_filter)
+
+        cursor.execute(sql, params)
+        records = cursor.fetchall()
+
+        return jsonify(records)  # Return JSON data for printing
+
+    except mysql.connector.Error as e:
+        return jsonify({"error": str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
 @app.route('/delete_fuel_record/<int:id>', methods=['DELETE'])
 def delete_fuel_record(id):
     if 'loggedIn' not in session:
@@ -965,7 +1108,7 @@ def delete_fuel_record(id):
 def waste_segregation():
     # Define pagination variables
     page = request.args.get('page', 1, type=int)
-    per_page = 15
+    per_page = 20
     offset = (page - 1) * per_page
 
     # Get the logged-in user's campus from session
@@ -981,9 +1124,6 @@ def waste_segregation():
             main_category = request.form.get('mainCategory')
             sub_category = request.form.get('subCategory')
             quantity = float(request.form.get('quantity'))
-
-            # Debugging: Print form data to check if values are correctly retrieved
-            print(f"Form Data: Year={year}, Month={month}, Quarter={quarter}, Main Category={main_category}, Subcategory={sub_category}, Quantity={quantity}")
 
             # Define emission factors for each main category
             emission_factors = {
@@ -1011,9 +1151,6 @@ def waste_segregation():
             ghg_emission_kg = quantity * emission_factor
             ghg_emission_t = ghg_emission_kg / 1000
 
-            # Debugging: Print calculated GHG emissions
-            print(f"GHG Emission (kg): {ghg_emission_kg}, GHG Emission (t): {ghg_emission_t}")
-
             # Insert data into the database
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -1023,13 +1160,8 @@ def waste_segregation():
             cursor.execute(sql, (campus, year, quarter, month, main_category, sub_category, quantity, ghg_emission_kg, ghg_emission_t))
             conn.commit()
 
-            # Debugging: Print success message after database commit
-            print("Data inserted successfully.")
-
             flash("Waste segregation record added successfully.", "success")
         except mysql.connector.Error as e:
-            # Log and flash database errors
-            print(f"Database Error: {e}")
             flash(f"Database Error: {e}", "danger")
         except ValueError:
             flash("Invalid data entered. Please check the form fields.", "danger")
@@ -1039,26 +1171,44 @@ def waste_segregation():
 
         return redirect(url_for('waste_segregation'))
 
-    # Handle GET request (displaying reports with pagination)
+    # Handle GET request (displaying reports with pagination and filtering)
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Get total records for the logged-in user's campus
+        # Initialize SQL query and parameters for filtering
+        sql = "SELECT * FROM tblsolidwastesegregated WHERE Campus = %s"
+        params = [campus]
+
+        # Apply filters if provided in query parameters
+        month_filter = request.args.get('month')
+        quarter_filter = request.args.get('quarter')
+        year_filter = request.args.get('year')
+
+        if month_filter:
+            sql += " AND Month = %s"
+            params.append(month_filter)
+        if quarter_filter:
+            sql += " AND Quarter = %s"
+            params.append(quarter_filter)
+        if year_filter:
+            sql += " AND Year = %s"
+            params.append(year_filter)
+
+        # Pagination
+        sql += " LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
+
+        # Fetch records with filters and pagination
+        cursor.execute(sql, tuple(params))
+        reports = cursor.fetchall()
+
+        # Get the total count of filtered records for pagination
         cursor.execute("SELECT COUNT(*) FROM tblsolidwastesegregated WHERE Campus = %s", (campus,))
         total_records = cursor.fetchone()['COUNT(*)']
         total_pages = (total_records + per_page - 1) // per_page
 
-        # Fetch reports only for the logged-in user's campus with pagination
-        cursor.execute("SELECT * FROM tblsolidwastesegregated WHERE Campus = %s LIMIT %s OFFSET %s", (campus, per_page, offset))
-        reports = cursor.fetchall()
-
-        # Debugging: Print fetched reports to verify
-        print(f"Fetched Reports: {reports}")
-
     except mysql.connector.Error as e:
-        # Log and flash database errors
-        print(f"Database Error: {e}")
         flash(f"Database Error: {e}", "danger")
         reports = []
         total_pages = 0
@@ -1066,7 +1216,80 @@ def waste_segregation():
         cursor.close()
         conn.close()
 
-    return render_template('waste_segregation.html', reports=reports, current_page=page, total_pages=total_pages)
+    # Render template with reports and pagination information
+    return render_template(
+        'waste_segregation.html',
+        reports=reports,
+        current_page=page,
+        total_pages=total_pages,
+        selected_month=month_filter,
+        selected_quarter=quarter_filter,
+        selected_year=year_filter
+    )
+
+# Updated route with a unique function name
+@app.route('/delete_waste_record/<int:record_id>', methods=['DELETE'])
+def delete_waste_record_by_id(record_id):  # Changed function name to avoid conflicts
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        sql = "DELETE FROM tblsolidwastesegregated WHERE id = %s"
+        cursor.execute(sql, (record_id,))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            return jsonify({'success': False, 'message': 'Record not found.'}), 404
+        return jsonify({'success': True, 'message': 'Record deleted successfully.'})
+    except mysql.connector.Error as e:
+        return jsonify({'success': False, 'message': f'Database error: {e}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/waste_segregation/all', methods=['GET'])
+def get_waste_segregation_data_for_printing():
+    # Ensure user is logged in
+    if 'loggedIn' not in session:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    campus = session.get('campus')
+    if not campus:
+        return jsonify({"error": "No campus found in session"}), 400
+
+    # Retrieve filter parameters
+    month_filter = request.args.get('month', '')
+    quarter_filter = request.args.get('quarter', '')
+    year_filter = request.args.get('year', '')
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Base SQL query with filtering
+        sql = "SELECT * FROM tblsolidwastesegregated WHERE Campus = %s"
+        params = [campus]
+
+        if month_filter:
+            sql += " AND Month = %s"
+            params.append(month_filter)
+        if quarter_filter:
+            sql += " AND Quarter = %s"
+            params.append(quarter_filter)
+        if year_filter:
+            sql += " AND Year = %s"
+            params.append(year_filter)
+
+        cursor.execute(sql, params)
+        records = cursor.fetchall()
+
+        return jsonify(records)  # Return data as JSON for frontend
+
+    except mysql.connector.Error as e:
+        return jsonify({"error": str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 
@@ -1074,7 +1297,7 @@ def waste_segregation():
 @app.route('/waste_unsegregation', methods=['GET'])
 def waste_unsegregation():
     page = request.args.get('page', 1, type=int)  # Get the current page number, default to 1
-    per_page = 15  # Number of records per page
+    per_page = 20  # Number of records per page
     offset = (page - 1) * per_page  # Calculate the offset for SQL query
 
     # Get filters from query parameters (year and month)
@@ -1134,6 +1357,44 @@ def waste_unsegregation():
         selected_year=selected_year,
         selected_month=selected_month
     )
+
+    # Route to fetch all or filtered waste unsegregated data for printing
+@app.route('/waste_unsegregation/all', methods=['GET'])
+def get_waste_unsegregated_data_for_printing():
+    # Ensure user is logged in
+    if 'loggedIn' not in session:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    campus = session.get('campus')
+    selected_year = request.args.get('year')
+    selected_month = request.args.get('month')
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Base SQL query with filtering
+        sql = "SELECT * FROM tblsolidwasteunsegregated WHERE Campus = %s"
+        params = [campus]
+
+        if selected_year:
+            sql += " AND Year = %s"
+            params.append(selected_year)
+        if selected_month:
+            sql += " AND Month = %s"
+            params.append(selected_month)
+
+        cursor.execute(sql, params)
+        records = cursor.fetchall()
+
+        return jsonify(records)  # Return data as JSON for the front-end
+
+    except mysql.connector.Error as e:
+        return jsonify({"error": str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # Route for handling the addition of waste unsegregation data via POST request
 @app.route('/add_waste_unsegregated', methods=['POST'])

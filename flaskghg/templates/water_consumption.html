@@ -16,10 +16,11 @@
      }
      
      th, td {
-         padding: 4px; /* Smaller cell padding */
-         text-align: center; /* Center align text */
-         border: 1px solid #ddd; /* Add border */
-     }
+    padding: 4px; /* Smaller cell padding */
+    text-align: center; /* Center align text */
+    border: 1px solid #000000 !important; /* Force black border with !important */
+}
+
      
      th {
          background-color:  #d50000 !important; /* Background color */
@@ -348,9 +349,29 @@
 
                     <!-- Button to open the modal -->
                     <div id="WaterSection">
-                        <div class="mb-4">
+                        <div class="mb-4 text-center">
                             <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Water Consumption</button>
                         </div>
+                    </div>
+
+                        <!-- Year Filter -->
+                        <label for="yearFilter">Filter by Year:</label>
+                        <select id="yearFilter" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                        </select>
+                
+                        <!-- Category Filter -->
+                        <label for="categoryFilter">Filter by Category:</label>
+                        <select id="categoryFilter" onchange="applyFilters()">
+                            <option value="">All Categories</option>
+                            <option value="Mains">Mains</option>
+                            <option value="Deep Well">Deep Well</option>
+                            <option value="Drinking Water">Drinking Water</option>
+                        </select>
+
+                    <div class="buttons-container mt-3">
+                        <button style="background-color: #d50000; color: white; border: none;"onclick="printReport()">Print Report</button>
+                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
                     </div>
 
                     <!-- Modal for Calculation -->
@@ -416,29 +437,7 @@
                         </div>
                     </div>
 
-                   
-                        <div class="filter-container">
-                            <!-- Year Filter -->
-                            <label for="yearFilter">Filter by Year:</label>
-                            <select id="yearFilter" onchange="applyFilters()">
-                                <option value="">All Years</option>
-                            </select>
-                    
-                            <!-- Category Filter -->
-                            <label for="categoryFilter">Filter by Category:</label>
-                            <select id="categoryFilter" onchange="applyFilters()">
-                                <option value="">All Categories</option>
-                                <option value="Mains">Mains</option>
-                                <option value="Deep Well">Deep Well</option>
-                                <option value="Drinking Water">Drinking Water</option>
-                            </select>
-                        </div>
-
-                    <div class="buttons-container mt-3">
-                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-                    </div>
-
+            
                       <!-- Header for Water Consumption Report -->
                       <div class="header text-center mt-4">
                         <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
@@ -557,7 +556,7 @@ function generateReport() {
         
 
         let currentPage = 1;
-        const rowsPerPage = 15;
+        const rowsPerPage = 20;
 
         function renderTable() {
             const rows = document.querySelectorAll('.record');
@@ -657,55 +656,79 @@ function applyFilters() {
 }
 
 
-    // Function to print the water consumption report
 function printReport() {
-    const originalContents = document.body.innerHTML; // Save the original content
+    // Get the filter values
+    const year = document.getElementById('yearFilter').value;
+    const category = document.getElementById('categoryFilter').value;
 
-    // Create the print layout with the specific water consumption report headers
-    const tableHeader = `
-        <thead>
-            <tr>
-                <th style="border: 1px solid black;">Campus</th>
-                <th style="border: 1px solid black;">Category</th>
-                <th style="border: 1px solid black;">Date</th>
-                <th style="border: 1px solid black;">Previous Reading (m³)</th>
-                <th style="border: 1px solid black;">Current Reading (m³)</th>
-                <th style="border: 1px solid black;">Consumption (m³)</th>
-                <th style="border: 1px solid black;">Total Amount (₱)</th>
-                <th style="border: 1px solid black;">Price per m³ (₱)</th>
-                <th style="border: 1px solid black;">Factor (kg CO₂/m³)</th>
-                <th style="border: 1px solid black;">Factor (t CO₂/m³)</th>
-            </tr>
-        </thead>
-    `;
+    // Build query string based on filters
+    let queryString = '';
+    if (year) queryString += `year=${year}&`;
+    if (category) queryString += `category=${category}`;
 
-    // Get the table body from the existing table
-    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-        .map(row => {
-            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell if present
-            return `<tr>${cells.map(cell => `<td style="border: 1px solid black;">${cell.innerHTML}</td>`).join('')}</tr>`;
+    // Trim trailing "&" if present
+    const fetchUrl = queryString ? `/water_consumption/all?${queryString}` : `/water_consumption/all`;
+
+    // Fetch data for printing
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.length) {
+                alert("No data available to print for the selected filters.");
+                return;
+            }
+
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Previous Reading (m³)</th>
+                        <th>Current Reading (m³)</th>
+                        <th>Consumption (m³)</th>
+                        <th>Total Amount (₱)</th>
+                        <th>Price per m³ (₱)</th>
+                        <th>Factor (kg CO₂/m³)</th>
+                        <th>Factor (t CO₂/m³)</th>
+                    </tr>
+                </thead>`;
+
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.Category}</td>
+                    <td>${report.Date}</td>
+                    <td>${report.PreviousReading}</td>
+                    <td>${report.CurrentReading}</td>
+                    <td>${report.Consumption}</td>
+                    <td>${report.TotalAmount}</td>
+                    <td>${report.PricePerLiter}</td>
+                    <td>${report.FactorKGCO2e}</td>
+                    <td>${report.FactorTCO2e}</td>
+                </tr>
+            `).join('');
+
+            const printContents = `
+                <div class="header">
+                    <img src="${window.location.origin}/static/images/bsu.png" alt="BSU Logo" style="width: 50px; height: auto;">
+                    <h2>Water Consumption Report</h2>
+                    <img src="${window.location.origin}/static/images/csd.png" alt="CSD Logo" style="width: 50px; height: auto;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            // Temporarily replace the document body content for printing
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents; // Restore original content after printing
         })
-        .join('');
-
-    // Create the print layout including headers and data
-    const printContents = `
-        <div class="header">
-       <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-        <h2>Water Consumption Report</h2>
-        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
-          </div>
-        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
-            ${tableHeader}
-            <tbody>
-                ${tableBody}
-            </tbody>
-        </table>
-    `;
-
-    document.body.innerHTML = printContents; // Replace body content with table
-    window.print(); // Print the current window
-    document.body.innerHTML = originalContents; // Restore original content
+        .catch(error => console.error('Error fetching data:', error));
 }
+
 
 
         // Function to download the data as an Excel file

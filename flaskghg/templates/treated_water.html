@@ -371,7 +371,33 @@ button:last-child:hover {
                         </div>
                     </div>
 
+                    <div id="TreatedSection">
+                        <div class="mb-4 text-center">
                     <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        </div>
+                    </div>
+
+                    <label for="monthFilter">Month:</label>
+                        <select id="monthFilter" name="month" onchange="applyFilter()">
+                            <option value="">All Months</option>
+                            <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
+                            <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
+                            <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
+                            <option value="April" {% if selected_month == 'April' %}selected{% endif %}>April</option>
+                            <option value="May" {% if selected_month == 'May' %}selected{% endif %}>May</option>
+                            <option value="June" {% if selected_month == 'June' %}selected{% endif %}>June</option>
+                            <option value="July" {% if selected_month == 'July' %}selected{% endif %}>July</option>
+                            <option value="August" {% if selected_month == 'August' %}selected{% endif %}>August</option>
+                            <option value="September" {% if selected_month == 'September' %}selected{% endif %}>September</option>
+                            <option value="October" {% if selected_month == 'October' %}selected{% endif %}>October</option>
+                            <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
+                            <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
+                        </select>
+
+                    <div class="buttons-container mt-3">
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
+                    </div>
 
                     <div class="header text-center mt-4">
                         <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
@@ -509,6 +535,110 @@ button:last-child:hover {
     
    
     <script>
+
+        // Function to print the Treated Water report
+        function printReport() {
+    // Retrieve filter values
+    const month = document.getElementById('monthFilter').value;
+
+    // Build query string based on filters
+    let queryString = '';
+    if (month) queryString += `month=${month}`;
+
+    // Determine URL for fetching data based on the presence of filters
+    const fetchUrl = queryString ? `/treated_water/all?${queryString}` : `/treated_water/all`;
+
+    // Fetch data from the server
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Generate the table header
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Month</th>
+                        <th>Treated Water Volume (m³)</th>
+                        <th>Reused Treated Water Volume (m³)</th>
+                        <th>Effluent Volume (m³)</th>
+                        <th>Price per Liter</th>
+                        <th>Factor (kg CO₂-e/m³)</th>
+                        <th>Factor (t CO₂-e/m³)</th>
+                    </tr>
+                </thead>`;
+
+            // Generate table rows with fetched data
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.Month}</td>
+                    <td>${report.TreatedWaterVolume}</td>
+                    <td>${report.ReusedTreatedWaterVolume}</td>
+                    <td>${report.EffluentVolume}</td>
+                    <td>${report.PricePerLiter}</td>
+                    <td>${report.FactorKGCO2e}</td>
+                    <td>${report.FactorTCO2e}</td>
+                </tr>
+            `).join('');
+
+            // Prepare print layout
+            const printContents = `
+                <div class="header">
+                    <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" style="width: 50px; height: auto;">
+                    <h2>Treated Water Consumption Report</h2>
+                    <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" style="width: 50px; height: auto;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            // Print the content
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+
+// Function to download the Treated Water report data as an Excel file
+function downloadExcel() {
+    const table = document.querySelector('#reportTable');
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+
+    for (let row of rows) {
+        const cols = row.querySelectorAll('td, th');
+        const csvRow = [];
+        for (let col of cols) {
+            csvRow.push(col.innerText);
+        }
+        csv.push(csvRow.join(','));
+    }
+
+    const csvString = csv.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'treated_water_consumption_report.csv');
+    a.click();
+    URL.revokeObjectURL(url); // Clean up
+}
+
+       function applyFilter() {
+    const month = document.getElementById('monthFilter').value;
+    const url = new URL(window.location.href);
+    if (month) {
+        url.searchParams.set('month', month);
+    } else {
+        url.searchParams.delete('month');
+    }
+    window.location.href = url.toString();
+}
+
         function deleteRow(id) {
         if (confirm("Are you sure you want to delete this record?")) {
             fetch(`/delete_report/${id}`, {

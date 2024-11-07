@@ -474,18 +474,11 @@
 
                     <!-- Button to open the modal -->
                     <div id="WasteSection">
-                        <div class="mb-4">
+                        <div class="mb-4 text-center">
                             <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Waste Consumption</button>
                         </div>
                     </div>
-
-                    <div class="buttons-container mt-3">
-                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-                    </div>
-
-                   
-                    <div class="filter-container">
+        
                         <label for="yearFilter">Year:</label>
                         <select id="yearFilter" name="year" onchange="applyFilter()">
                             <option value="">All Years</option>
@@ -512,8 +505,11 @@
                             <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
                             <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
                         </select>
+
+                    <div class="buttons-container mt-3">
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
                     </div>
-                    
 
                     <div id="myModal" class="modal">
                         <div class="modal-content">
@@ -782,52 +778,73 @@ function calculateGHGEmissions() {
             }
         }
 
-// Function to print the solid waste unsegregated consumption report
-function printReport() {
-    const originalContents = document.body.innerHTML; // Save the original content
+        function printReport() {
+    // Get the filter values
+    const year = document.getElementById('yearFilter').value;
+    const month = document.getElementById('monthFilter').value;
 
-    // Get the table header (excluding the "Actions" column)
-    const tableHeader = `
-        <thead>
-            <tr>
-                <th style="border: 1px solid black;">Campus</th>
-                <th style="border: 1px solid black;">Year</th>
-                <th style="border: 1px solid black;">Month</th>
-                <th style="border: 1px solid black;">Waste Type</th>
-                <th style="border: 1px solid black;">Quantity (KG)</th>
-                <th style="border: 1px solid black;">Sent to Landfill (KG)</th>
-                <th style="border: 1px solid black;">Sent to Landfill (TONS)</th>
-                <th style="border: 1px solid black;">GHG Emission (KG CO₂e)</th>
-                <th style="border: 1px solid black;">GHG Emission (T CO₂e)</th>
-            </tr>
-        </thead>`;
+    // Build the query string based on filters
+    let queryString = '';
+    if (year) queryString += `year=${year}&`;
+    if (month) queryString += `month=${month}`;
 
-    // Get the table body without the "Actions" column
-    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-        .map(row => {
-            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
-            return `<tr>${cells.map(cell => `<td style="border: 1px solid black;">${cell.innerHTML}</td>`).join('')}</tr>`;
+    const fetchUrl = queryString ? `/waste_unsegregation/all?${queryString}` : `/waste_unsegregation/all`;
+
+    // Fetch data to print
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.length) {
+                alert("No data available to print for the selected filters.");
+                return;
+            }
+
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Waste Type</th>
+                        <th>Quantity (KG)</th>
+                        <th>Sent to Landfill (KG)</th>
+                        <th>Sent to Landfill (TONS)</th>
+                        <th>GHG Emission (KG CO₂e)</th>
+                        <th>GHG Emission (T CO₂e)</th>
+                    </tr>
+                </thead>`;
+
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.Year}</td>
+                    <td>${report.Month}</td>
+                    <td>${report.WasteType}</td>
+                    <td>${report.QuantityInKG}</td>
+                    <td>${report.SentToLandfillKG}</td>
+                    <td>${report.SentToLandfillTONS}</td>
+                    <td>${report.GHGEmissionKGCO2e}</td>
+                    <td>${report.GHGEmissionTCO2e}</td>
+                </tr>
+            `).join('');
+
+            const printContents = `
+                <div class="header">
+                    <img src="${window.location.origin}/static/images/bsu.png" alt="BSU Logo" style="width: 50px; height: auto;">
+                    <h2>Solid Waste Unsegregated Consumption Report</h2>
+                    <img src="${window.location.origin}/static/images/csd.png" alt="CSD Logo" style="width: 50px; height: auto;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents; // Restore the original content
         })
-        .join('');
-
-    // Create a print layout with borders added to the table
-    const printContents = `
-        <div class="header">
-            <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" style="width: 50px; height: auto;">
-            <h2>Solid Waste Unsegregated Consumption Report</h2>
-            <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" style="width: 50px; height: auto;">
-        </div>
-        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
-            ${tableHeader}
-            <tbody>
-                ${tableBody}
-            </tbody>
-        </table>
-    `;
-
-    document.body.innerHTML = printContents; // Replace body content with table
-    window.print(); // Print the current window
-    document.body.innerHTML = originalContents; // Restore original content
+        .catch(error => console.error('Error fetching data:', error));
 }
 
 function downloadExcel() {

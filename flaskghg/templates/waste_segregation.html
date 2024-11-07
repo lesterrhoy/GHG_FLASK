@@ -465,7 +465,11 @@
                         </div>
                     </div>
 
+                    <div id="WasteSection">
+                        <div class="mb-4 text-center">
                     <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        </div>
+                    </div>
 
                     <!-- Filter section -->
                     <div class="mb-4">
@@ -812,7 +816,7 @@
     
         // Pagination and filter functionality
         let currentPage = 1;
-        const rowsPerPage = 15;
+        const rowsPerPage = 20;
     
         function renderTable() {
             const rows = document.querySelectorAll('#reportData tr');
@@ -847,50 +851,71 @@
         }
     
         function applyFilter() {
-            const monthFilter = document.getElementById('monthFilter').value;
-            const quarterFilter = document.getElementById('quarterFilter').value;
-            const yearFilter = document.getElementById('yearFilter').value;
+    // Get the filter values
+    const month = document.getElementById('monthFilter').value;
+    const quarter = document.getElementById('quarterFilter').value;
+    const year = document.getElementById('yearFilter').value;
+
+    // Build the query string
+    let queryString = '';
+    if (month) queryString += `month=${month}&`;
+    if (quarter) queryString += `quarter=${quarter}&`;
+    if (year) queryString += `year=${year}`;
+
+    // Remove trailing "&" if any, and redirect to filtered page
+    queryString = queryString ? '?' + queryString.slice(0, -1) : '';
+    window.location.href = `/waste_segregation${queryString}`;
+}
+
     
-            // Build the query string with the selected filters
-            let query = '?';
-            if (monthFilter) {
-                query += `month=${monthFilter}&`;
-            }
-            if (quarterFilter) {
-                query += `quarter=${quarterFilter}&`;
-            }
-            if (yearFilter) {
-                query += `year=${yearFilter}&`;
-            }
-    
-            // Redirect to the same page with the selected filters as query parameters
-            window.location.href = `/waste_segregation${query}`;
+function deleteRow(id) {
+    if (!confirm("Are you sure you want to delete this record?")) return;
+
+    fetch(`/delete_waste_record/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
         }
-    
-        function deleteRow(id) {
-            fetch(`/delete_waste_record/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload(); // Reload the page after deletion
-                } else {
-                    alert("Error deleting record: " + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Delete error:', error);
-            });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Reload the page to update the table after deletion
+        } else {
+            alert("Error deleting record: " + data.message);
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("An error occurred while deleting the record.");
+    });
+}
+
     
-        // Function to print the report
         function printReport() {
-            const originalContents = document.body.innerHTML;
-    
+    // Get filter values
+    const month = document.getElementById('monthFilter').value;
+    const quarter = document.getElementById('quarterFilter').value;
+    const year = document.getElementById('yearFilter').value;
+
+    // Build query string based on active filters
+    let queryString = '';
+    if (month) queryString += `month=${month}&`;
+    if (quarter) queryString += `quarter=${quarter}&`;
+    if (year) queryString += `year=${year}`;
+
+    // Fetch URL based on query string
+    const fetchUrl = queryString ? `/waste_segregation/all?${queryString}` : `/waste_segregation/all`;
+
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.length) {
+                alert("No data available to print for the selected filters.");
+                return;
+            }
+
             const tableHeader = `
                 <thead>
                     <tr>
@@ -906,29 +931,43 @@
                     </tr>
                 </thead>`;
             
-            const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-                .map(row => {
-                    const cells = Array.from(row.querySelectorAll('td')).slice(0, -1);
-                    return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
-                })
-                .join('');
-    
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.Year}</td>
+                    <td>${report.Quarter}</td>
+                    <td>${report.Month}</td>
+                    <td>${report.MainCategory}</td>
+                    <td>${report.SubCategory}</td>
+                    <td>${report.QuantityInKG}</td>
+                    <td>${report.GHGEmissionKGCO2e}</td>
+                    <td>${report.GHGEmissionTCO2e}</td>
+                </tr>
+            `).join('');
+
             const printContents = `
                 <div class="header">
-                    <h2>WASTE SEGREGATION REPORT</h2>
+                    <img src="${window.location.origin}/static/images/bsu.png" alt="BSU Logo" style="width: 50px; height: auto;">
+                    <h2>Waste Segregated Consumption Report</h2>
+                    <img src="${window.location.origin}/static/images/csd.png" alt="CSD Logo" style="width: 50px; height: auto;">
                 </div>
                 <table border="1" cellspacing="0" cellpadding="5">
                     ${tableHeader}
-                    <tbody>
-                        ${tableBody}
-                    </tbody>
-                </table>
-            `;
-    
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            // Temporarily replace the document body with the print contents
+            const originalContents = document.body.innerHTML;
             document.body.innerHTML = printContents;
+
+            // Trigger print and restore original content
             window.print();
             document.body.innerHTML = originalContents;
-        }
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+
     
         // Function to download the data as an Excel file
         function downloadExcel() {
