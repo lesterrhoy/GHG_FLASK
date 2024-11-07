@@ -115,41 +115,7 @@
                         </div>
                     </div>
 
-                    <!-- Data Table for GHG Data -->
-                    <div class="row">
-                        <div class="col-xl-12">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-table me-1"></i>
-                                    GHG Data for {{ campus }}
-                                </div>
-                                <div class="card-body">
-                                    <table id="datatablesSimple" class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Campus</th>
-                                                <th>Emission Type</th>
-                                                <th>Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for record in ghg_data %}
-                                            <tr>
-                                                <td>{{ record['id'] }}</td>
-                                                <td>{{ record['campus'] }}</td>
-                                                <td>{{ record['emission_type'] }}</td>
-                                                <td>{{ record['emission_amount'] }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
+                    <br><br><br><br><br>    <br>
 
             <!-- Footer -->
             <footer class="py-4 bg-light mt-auto">
