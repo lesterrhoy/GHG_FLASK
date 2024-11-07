@@ -1,156 +1,35 @@
+<!-- sdo_dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDO Report</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
-    <style>
-        /* Layout and Sidenav Styling */
-        #layoutSidenav {
-            display: flex;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-    
-        #layoutSidenav_nav {
-            width: 250px;
-            background-color: #495057;
-        }
-    
-        #layoutSidenav_nav .nav-link {
-            color: #fff;
-            font-weight: 500;
-        }
-    
-        #layoutSidenav_nav .nav-link:hover {
-            color: #fff;
-            background-color: #495057;
-        }
-    
-        #layoutSidenav_content {
-            flex-grow: 1;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-    
-        /* Header Styling */
-        .header {
-            background-color: #495057;
-            color: #ffffff;
-            padding: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-    
-        .header h1 {
-            font-size: 1.5rem;
-            margin: 0;
-            color: #fff;
-        }
-    
-        .header img {
-            height: 80px;
-        }
-
-        /* Filter container styling */
-        .filter-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 10px;
-        }
-
-        /* Compact dropdown styling */
-        .filter-container select {
-            width: 150px; /* Smaller width for compact design */
-            padding: 5px;
-            font-size: 0.9rem;
-            border-radius: 4px;
-            margin-left: auto;
-        }
-
-        /* Table Styling */
-        .container {
-            margin-top: 20px;
-        }
-    
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-    
-        th {
-            background-color: #f2f2f2;
-            color: #000;
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-    
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-    
-        .footer {
-            text-align: center;
-            padding: 10px;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-    
-        @media print {
-            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
-                display: none !important;
-            }
-            body, .container, .header, .card, .card-header, .card-body, table {
-                background-color: white !important;
-                color: black !important;
-                box-shadow: none !important;
-            }
-        }
-    
-        /* Button styling */
-        .btn {
-            width: 100px;
-            padding: 5px 10px;
-            font-size: 12px;
-            border-radius: 4px;
-        }
-    
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: white;
-        }
-    
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: white;
-        }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>SDO Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
-<body>
-    <!-- Header Section -->
-    <div class="header">
-        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1">
-        <h1>EMU Consumption Report</h1>
-        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2">
-    </div>
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="#">SDO <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <ul class="navbar-nav ms-auto me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-power-off fa-fw"></i> Sign-out
+                        </a>
+                </ul>
+            </li>
+        </ul>
+    </nav>
 
-    <!-- Sidebar and Main Content Layout -->
     <div id="layoutSidenav">
-        <!-- Sidebar Navigation -->
         <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
                         <a class="nav-link" href="{{ url_for('sdo_dashboard') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
@@ -159,885 +38,271 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
                             Manage Account
                         </a>
-                        <a class="nav-link" href="{{ url_for('sdo_report') }}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
-                            Report
+                        <div class="sb-sidenav-menu-heading">REPORT</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            REPORT
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('sdo_report') }}">Consumption Report</a>
+                            </nav>
+                        </div>
                     </div>
                 </div>
             </nav>
         </div>
 
-        <!-- Main Content Area -->
-        <div class="container my-4">
-            <!-- Office Selection Form -->
-            <form class="mb-3">
-                <div class="form-group">
-                    <label for="office">Select Office:</label>
-                    <select id="office" class="form-control" onchange="showConsumptionTables()">
-                        <option value="">-- Select an Office --</option>
-                        <option value="All Offices">All Offices</option>
-                        <option value="Environmental Management Office">Environmental Management Office</option>
-                        <option value="Procurement Office">Procurement Office</option>
-                        <option value="External Affairs">External Affairs</option>
-                    </select>
-                </div>
-            </form>
-        
-    <!-- Filters for Month and Year -->
-    <div class="filter-container">
-        <label for="monthFilter">Month: </label>
-        <select id="monthFilter">
-            <option value="">--Select--</option>
-            <option value="January">January</option>
-            <option value="February">February</option>
-            <option value="March">March</option>
-            <option value="April">April</option>
-            <option value="May">May</option>
-            <option value="June">June</option>
-            <option value="July">July</option>
-            <option value="August">August</option>
-            <option value="September">September</option>
-            <option value="October">October</option>
-            <option value="November">November</option>
-            <option value="December">December</option>
-        </select>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">SDO Dashboard</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item active">Consumption Trends</li>
+                    </ol>
 
-        <label for="yearFilter">Year: </label>
-        <select id="yearFilter">
-            <option value="">--Select--</option>
-            <option value="2021">2021</option>
-            <option value="2022">2022</option>
-            <option value="2023">2023</option>
-            <option value="2024">2024</option>
-        </select>
+                    <!-- Charts for Each Consumption -->
+                    <div class="row">
+                        <!-- Electricity Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-bolt me-1"></i>
+                                    Electricity Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="electricityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-    
-    </div>
-            
-            
-            <!-- Electricity Consumption Table -->
-            <div id="electricityTable">
-                <h3>Electricity Consumption</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Category</th>
-                            <th>Month</th>
-                            <th>Quarter</th>
-                            <th>Year</th>
-                            <th>Consumption</th>
-                            <th>Price Per KWH</th>
-                            <th>KG CO2 per KWH</th>
-                            <th>T CO2 per KWH</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in electricity_data %}
-                        <tr>
-                            <td>{{ row.campus }}</td>
-                            <td>{{ row.category }}</td>
-                            <td>{{ row.month }}</td>
-                            <td>{{ row.quarter }}</td>
-                            <td>{{ row.year }}</td>
-                            <td>{{ row.consumption }}</td>
-                            <td>{{ row.price_per_kwh }}</td>
-                            <td>{{ row.kg_co2_per_kwh }}</td>
-                            <td>{{ row.t_co2_per_kwh }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="electricityPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Fuel Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-gas-pump me-1"></i>
+                                    Fuel Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="fuelChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Water Consumption Table -->
-            <div id="waterTable">
-                <h3>Water Consumption</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Category</th>
-                            <th>Date</th>
-                            <th>Previous Reading (m³)</th>
-                            <th>Current Reading (m³)</th>
-                            <th>Consumption (m³)</th>
-                            <th>Total Amount (₱)</th>
-                            <th>Price per m³ (₱)</th>
-                            <th>Factor (kg CO2/m³)</th>
-                            <th>Factor (t CO2/m³)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in water_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.Category }}</td>
-                            <td>{{ row.Date }}</td>
-                            <td>{{ row.PreviousReading }}</td>
-                            <td>{{ row.CurrentReading }}</td>
-                            <td>{{ row.Consumption }}</td>
-                            <td>{{ row.TotalAmount }}</td>
-                            <td>{{ row.PricePerLiter }}</td>
-                            <td>{{ row.FactorKGCO2e }}</td>
-                            <td>{{ row.FactorTCO2e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="waterPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Waste Segregated Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-recycle me-1"></i>
+                                    Waste Segregated Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="wasteSegregatedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Segregated Solid Waste Table -->
-            <div id="segWasteTable">
-                <h3>Segregated Solid Waste</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Year</th>
-                            <th>Quarter</th>
-                            <th>Month</th>
-                            <th>Main Category</th>
-                            <th>Subcategory</th>
-                            <th>Quantity (kg)</th>
-                            <th>GHG Emission (kg CO₂-e)</th>
-                            <th>GHG Emission (t CO₂-e)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in seg_waste_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.Year }}</td>
-                            <td>{{ row.Quarter }}</td>
-                            <td>{{ row.Month }}</td>
-                            <td>{{ row.MainCategory }}</td>
-                            <td>{{ row.SubCategory }}</td>
-                            <td>{{ row.QuantityInKG }}</td>
-                            <td>{{ row.GHGEmissionKGCO2e }}</td>
-                            <td>{{ row.GHGEmissionTCO2e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="segWastePageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Waste Unsegregated Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-trash-alt me-1"></i>
+                                    Waste Unsegregated Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="wasteUnsegregatedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Unsegregated Solid Waste Table -->
-            <div id="unsegWasteTable">
-                <h3>Unsegregated Solid Waste</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Year</th>
-                            <th>Month</th>
-                            <th>Waste Type</th>
-                            <th>Quantity (kg)</th>
-                            <th>Sent to Landfill (kg)</th>
-                            <th>Sent to Landfill (tons)</th>
-                            <th>GHG Emission (kg CO₂-e)</th>
-                            <th>GHG Emission (t CO₂-e)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in unseg_waste_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.Year }}</td>
-                            <td>{{ row.Month }}</td>
-                            <td>{{ row.WasteType }}</td>
-                            <td>{{ row.QuantityInKG }}</td>
-                            <td>{{ row.SentToLandfillKG }}</td>
-                            <td>{{ row.SentToLandfillTONS }}</td>
-                            <td>{{ row.GHGEmissionKGCO2e }}</td>
-                            <td>{{ row.GHGEmissionTCO2e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="unsegWastePageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Treated Water Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-water me-1"></i>
+                                    Treated Water Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="treatedWaterChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Treated Water Table -->
-            <div id="treatedWaterTable">
-                <h3>Treated Water</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Month</th>
-                            <th>Treated Water Volume (m³)</th>
-                            <th>Reused Treated Water Volume (m³)</th>
-                            <th>Effluent Volume (m³)</th>
-                            <th>Price per Liter</th>
-                            <th>Factor (kg CO₂-e/m³)</th>
-                            <th>Factor (t CO₂-e/m³)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in treated_water_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.Month }}</td>
-                            <td>{{ row.TreatedWaterVolume }}</td>
-                            <td>{{ row.ReusedTreatedWaterVolume }}</td>
-                            <td>{{ row.EffluentVolume }}</td>
-                            <td>{{ row.PricePerLiter }}</td>
-                            <td>{{ row.FactorKGCO2e }}</td>
-                            <td>{{ row.FactorTCO2e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="treatedWaterPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Water Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-tint me-1"></i>
+                                    Water Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="waterChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- LPG Consumption Table -->
-            <div id="lpgTable">
-                <h3>LPG Consumption</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Year</th>
-                            <th>Month</th>
-                            <th>Office</th>
-                            <th>Concessionaries Type</th>
-                            <th>Tank Quantity</th>
-                            <th>Tank Weight</th>
-                            <th>Tank Volume</th>
-                            <th>Total Tank Volume</th>
-                            <th>GHG Emission (kg CO₂-e)</th>
-                            <th>GHG Emission (t CO₂-e)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in lpg_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.YearTransact }}</td>
-                            <td>{{ row.Month }}</td>
-                            <td>{{ row.Office }}</td>
-                            <td>{{ row.ConcessionariesType }}</td>
-                            <td>{{ row.TankQuantity }}</td>
-                            <td>{{ row.TankWeight }}</td>
-                            <td>{{ row.TankVolume }}</td>
-                            <td>{{ row.TotalTankVolume }}</td>
-                            <td>{{ row.GHGEmissionKGCO2e }}</td>
-                            <td>{{ row.GHGEmissionTCO2e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="lpgPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- LPG Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-gas-pump me-1"></i>
+                                    LPG Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="lpgChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Fuel Emissions Table -->
-            <div id="fuelEmissionsTable">
-                <h3>Fuel Emissions</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Date</th>
-                            <th>Driver</th>
-                            <th>Type</th>
-                            <th>Vehicle Type</th>
-                            <th>Plate Number</th>
-                            <th>Category</th>
-                            <th>Fuel Type</th>
-                            <th>Quantity (Liters)</th>
-                            <th>Total Amount</th>
-                            <th>CO₂ Emission (kg)</th>
-                            <th>NH₄ Emission (kg CO₂-e)</th>
-                            <th>N₂O Emission (kg CO₂-e)</th>
-                            <th>Total Emission (kg CO₂-e)</th>
-                            <th>Total Emission (t CO₂-e)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in fuel_data %}
-                        <tr>
-                            <td>{{ row.campus }}</td>
-                            <td>{{ row.date }}</td>
-                            <td>{{ row.driver }}</td>
-                            <td>{{ row.type }}</td>
-                            <td>{{ row.vehicle_equipment }}</td>
-                            <td>{{ row.plate_no }}</td>
-                            <td>{{ row.category }}</td>
-                            <td>{{ row.fuel_type }}</td>
-                            <td>{{ row.quantity_liters }}</td>
-                            <td>{{ row.total_amount }}</td>
-                            <td>{{ row.co2_emission }}</td>
-                            <td>{{ row.nh4_emission }}</td>
-                            <td>{{ row.n2o_emission }}</td>
-                            <td>{{ row.total_emission }}</td>
-                            <td>{{ row.total_emission_t }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="fuelEmissionsPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Food Waste Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-utensils me-1"></i>
+                                    Food Waste Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="foodWasteChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Food Consumption Table -->
-            <div id="foodWasteTable">
-                <h3>Food Consumption</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Year</th>
-                            <th>Month</th>
-                            <th>Office</th>
-                            <th>Type Of Food Served</th>
-                            <th>Quantity Of Serving</th>
-                            <th>GHG Emission (kg CO₂-e)</th>
-                            <th>GHG Emission (t CO₂-e)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in food_waste_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.YearTransaction }}</td>
-                            <td>{{ row.Month }}</td>
-                            <td>{{ row.Office }}</td>
-                            <td>{{ row.TypeOfFoodServed }}</td>
-                            <td>{{ row.QuantityOfServing }}</td>
-                            <td>{{ row.GHGEmissionKGCO2e }}</td>
-                            <td>{{ row.GHGEmissionTCO2e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="foodWastePageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
+                        <!-- Accommodation Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-hotel me-1"></i>
+                                    Accommodation Emissions Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="accommodationChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Flight Emissions Table -->
-            <div id="flightTable">
-                <h3>Flight Emissions</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Office</th>
-                            <th>Year</th>
-                            <th>Traveller</th>
-                            <th>Purpose</th>
-                            <th>Travel Date</th>
-                            <th>Flight Type</th>
-                            <th>Origin</th>
-                            <th>Destination</th>
-                            <th>Class</th>
-                            <th>One Way/Round Trip</th>
-                            <th>kg CO₂e</th>
-                            <th>t CO₂e</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in flight_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.Office }}</td>
-                            <td>{{ row.Year }}</td>
-                            <td>{{ row.TravellerName }}</td>
-                            <td>{{ row.TravelPurpose }}</td>
-                            <td>{{ row.TravelDate }}</td>
-                            <td>{{ row.DomesticInternational }}</td>
-                            <td>{{ row.Origin }}</td>
-                            <td>{{ row.Destination }}</td>
-                            <td>{{ row.Class }}</td>
-                            <td>{{ row.OnewayRoundTrip }}</td>
-                            <td>{{ row.GHGEmissionKGC02e }}</td>
-                            <td>{{ row.GHGEmissionTC02e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="flightPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
-
-            <!-- Accommodation Emissions Table -->
-            <div id="accommodationTable">
-                <h3>Accommodation Emissions</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Campus</th>
-                            <th>Office</th>
-                            <th>Year</th>
-                            <th>Traveller</th>
-                            <th>Event Name</th>
-                            <th>Travel Date From</th>
-                            <th>Travel Date To</th>
-                            <th>Country</th>
-                            <th>Local/International</th>
-                            <th>Occupied Rooms</th>
-                            <th>Nights per Room</th>
-                            <th>kg CO₂e</th>
-                            <th>t CO₂e</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in accommodation_data %}
-                        <tr>
-                            <td>{{ row.Campus }}</td>
-                            <td>{{ row.Office }}</td>
-                            <td>{{ row.YearTransact }}</td>
-                            <td>{{ row.TravellerName }}</td>
-                            <td>{{ row.TravelPurpose }}</td>
-                            <td>{{ row.TravelDateFrom }}</td>
-                            <td>{{ row.TravelDateTo }}</td>
-                            <td>{{ row.Country }}</td>
-                            <td>{{ row.TravelType }}</td>
-                            <td>{{ row.NumOccupiedRoom }}</td>
-                            <td>{{ row.NumNightPerRoom }}</td>
-                            <td>{{ row.GHGEmissionKGC02e }}</td>
-                            <td>{{ row.GHGEmissionTC02e }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div class="pagination-container">
-                    <button class="page-btn prevBtn">Previous</button>
-                    <span id="accommodationPageInfo">Page 1 of 1</span>
-                    <button class="page-btn nextBtn">Next</button>
-                </div>
-            </div>
-<br>
-            <!-- Save As Button and Modal for Export Options -->
-           <!-- Save As Button and Modal for Export Options -->
-<!-- Save As Button and Modal for Export Options -->
-<button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
-<div class="modal fade" id="exportOptionsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Export Options</h5>
-                <button type="button" class="close" data-dismiss="modal">×</button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="form-group">
-                        <label for="tableSelect">Select Table:</label>
-                        <select id="tableSelect" class="form-control">
-                            <option value="electricityTable">Electricity</option>
-                            <option value="waterTable">Water</option>
-                            <option value="segWasteTable">Segregated Solid Waste</option>
-                            <option value="unsegWasteTable">Unsegregated Solid Waste</option>
-                            <option value="treatedWaterTable">Treated Water</option>
-                            <option value="lpgTable">LPG Consumption</option>
-                            <option value="fuelEmissionsTable">Fuel Emissions</option>
-                            <option value="foodWasteTable">Food Consumption</option>
-                            <option value="flightTable">Flight Emissions</option>
-                            <option value="accommodationTable">Accommodation Emissions</option>
-                        </select>
+                        <!-- Flight Emissions Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-plane me-1"></i>
+                                    Flight Emissions Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="flightChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="exportFormat">Format:</label>
-                        <select id="exportFormat" class="form-control">
-                            <option value="pdf">PDF</option>
-                            <option value="excel">Excel</option>
-                        </select>
+                </div>
+            </main>
+
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="dataSelection">Select Data:</label>
-                        <select id="dataSelection" class="form-control">
-                            <option value="all">All Data</option>
-                            <option value="filtered">Filtered Data</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="generatePDF()">Export PDF</button>
-                <button type="button" class="btn btn-success" onclick="generateExcel()">Export Excel</button>
-            </div>
+                </div>
+            </footer>
         </div>
     </div>
-</div>
 
-
-
-<!-- Scripts for Showing Tables and Pagination -->
-<script>
-    function exportData() {
-        const tableSelect = document.getElementById('tableSelect').value;
-        const exportFormat = document.getElementById('exportFormat').value;
-    
-        if (tableSelect === 'allData') {
-            // Logic to export all data, for example, call the exportAll function
-            if (exportFormat === 'pdf') {
-                generateAllPDF(); // Implement this function for exporting all data as PDF
-            } else {
-                generateAllExcel(); // Implement this function for exporting all data as Excel
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Helper function to get month names
+        function getMonthNames(startMonthIndex, totalMonths) {
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            let labels = [];
+            for (let i = 0; i < totalMonths; i++) {
+                let month = monthNames[(startMonthIndex + i) % 12];
+                if (i >= 12) {  // Mark future trend months
+                    month += " (Future)";
+                }
+                labels.push(month);
             }
-        } else if (tableSelect === 'filteredData') {
-            // Logic to export only filtered data, for example, call the exportFiltered function
-            if (exportFormat === 'pdf') {
-                generateFilteredPDF(); // Implement this function for exporting filtered data as PDF
-            } else {
-                generateFilteredExcel(); // Implement this function for exporting filtered data as Excel
-            }
-        } else {
-            // Logic to export specific table data
-            if (exportFormat === 'pdf') {
-                generatePDF(tableSelect); // Modify the generatePDF function to accept tableId
-            } else {
-                generateExcel(tableSelect); // Modify the generateExcel function to accept tableId
-            }
+            return labels;
         }
-    }
     
+        // Get the current month index and generate labels for 12 months plus 2 future months
+        const currentMonthIndex = new Date().getMonth();
+        const labels = getMonthNames(currentMonthIndex, 14);
     
-    document.addEventListener('DOMContentLoaded', () => {
-        const yearFilter = document.getElementById('yearFilter');
-        const monthFilter = document.getElementById('monthFilter');
+        // Forecast data passed from server
+        const forecastData = {{ forecast_data | tojson }};
     
-        // Add event listeners for the filters
-        yearFilter.addEventListener('change', filterTables);
-        monthFilter.addEventListener('change', filterTables);
+        // Helper function to create a line chart with connected historical and forecasted data
+        function createForecastChart(chartId, label, data) {
+            const ctx = document.getElementById(chartId).getContext('2d');
     
-        function filterTables() {
-            const selectedYear = yearFilter.value;
-            const selectedMonth = monthFilter.value.toLowerCase();
+            // Separate historical and forecast data
+            const historicalData = data.slice(0, 12); // First 12 points for historical data
+            const forecastData = data.slice(12);      // Last 2 points for forecasted data
     
-            const tables = {
-                electricityTable: { yearIndex: 4, monthIndex: 2 },
-                waterTable: { yearIndex: 0, monthIndex: 2 }, // Assuming water data uses date instead of quarter
-                segWasteTable: { yearIndex: 1, monthIndex: 3 },
-                unsegWasteTable: { yearIndex: 1, monthIndex: 2 },
-                treatedWaterTable: { yearIndex: null, monthIndex: 1 }, // Only has month
-                lpgTable: { yearIndex: 1, monthIndex: 2 },
-                fuelEmissionsTable: { yearIndex: null, monthIndex: 1 }, // Assuming date instead of quarter
-                foodWasteTable: { yearIndex: 1, monthIndex: 2 },
-                flightTable: { yearIndex: 2, monthIndex: null }, // No month
-                accommodationTable: { yearIndex: 2, monthIndex: null } // No month
-            };
+            // Combine historical and forecast data into a single dataset for continuous line
+            const combinedData = [...historicalData, ...forecastData];
     
-            for (const [tableId, columns] of Object.entries(tables)) {
-                const table = document.getElementById(tableId);
-                const rows = table.querySelectorAll('tbody tr');
-                let showTable = false;
-    
-                rows.forEach(row => {
-                    const yearCell = columns.yearIndex !== null ? row.querySelector(`td:nth-child(${columns.yearIndex + 1})`) : null;
-                    const monthCell = columns.monthIndex !== null ? row.querySelector(`td:nth-child(${columns.monthIndex + 1})`) : null;
-    
-                    const rowYear = yearCell ? yearCell.textContent.trim() : '';
-                    const rowMonth = monthCell ? monthCell.textContent.trim().toLowerCase() : '';
-    
-                    const yearMatch = selectedYear === '' || rowYear === selectedYear;
-                    const monthMatch = selectedMonth === '' || rowMonth.includes(selectedMonth);
-    
-                    if (yearMatch && monthMatch) {
-                        row.style.display = ''; // Show the row
-                        showTable = true; // Indicate that the table should be shown
-                    } else {
-                        row.style.display = 'none'; // Hide the row
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `${label} (Historical + Forecast)`,
+                            data: combinedData,
+                            borderColor: 'blue',
+                            fill: false,
+                            pointBackgroundColor: (ctx) => ctx.dataIndex < 12 ? 'blue' : 'red', // Blue for historical, red for forecast points
+                            borderWidth: 2
+                        },
+                        {
+                            label: `${label} (Forecast)`,
+                            data: [...Array(12).fill(null), ...forecastData], // Offset forecast data to start after historical data
+                            borderColor: 'red',
+                            fill: false,
+                            borderDash: [5, 5],  // Dashed line for forecast
+                            pointBackgroundColor: 'red',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Month' } },
+                        y: { title: { display: true, text: 'Consumption/Emissions' } }
                     }
-                });
-    
-                // Hide the table if no rows are visible
-                table.style.display = showTable ? '' : 'none';
-            }
-        }
-    });
-    
-    
-    // Function to show or hide tables based on the selected office
-    function showConsumptionTables() {
-        const selectedOffice = document.getElementById('office').value;
-
-        // List of all table IDs
-        const tables = [
-            'electricityTable',
-            'waterTable',
-            'treatedWaterTable',
-            'segWasteTable',
-            'unsegWasteTable',
-            'lpgTable',
-            'fuelEmissionsTable',
-            'foodWasteTable',
-            'flightTable',
-            'accommodationTable'
-        ];
-
-        // Hide all tables initially
-        tables.forEach((tableId) => {
-            const table = document.getElementById(tableId);
-            if (table) {
-                table.style.display = 'none';
-            }
-        });
-
-        // Show tables based on the selected office
-        if (selectedOffice === "All Offices") {
-            tables.forEach((tableId) => {
-                const table = document.getElementById(tableId);
-                if (table) {
-                    table.style.display = ''; // Show the table
-                }
-            });
-        } else if (selectedOffice === "Environmental Management Office") {
-            const tableIdsToShow = [
-                'electricityTable',
-                'waterTable',
-                'treatedWaterTable',
-                'segWasteTable',
-                'unsegWasteTable',
-                'fuelEmissionsTable'
-            ];
-            tableIdsToShow.forEach((tableId) => {
-                const table = document.getElementById(tableId);
-                if (table) {
-                    table.style.display = ''; // Show the table
-                }
-            });
-        } else if (selectedOffice === "Procurement Office") {
-            const tableIdsToShow = ['lpgTable', 'foodWasteTable'];
-            tableIdsToShow.forEach((tableId) => {
-                const table = document.getElementById(tableId);
-                if (table) {
-                    table.style.display = ''; // Show the table
-                }
-            });
-        } else if (selectedOffice === "External Affairs") {
-            const tableIdsToShow = ['flightTable', 'accommodationTable'];
-            tableIdsToShow.forEach((tableId) => {
-                const table = document.getElementById(tableId);
-                if (table) {
-                    table.style.display = ''; // Show the table
                 }
             });
         }
-    }
+    
+        // Generate charts for each category
+        createForecastChart('electricityChart', 'Electricity Consumption', forecastData.electricity_forecast);
+        createForecastChart('fuelChart', 'Fuel Consumption', forecastData.fuel_forecast);
+        createForecastChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast);
+        createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast);
+        createForecastChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast);
+        createForecastChart('waterChart', 'Water Consumption', forecastData.water_forecast);
+        createForecastChart('lpgChart', 'LPG Consumption', forecastData.lpg_forecast);
+        createForecastChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast);
+        createForecastChart('accommodationChart', 'Accommodation Emissions', forecastData.accommodation_forecast);
+        createForecastChart('flightChart', 'Flight Emissions', forecastData.flight_forecast);
+    </script>
+    
+    
 
-    // Function to handle pagination for tables
-    function paginateTable(tableId, pageInfoId) {
-        const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-        const rowsPerPage = 15; // Set the number of rows per page to 15
-        let currentPage = 1;
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-        // Function to update the table rows visibility based on the current page
-        function updatePagination() {
-            rows.forEach((row, index) => {
-                row.style.display = (index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage) ? '' : 'none';
-            });
-            document.getElementById(pageInfoId).textContent = `Page ${currentPage} of ${totalPages}`;
-        }
-
-        // Event listeners for Previous and Next buttons
-        document.querySelector(`#${tableId} .prevBtn`).onclick = () => {
-            if (currentPage > 1) currentPage--;
-            updatePagination();
-        };
-        document.querySelector(`#${tableId} .nextBtn`).onclick = () => {
-            if (currentPage < totalPages) currentPage++;
-            updatePagination();
-        };
-
-        updatePagination();
-    }
-
-    // Initialize Pagination for Tables
-    document.addEventListener('DOMContentLoaded', () => {
-        paginateTable('electricityTable', 'electricityPageInfo');
-        paginateTable('waterTable', 'waterPageInfo');
-        paginateTable('segWasteTable', 'segWastePageInfo');
-        paginateTable('unsegWasteTable', 'unsegWastePageInfo');
-        paginateTable('treatedWaterTable', 'treatedWaterPageInfo');
-        paginateTable('lpgTable', 'lpgPageInfo');
-        paginateTable('fuelEmissionsTable', 'fuelEmissionsPageInfo');
-        paginateTable('foodWasteTable', 'foodWastePageInfo');
-        paginateTable('flightTable', 'flightPageInfo');
-        paginateTable('accommodationTable', 'accommodationPageInfo');
-    });
-
-//// Function to generate and download the PDF with the adjusted header layout
-function generatePDF() {
-    const tableId = document.getElementById('tableSelect').value;
-    const dataType = document.getElementById('dataSelection').value; // Get selected data type
-    const tableElement = document.getElementById(tableId);
-
-    if (!tableElement) {
-        alert('Please select a valid table.');
-        return;
-    }
-
-    // Hide pagination controls before generating the PDF
-    const paginationControls = document.querySelectorAll('.pagination-container');
-    paginationControls.forEach(control => control.style.display = 'none');
-
-    // Create a container for the PDF content
-    const pdfContainer = document.createElement('div');
-    pdfContainer.style.padding = '20px';
-    pdfContainer.style.fontFamily = 'Arial, sans-serif';
-    pdfContainer.style.color = '#333';
-
-    // Add a custom header to the PDF with logos and adjusted date
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.alignItems = 'center';
-    header.style.justifyContent = 'space-between';
-    header.style.marginBottom = '10px';
-
-    // Logo 1
-    const logo1 = document.createElement('img');
-    logo1.src = "{{ url_for('static', filename='images/bsu.png') }}";
-    logo1.alt = "Logo 1";
-    logo1.style.height = '60px';
-    header.appendChild(logo1);
-
-    // Title and Date Container
-    const titleContainer = document.createElement('div');
-    titleContainer.style.textAlign = 'center';
-    titleContainer.innerHTML = `
-        <h1 style="font-size: 20px; color: #2b7a78; margin: 0;">Consumption Report</h1>
-        <p style="font-size: 12px; color: #555; margin-top: 5px;">Generated on ${new Date().toLocaleDateString()}</p>
-    `;
-    header.appendChild(titleContainer);
-
-    // Logo 2
-    const logo2 = document.createElement('img');
-    logo2.src = "{{ url_for('static', filename='images/csd.png') }}";
-    logo2.alt = "Logo 2";
-    logo2.style.height = '60px';
-    header.appendChild(logo2);
-
-    pdfContainer.appendChild(header);
-
-    // Collect rows based on selected data type
-    const rows = dataType === 'filtered'
-        ? Array.from(tableElement.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none')
-        : Array.from(tableElement.querySelectorAll('tbody tr'));
-
-    // Clone the table element and apply simple styles
-    const styledTable = tableElement.cloneNode(true);
-    styledTable.style.width = '100%';
-    styledTable.style.borderCollapse = 'collapse';
-    styledTable.querySelectorAll('th, td').forEach(cell => {
-        cell.style.padding = '8px';
-        cell.style.border = '1px solid #ddd';
-        cell.style.fontSize = '10px';
-    });
-
-    // Append rows to the styled table based on the selection
-    const tbody = styledTable.querySelector('tbody');
-    tbody.innerHTML = ''; // Clear existing rows
-    rows.forEach(row => {
-        tbody.appendChild(row.cloneNode(true)); // Clone and add only the relevant rows
-    });
-
-    pdfContainer.appendChild(styledTable);
-
-    // Footer for the PDF
-    const footer = document.createElement('div');
-    footer.style.textAlign = 'center';
-    footer.style.marginTop = '20px';
-    footer.style.fontSize = '10px';
-    footer.style.color = '#777';
-    footer.innerHTML = `
-        <hr style="border: 1px solid #ddd;">
-        <p>© 2024 Consumption Report. All Rights Reserved.</p>
-    `;
-    pdfContainer.appendChild(footer);
-
-    // Configure PDF generation options
-    const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `${tableId}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // Use html2pdf to generate and download the PDF
-    html2pdf().set(opt).from(pdfContainer).save().then(() => {
-        // Restore the display of pagination controls after PDF generation
-        paginationControls.forEach(control => control.style.display = '');
-    });
-}
-
-// Function to generate and download the Excel file as CSV
-function generateExcel() {
-    const tableId = document.getElementById('tableSelect').value;
-    const dataType = document.getElementById('dataSelection').value; // Get selected data type
-    const tableElement = document.getElementById(tableId);
-
-    if (!tableElement) {
-        alert('Please select a valid table.');
-        return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    const rows = dataType === 'filtered'
-        ? Array.from(tableElement.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none')
-        : Array.from(tableElement.querySelectorAll('tbody tr'));
-
-    rows.forEach(row => {
-        const cols = row.querySelectorAll("td, th");
-        const csvRow = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
-        csvContent += csvRow + "\r\n";
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${tableId}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-</script>
-
-<!-- Include Bootstrap JS and jQuery -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
-</body>
 </html>
