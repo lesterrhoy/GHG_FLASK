@@ -377,22 +377,25 @@ button.btn-danger:hover {
     background-color: #b71c1c;
 }
 
-.pagination {
-    margin-top: 10px;
-    text-align: center;
-}
-
-.pagination button {
-    padding: 5px 8px;
-    margin: 2px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.pagination .page-info {
-    margin: 0 10px;
-    font-size: 14px;
-}
+.pagination-container {
+         margin-top: 20px; /* Add some margin above the pagination */
+         text-align: center;
+     }
+     
+     .pagination .page-item .page-link {
+         color: black; /* Set font color to black */
+     }
+     
+     .pagination .page-item.active .page-link {
+         background-color: #d50000; /* Active page with the same red color */
+         border-color: #d50000;
+         color: white; /* White text for the active page */
+     }
+     
+     .pagination .page-link:hover {
+         background-color: #b71c1c; /* Darker red on hover */
+         color: white; /* White text on hover */
+     }
 
 .delete-icon {
     cursor: pointer;
@@ -467,11 +470,13 @@ button.btn-danger:hover {
                     </div>
 
 
-
-                    <div class="buttons-container mt-3 text-center">
+                    <div class="buttons-container mt-3 d-flex justify-content-start align-items-center gap-2">
+                        <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
                         <button class="btn btn-primary" onclick="printReport()">Print Report</button>
                         <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
+                       
                     </div>
+                    
                     
 
                     <div class="mb-4">
@@ -511,11 +516,7 @@ button.btn-danger:hover {
                         </select>
                     </div>
 
-                    <div id="ElecSection">
-                        <div class="mb-4 text-center">
-                            <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
-                        </div>
-                    </div>
+                 
 
                     <!-- Modal for Calculation -->
                     <div class="modal" id="myModal" style="display: none;">
@@ -673,26 +674,28 @@ button.btn-danger:hover {
                     
                         
 
-                    <!-- Pagination controls -->
-                    <div class="pagination-container">
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination justify-content-center">
-                                {% if total_pages > 1 %}
-                                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                                        <a class="page-link" href="{{ url_for('electricity_consumption', page=current_page - 1) }}" tabindex="-1">Previous</a>
-                                    </li>
-                                    {% for i in range(1, total_pages + 1) %}
-                                        <li class="page-item {% if i == current_page %}active{% endif %}">
-                                            <a class="page-link" href="{{ url_for('electricity_consumption', page=i) }}">{{ i }}</a>
-                                        </li>
-                                    {% endfor %}
-                                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                                        <a class="page-link" href="{{ url_for('electricity_consumption', page=current_page + 1) }}">Next</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    </div>
+                    
+                     <!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('electricity_consumption', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page numbers -->
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('electricity_consumption', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
                 </div>
             </main>
 

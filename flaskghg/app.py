@@ -411,91 +411,72 @@ def emu_dashboard():
 
 
 
-# Route for Electricity Consumption
+#Route for Electricity Consumption
 @app.route('/electricity_consumption', methods=['GET', 'POST'])
 def electricity_consumption():
     if 'loggedIn' not in session:
         return redirect(url_for('login'))
 
-    # Get the logged-in campus from the session
-    campus = session.get('campus')
-
-    # Determine associated campuses
-    if campus.lower() == 'alangilan':
-        associated_campuses = ['Alangilan', 'Lobo', 'Mabini', 'Balayan']
-    elif campus.lower() == 'pablo borbon':
-        associated_campuses = ['Pablo Borbon', 'Lemery', 'San Juan', 'Rosario', 'Central']
-    else:
-        associated_campuses = [campus]
-
     # Set up pagination parameters
-    page = request.args.get('page', 1, type=int)  # Current page number
-    per_page = 20  # Records per page
-    offset = (page - 1) * per_page  # Offset for SQL
+    page = request.args.get('page', 1, type=int)  # Get the current page number from the query string
+    per_page = 20  # Number of records per page
+    offset = (page - 1) * per_page  # Calculate the offset based on the current page
 
     # Get filter parameters from query string
-    selected_month = request.args.get('month')
-    selected_quarter = request.args.get('quarter')
-    selected_year = request.args.get('year')
+    selected_month = request.args.get('month', None)
+    selected_quarter = request.args.get('quarter', None)
+    selected_year = request.args.get('year', None)
 
-    results = {}  # Store calculation results if POST method
-
+    results = {}  # Dictionary to hold calculation results
     if request.method == 'POST':
-        # Handle form submission for adding electricity data
+        # Handle form submission
         campus = request.form.get('campus')
         category = request.form.get('category')
         month = request.form.get('month')
         quarter = request.form.get('quarter')
         year = request.form.get('year')
+        prev_reading = float(request.form.get('prevReading'))
+        current_reading = float(request.form.get('currentReading'))
+        multiplier = float(request.form.get('multiplier'))
+        total_amount = float(request.form.get('totalAmount'))
+
+        # Validate input and calculate consumption
+        consumption = (current_reading - prev_reading) * multiplier
+
+        if consumption < 0:
+            flash("Consumption cannot be negative. Check your readings.", "danger")
+            return redirect(url_for('electricity_consumption'))
+
+        price_per_kwh = round(total_amount / consumption, 2) if consumption != 0 else 0
+        kg_co2_per_kwh = round(0.7122 * consumption, 2)
+        t_co2_per_kwh = round(kg_co2_per_kwh / 1000, 2)
+
+        results = {
+            'consumption': consumption,
+            'price_per_kwh': price_per_kwh,
+            'kg_co2_per_kwh': kg_co2_per_kwh,
+            't_co2_per_kwh': t_co2_per_kwh
+        }
 
         try:
-            prev_reading = float(request.form.get('prevReading'))
-            current_reading = float(request.form.get('currentReading'))
-            multiplier = float(request.form.get('multiplier'))
-            total_amount = float(request.form.get('totalAmount'))
-
-            # Calculate consumption and validate
-            consumption = (current_reading - prev_reading) * multiplier
-            if consumption < 0:
-                flash("Consumption cannot be negative. Check your readings.", "danger")
-                return redirect(url_for('electricity_consumption'))
-
-            # Calculated metrics
-            price_per_kwh = round(total_amount / consumption, 2) if consumption != 0 else 0
-            kg_co2_per_kwh = round(0.7122 * consumption, 2)
-            t_co2_per_kwh = round(kg_co2_per_kwh / 1000, 2)
-
-            # Store results for display
-            results = {
-                'consumption': consumption,
-                'price_per_kwh': price_per_kwh,
-                'kg_co2_per_kwh': kg_co2_per_kwh,
-                't_co2_per_kwh': t_co2_per_kwh
-            }
-
-            # Insert into database
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            sql = """
-                INSERT INTO electricity_consumption 
-                (campus, category, month, quarter, year, prev_reading, current_reading, multiplier, total_amount, consumption, price_per_kwh, kg_co2_per_kwh, t_co2_per_kwh)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
+            # Insert record into electricity_consumption table
+            sql = """INSERT INTO electricity_consumption 
+                      (campus, category, month, quarter, year, prev_reading, current_reading, multiplier, total_amount, consumption, price_per_kwh, kg_co2_per_kwh, t_co2_per_kwh)
+                      VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             cursor.execute(sql, (campus, category, month, quarter, year, prev_reading, current_reading, multiplier, total_amount, consumption, price_per_kwh, kg_co2_per_kwh, t_co2_per_kwh))
             conn.commit()
 
             flash("Electricity consumption record inserted successfully.", "success")
 
-        except (ValueError, TypeError) as e:
-            flash(f"Invalid input data: {e}", "danger")
         except mysql.connector.Error as e:
             flash(f"Database Error: {e}", "danger")
+
         finally:
-            if 'cursor' in locals():
-                cursor.close()
-            if 'conn' in locals():
-                conn.close()
+            cursor.close()
+            conn.close()
 
         return redirect(url_for('electricity_consumption'))
 
@@ -504,10 +485,9 @@ def electricity_consumption():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Build SQL query with optional filtering
-        placeholders = ', '.join(['%s'] * len(associated_campuses))
-        sql = f"SELECT * FROM electricity_consumption WHERE campus IN ({placeholders})"
-        params = associated_campuses
+        # Build the SQL query with optional filtering
+        sql = "SELECT * FROM electricity_consumption WHERE campus = %s"
+        params = [session['campus']]  # Use the logged-in campus from session
 
         if selected_month:
             sql += " AND month = %s"
@@ -521,87 +501,83 @@ def electricity_consumption():
             sql += " AND year = %s"
             params.append(selected_year)
 
-        # Get total record count for pagination
-        count_sql = f"SELECT COUNT(*) AS total FROM electricity_consumption WHERE campus IN ({placeholders})"
-        cursor.execute(count_sql, params)
-        total_records = cursor.fetchone()['total']
-        total_pages = (total_records + per_page - 1) // per_page
+        # Get total records with filters
+        cursor.execute(f"SELECT COUNT(*) FROM ({sql}) as total", params)
+        total_records = cursor.fetchone()['COUNT(*)']
+        total_pages = (total_records + per_page - 1) // per_page  # Calculate the total number of pages
 
         # Apply pagination
         sql += " LIMIT %s OFFSET %s"
         params.extend([per_page, offset])
 
+        # Fetch the filtered records
         cursor.execute(sql, params)
         reports = cursor.fetchall()
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
         reports = []
-        total_pages = 0
+        total_pages = 0  # Set total_pages to 0 if there's a database error
 
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
+        cursor.close()
+        conn.close()
 
+    # Render the template with the fetched records and pagination information
     return render_template(
-        'electricity_consumption.html',
-        reports=reports,
-        current_page=page,
-        total_pages=total_pages,
-        selected_month=selected_month,
-        selected_quarter=selected_quarter,
+        'electricity_consumption.html', 
+        reports=reports, 
+        current_page=page, 
+        total_pages=total_pages, 
+        selected_month=selected_month, 
+        selected_quarter=selected_quarter, 
         selected_year=selected_year,
-        results=results
-    )
+        results=results  # Pass the results for calculations
+        )
 
-# Route to fetch all or filtered electricity consumption data for printing
 @app.route('/electricity_consumption/all', methods=['GET'])
 def electricity_consumption_all():
     if 'loggedIn' not in session:
-        return jsonify({"error": "Unauthorized access"}), 403
+        return redirect(url_for('login'))
 
-    campus = session.get('campus')
+    selected_month = request.args.get('month', None)
+    selected_quarter = request.args.get('quarter', None)
+    selected_year = request.args.get('year', None)
 
-    # Determine associated campuses
-    if campus.lower() == 'alangilan':
-        associated_campuses = ['Alangilan', 'Lobo', 'Mabini', 'Balayan']
-    elif campus.lower() == 'pablo borbon':
-        associated_campuses = ['Pablo Borbon', 'Lemery', 'San Juan', 'Rosario', 'Central']
-    else:
-        associated_campuses = [campus]
-
-    selected_year = request.args.get('year')
-    selected_month = request.args.get('month')
+    print(f"Received filters - Month: {selected_month}, Quarter: {selected_quarter}, Year: {selected_year}")  # Debugging line
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        placeholders = ', '.join(['%s'] * len(associated_campuses))
-        sql = f"SELECT * FROM electricity_consumption WHERE campus IN ({placeholders})"
-        params = associated_campuses
-
-        if selected_year:
-            sql += " AND year = %s"
-            params.append(selected_year)
+        sql = "SELECT * FROM electricity_consumption WHERE campus = %s"
+        params = [session['campus']]
 
         if selected_month:
             sql += " AND month = %s"
             params.append(selected_month)
+        if selected_quarter:
+            sql += " AND quarter = %s"
+            params.append(selected_quarter)
+        if selected_year:
+            sql += " AND year = %s"
+            params.append(selected_year)
 
         cursor.execute(sql, params)
-        records = cursor.fetchall()
+        all_reports = cursor.fetchall()
 
-        return jsonify(records)
+        print(f"Number of records fetched: {len(all_reports)}")  # Debugging line
 
     except mysql.connector.Error as e:
-        return jsonify({"error": str(e)})
+        flash(f"Database Error: {e}", "danger")
+        all_reports = []
+        print(f"Database Error: {e}")  # Debugging line
 
     finally:
         cursor.close()
         conn.close()
+
+    return jsonify(all_reports)
 
 
 @app.route('/delete_record/<int:record_id>', methods=['POST'])
@@ -2303,16 +2279,7 @@ def flight():
     if 'loggedIn' not in session:
         return redirect(url_for('login'))
 
-    # Get the logged-in campus from the session
     campus = session.get('campus')
-
-    # Determine associated campuses for specific campuses
-    if campus.lower() == 'alangilan':
-        associated_campuses = ['Alangilan', 'Lobo', 'Mabini', 'Balayan']
-    elif campus.lower() == 'pablo borbon':
-        associated_campuses = ['Pablo Borbon', 'Lemery', 'San Juan', 'Rosario', 'Central']
-    else:
-        associated_campuses = [campus]
 
     if request.method == 'POST':
         # Handle flight data submission
@@ -2351,14 +2318,12 @@ def flight():
 
         return redirect(url_for('flight'))
 
-    # Get current page and year filter from request arguments
+    # Get current page and year filter from request arguments, default page to 1 and year to None
     current_page = int(request.args.get('page', 1))
     selected_year = request.args.get('year')
 
-    # Build the base query for fetching flight data with associated campuses
-    placeholders = ', '.join(['%s'] * len(associated_campuses))
-    query = f"SELECT * FROM tblflight WHERE Campus IN ({placeholders})"
-    params = associated_campuses
+    query = "SELECT * FROM tblflight WHERE Campus = %s"
+    params = [campus]
 
     if selected_year:
         query += " AND Year = %s"
@@ -2375,9 +2340,8 @@ def flight():
 
     flight_data = cursor.fetchall()
 
-    # Count total records for pagination
-    count_query = f"SELECT COUNT(*) FROM tblflight WHERE Campus IN ({placeholders})" + (" AND Year = %s" if selected_year else "")
-    cursor.execute(count_query, associated_campuses + ([selected_year] if selected_year else []))
+    cursor.execute("SELECT COUNT(*) FROM tblflight WHERE Campus = %s" + (" AND Year = %s" if selected_year else ""), 
+                   [campus] + ([selected_year] if selected_year else []))
     total_records = cursor.fetchone()['COUNT(*)']
     total_pages = (total_records // limit) + (1 if total_records % limit > 0 else 0)
 
@@ -2393,14 +2357,8 @@ def get_all_flight_data():
         return jsonify({"error": "Unauthorized access"}), 403
 
     campus = session.get('campus')
-
-    # Determine associated campuses
-    if campus.lower() == 'alangilan':
-        associated_campuses = ['Alangilan', 'Lobo', 'Mabini', 'Balayan']
-    elif campus.lower() == 'pablo borbon':
-        associated_campuses = ['Pablo Borbon', 'Lemery', 'San Juan', 'Rosario', 'Central']
-    else:
-        associated_campuses = [campus]
+    if not campus:
+        return jsonify({"error": "No campus found in session"}), 400
 
     # Get filter parameters
     year_filter = request.args.get('year')
@@ -2409,9 +2367,9 @@ def get_all_flight_data():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        placeholders = ', '.join(['%s'] * len(associated_campuses))
-        sql = f"SELECT * FROM tblflight WHERE Campus IN ({placeholders})"
-        params = associated_campuses
+        # Base SQL query
+        sql = "SELECT * FROM tblflight WHERE Campus = %s"
+        params = [campus]
 
         if year_filter:
             sql += " AND Year = %s"
@@ -2535,7 +2493,7 @@ def accommodation():
 
     # Pagination variables
     current_page = request.args.get('page', 1, type=int)
-    per_page = 10  # Number of records per page
+    per_page = 20  # Number of records per page
 
     if request.method == 'POST':
         # Retrieve form data
@@ -2966,21 +2924,13 @@ def pro_report():
     )
 
 
+# Route to handle food consumption form submission and display
 @app.route('/food_consumption', methods=['GET', 'POST'])
 def food_consumption():
     if 'loggedIn' not in session:
         return redirect(url_for('login'))
 
-    # Get the logged-in campus from the session
-    campus = session.get('campus')
-
-    # Determine associated campuses for specific campuses
-    if campus.lower() == 'alangilan':
-        associated_campuses = ['Alangilan', 'Lobo', 'Mabini', 'Balayan']
-    elif campus.lower() == 'pablo borbon':
-        associated_campuses = ['Pablo Borbon', 'Lemery', 'San Juan', 'Rosario', 'Central']
-    else:
-        associated_campuses = [campus]
+    campus = session.get('campus')  # Get the logged-in campus
 
     # Pagination variables
     page_size = 15  # Number of records per page
@@ -3041,15 +2991,14 @@ def food_consumption():
 
         return redirect(url_for('food_consumption'))  # Redirect to the same page after submission
 
-    # Fetch existing food data for associated campuses with pagination and filters
+    # Fetch existing food data for the logged-in campus with pagination and filters
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Create SQL query with dynamic placeholders for associated campuses
-        placeholders = ', '.join(['%s'] * len(associated_campuses))
-        sql = f"SELECT * FROM tblfoodwaste WHERE Campus IN ({placeholders})"
-        params = associated_campuses
+        # Base SQL query for fetching records
+        sql = "SELECT * FROM tblfoodwaste WHERE Campus = %s"
+        params = [campus]
 
         # Apply filters if they are provided
         if selected_year:
@@ -3063,8 +3012,7 @@ def food_consumption():
             params.append(selected_office)
 
         # Count total records for pagination
-        count_sql = f"SELECT COUNT(*) AS total FROM ({sql}) AS filtered"
-        cursor.execute(count_sql, params)
+        cursor.execute(f"SELECT COUNT(*) AS total FROM ({sql}) AS filtered", params)
         total_records = cursor.fetchone()['total']
         total_pages = (total_records + page_size - 1) // page_size  # Calculate total pages
 
@@ -3103,30 +3051,48 @@ def food_consumption():
     )
 
 
-@app.route('/fetch_consumption_data', methods=['GET'])
-def fetch_consumption_data():
-    table = request.args.get('table')
+@app.route('/food_consumption/all', methods=['GET'])
+def food_consumption_all():
+    if 'loggedIn' not in session:
+        return redirect(url_for('login'))
 
-    # Dictionary mapping table IDs to SQL queries
-    queries = {
-        'foodWasteData': "SELECT * FROM tblfoodwaste",
-        'lpgData': "SELECT * FROM tbllpgconsumption",
-    }
-
-    if table not in queries:
-        return jsonify({'error': 'Invalid table selected'}), 400
+    selected_month = request.args.get('month', None)
+    selected_office = request.args.get('office', None)
+    selected_year = request.args.get('year', None)
 
     try:
         conn = get_db_connection()
-        with conn.cursor(dictionary=True) as cursor:
-            cursor.execute(queries[table])
-            data = cursor.fetchall()
+        cursor = conn.cursor(dictionary=True)
+
+        # Build SQL query with optional filters, but no pagination
+        sql = "SELECT * FROM tblfoodwaste WHERE Campus = %s"
+        params = [session['campus']]  # Filter by campus
+
+        if selected_month:
+            sql += " AND Month = %s"
+            params.append(selected_month)
+        if selected_office:
+            sql += " AND Office = %s"
+            params.append(selected_office)
+        if selected_year:
+            sql += " AND YearTransaction = %s"
+            params.append(selected_year)
+
+        # Execute query to fetch all records
+        cursor.execute(sql, params)
+        all_food_reports = cursor.fetchall()
+
     except mysql.connector.Error as e:
-        return jsonify({'error': f'Database error: {e}'}), 500
+        flash(f"Database Error: {e}", "danger")
+        all_food_reports = []
+
     finally:
+        cursor.close()
         conn.close()
 
-    return jsonify(data)
+    # Return data as JSON
+    return jsonify(all_food_reports)
+
 
 
 

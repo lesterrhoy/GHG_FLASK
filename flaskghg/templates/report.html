@@ -5,8 +5,11 @@
     <title>EMU Report</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <style>
+       
         /* Layout and Sidenav Styling */
         #layoutSidenav {
             display: flex;
@@ -158,13 +161,6 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Consumption</div>
-                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
-                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
-                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
-                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
-                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
                     </div>
                 </div>
             </nav>
@@ -211,6 +207,38 @@
                         </select>
                     </div>
 
+<!-- Save As Button and Modal for Export Options -->
+<button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
+<div class="modal fade" id="exportOptionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Consumption Report</h5>
+                <button type="button" class="close" data-dismiss="modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="tableSelect">Select Table:</label>
+                        <select id="tableSelect" class="form-control">
+                            <option value="electricityTable">Electricity</option>
+                            <option value="waterTable">Water</option>
+                            <option value="segWasteTable">Segregated Solid Waste</option>
+                            <option value="unsegWasteTable">Unsegregated Solid Waste</option>
+                            <option value="treatedWaterTable">Treated Water</option>
+                            <option value="fuelEmissionsTable">Fuel Emissions</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                <button class="btn btn-success" onclick="generateExcel()">Download Excel</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+      </div>
+  </div>
                         <!-- Electricity Consumption Table -->
                         <h3>Electricity Consumption</h3>
                         <table class="table table-bordered" id="electricityTable">
@@ -560,40 +588,40 @@
                                 {% endif %}
                             </ul>
                         </nav>
+                                       <!-- Save As Button and Modal for Export Options -->
+                                       <button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
+                                       <div class="modal fade" id="exportOptionsModal" tabindex="-1">
+                                           <div class="modal-dialog">
+                                               <div class="modal-content">
+                                                   <div class="modal-header">
+                                                       <h5 class="modal-title">Select Consumption Report</h5>
+                                                       <button type="button" class="close" data-dismiss="modal">×</button>
+                                                   </div>
+                                                   <div class="modal-body">
+                                                       <form>
+                                                           <div class="form-group">
+                                                               <label for="tableSelect">Select Table:</label>
+                                                               <select id="tableSelect" class="form-control">
+                                                                   <option value="electricityTable">Electricity</option>
+                                                                   <option value="waterTable">Water</option>
+                                                                   <option value="segWasteTable">Segregated Solid Waste</option>
+                                                                   <option value="unsegWasteTable">Unsegregated Solid Waste</option>
+                                                                   <option value="treatedWaterTable">Treated Water</option>
+                                                                   <option value="fuelEmissionsTable">Fuel Emissions</option>
+                                                               </select>
+                                                           </div>
+                                                       </form>
+                                                   </div>
+                                                   <div class="modal-footer">
+                                                       <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                                                       <button class="btn btn-success" onclick="generateExcel()">Download Excel</button>
+                                                       <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                   </div>
+                                               </div>
+                                             </div>
+                                         </div>
 
-
-                        <!-- Save As Button and Modal for Export Options -->
-<button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
-<div class="modal fade" id="exportOptionsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Select Consumption Report</h5>
-                <button type="button" class="close" data-dismiss="modal">×</button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="form-group">
-                        <label for="tableSelect">Select Table:</label>
-                        <select id="tableSelect" class="form-control">
-                            <option value="electricityTable">Electricity</option>
-                            <option value="waterTable">Water</option>
-                            <option value="segWasteTable">Segregated Solid Waste</option>
-                            <option value="unsegWasteTable">Unsegregated Solid Waste</option>
-                            <option value="treatedWaterTable">Treated Water</option>
-                            <option value="fuelEmissionsTable">Fuel Emissions</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
-                <button class="btn btn-success" onclick="generateExcel()">Download Excel</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+   
 
 
                         <script>

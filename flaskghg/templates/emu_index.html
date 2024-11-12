@@ -13,18 +13,17 @@
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+       <!-- Spacer to push "Sign-out" to the right -->
+       <div class="ms-auto"></div>
+    
+       <!-- Sign-out Icon and Link -->
+       <ul class="navbar-nav">
+           <li class="nav-item">
+               <a class="nav-link" href="{{ url_for('logout') }}">
+                   <i class="fas fa-power-off fa-fw"></i> Sign-out
+               </a>
+           </li>
+       </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -61,7 +60,8 @@
                         <div class="collapse" id="collapsePages">
                             <nav class="sb-sidenav-menu-nested nav">
                                 <a class="nav-link" href="{{ url_for('report') }}">Consumption Report</a>
-                        
+                            </nav>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -75,115 +75,111 @@
                         <li class="breadcrumb-item active">Consumption's Trend</li>
                     </ol>
 
+                    <div class="container-fluid px-4">
+                      
+                        </ol>
                     
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <p style="margin-bottom: 0; line-height: 1.5; text-align: justify;">
-                                The Environmental Management Unit dashboard presents an overview of historical and forecasted trends across various data points. It visualizes monthly patterns that initially show notable fluctuations, which gradually stabilize as the year advances. This clear representation supports informed decision-making and strategic planning for continuous improvement in sustainability efforts.
-                            </p>
+                        <!-- Total Emission Card -->
+                        <div class="row mb-4">
+                            <div class="col-xl-12">
+                                <div class="card bg-dark text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Total Emission</div>
+                                        <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- Individual Consumption Cards -->
+                        <div class="row">
+                            <!-- Electricity Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-primary text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Electricity</div>
+                                        <div><strong>Current Emission:</strong> {{ current_emission_data.electricity }} CO₂e</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="electricity_consumption">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Fuel Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-warning text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Fuel</div>
+                                        <div><strong>Current Emission:</strong> {{ current_emission_data.fuel }} CO₂e</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="emu_fuel">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Waste Segregated Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-success text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Waste Segregated</div>
+                                        <div><strong>Quantity:</strong> {{ waste_segregation_data[-1] if waste_segregation_data else 0 }} kg</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="waste_segregation">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Waste Unsegregated Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-danger text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Waste Unsegregated</div>
+                                        <div><strong>Quantity:</strong> {{ waste_unsegregation_data[-1] if waste_unsegregation_data else 0 }} kg</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="waste_unsegregation">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Treated Water Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-info text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Treated Water</div>
+                                        <div><strong>Volume:</strong> {{ treated_water_data[-1] if treated_water_data else 0 }} liters</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="treated_water">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Water Consumption Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-secondary text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Water Consumption</div>
+                                        <div><strong>Consumption:</strong> {{ water_data[-1] if water_data else 0 }} liters</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="water_consumption">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-
-                     <!-- Total Emission Card -->
-                     <div class="row mb-4">
-                        <div class="col-xl-12">
-                            <div class="card bg-dark text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Total Emission</div>
-                                    <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                
-                    <!-- Individual Consumption Cards -->
-                    <div class="row">
-                        <!-- Electricity Card -->
-                        <div class="col-xl-2 col-md-4 mb-4">
-                            <div class="card bg-primary text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Electricity</div>
-                                    <div><strong>Current Emission:</strong> {{ current_emission_data.electricity }} CO₂e</div>
-                                </div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="electricity_consumption">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Fuel Card -->
-                        <div class="col-xl-2 col-md-4 mb-4">
-                            <div class="card bg-warning text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Fuel</div>
-                                    <div><strong>Current Emission:</strong> {{ current_emission_data.fuel }} CO₂e</div>
-                                </div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="emu_fuel">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                
-                        <!-- Waste Segregated Card -->
-                        <div class="col-xl-2 col-md-4 mb-4">
-                            <div class="card bg-success text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Waste Segregated</div>
-                                    <div><strong>Quantity:</strong> {{ waste_segregation_data[-1] if waste_segregation_data else 0 }} kg</div>
-                                </div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="waste_segregation">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                
-                        <!-- Waste Unsegregated Card -->
-                        <div class="col-xl-2 col-md-4 mb-4">
-                            <div class="card bg-danger text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Waste Unsegregated</div>
-                                    <div><strong>Quantity:</strong> {{ waste_unsegregation_data[-1] if waste_unsegregation_data else 0 }} kg</div>
-                                </div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="waste_unsegregation">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                
-                        <!-- Treated Water Card -->
-                        <div class="col-xl-2 col-md-4 mb-4">
-                            <div class="card bg-info text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Treated Water</div>
-                                    <div><strong>Volume:</strong> {{ treated_water_data[-1] if treated_water_data else 0 }} liters</div>
-                                </div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="treated_water">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                
-                        <!-- Water Consumption Card -->
-                        <div class="col-xl-2 col-md-4 mb-4">
-                            <div class="card bg-secondary text-white h-100">
-                                <div class="card-body">
-                                    <div class="card-title">Water Consumption</div>
-                                    <div><strong>Consumption:</strong> {{ water_data[-1] if water_data else 0 }} liters</div>
-                                </div>
-                                <div class="card-footer d-flex align-items-center justify-content-between">
-                                    <a class="small text-white stretched-link" href="water_consumption">View Details</a>
-                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    
 
                     <!-- Charts for Each Consumption -->
                     <div class="row">

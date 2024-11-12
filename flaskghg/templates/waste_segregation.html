@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Waste Segregation</title>
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -376,21 +376,24 @@
          background-color: #b71c1c;
      }
      
-     .pagination {
-         margin-top: 10px;
+     .pagination-container {
+         margin-top: 20px; /* Add some margin above the pagination */
          text-align: center;
      }
      
-     .pagination button {
-         padding: 5px 8px;
-         margin: 2px;
-         font-size: 12px;
-         cursor: pointer;
+     .pagination .page-item .page-link {
+         color: black; /* Set font color to black */
      }
      
-     .pagination .page-info {
-         margin: 0 10px;
-         font-size: 14px;
+     .pagination .page-item.active .page-link {
+         background-color: #d50000; /* Active page with the same red color */
+         border-color: #d50000;
+         color: white; /* White text for the active page */
+     }
+     
+     .pagination .page-link:hover {
+         background-color: #b71c1c; /* Darker red on hover */
+         color: white; /* White text on hover */
      }
      
      .delete-icon {
@@ -468,8 +471,10 @@
                     </div>
 
                     <div id="WasteSection">
-                        <div class="mb-4 text-center">
+                        <div>
                     <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                    <button class="btn btn-primary" onclick="printReport()">Print Report</button>
+                    <button class="btn btn-success"style="background-color: #d50000; border-color: #d50000;" onclick="downloadExcel()">Download Excel</button>
                         </div>
                     </div>
 
@@ -607,11 +612,6 @@
                         </div>
                     </div>
 
-                    <div class="buttons-container mt-3">
-                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-                    </div>
-
                     <div class="container">
                         <table id="reportTable">
                             <thead>
@@ -649,26 +649,27 @@
                         </table>
                     </div>
 
-                    <!-- Pagination controls -->
-    <div class="pagination-container">
-        <nav aria-label="Page navigation example">
-            <ul class="pagination justify-content-center">
-                {% if total_pages > 1 %}
-                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('waste_segregation', page=current_page - 1) }}" tabindex="-1">Previous</a>
-                    </li>
-                    {% for i in range(1, total_pages + 1) %}
-                        <li class="page-item {% if i == current_page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('waste_segregation', page=i) }}">{{ i }}</a>
-                        </li>
-                    {% endfor %}
-                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('waste_segregation', page=current_page + 1) }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
+   <!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page numbers -->
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 
                 </div>
             </main>

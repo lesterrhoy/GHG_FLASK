@@ -350,8 +350,10 @@
 
                     <!-- Button to open the modal -->
                     <div id="WaterSection">
-                        <div class="mb-4 text-center">
-                            <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Water Consumption</button>
+                        <div>
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="openCalculatorModal()">Calculate Water Consumption</button>
+                            <button style="background-color: #d50000; color: white; border: none;"onclick="printReport()">Print Report</button>
+                            <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
                         </div>
                     </div>
 
@@ -369,11 +371,6 @@
                             <option value="Deep Well">Deep Well</option>
                             <option value="Drinking Water">Drinking Water</option>
                         </select>
-
-                    <div class="buttons-container mt-3">
-                        <button style="background-color: #d50000; color: white; border: none;"onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-                    </div>
 
                     <!-- Modal for Calculation -->
                     <div class="modal" id="myModal" style="display: none;">
@@ -478,26 +475,27 @@
                         
                     </table>
 
-                   <!-- Pagination controls -->
-                <div class="pagination-container">
-                    <nav aria-label="Page navigation example">
-                        <ul class="pagination justify-content-center">
-                            {% if total_pages > 1 %}
-                                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page - 1, year=selected_year, category=selected_category) }}" tabindex="-1">Previous</a>
-                                </li>
-                                {% for i in range(1, total_pages + 1) %}
-                                    <li class="page-item {% if i == current_page %}active{% endif %}">
-                                        <a class="page-link" href="{{ url_for('water_consumption', page=i, year=selected_year, category=selected_category) }}">{{ i }}</a>
-                                    </li>
-                                {% endfor %}
-                                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page + 1, year=selected_year, category=selected_category) }}">Next</a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
+<!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page numbers -->
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 
                 </div>
             </main>
