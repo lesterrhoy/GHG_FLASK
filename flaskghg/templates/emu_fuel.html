@@ -325,6 +325,7 @@ button.btn-danger:hover {
                     </div>
                     </div>
 
+
                 <label for="yearFilter">Filter by Year:</label>
                 <select id="yearFilter" onchange="filterByYear()">
                     <option value="">All Years</option>
@@ -443,13 +444,8 @@ button.btn-danger:hover {
                             </div>
                         </div>
                     </div>
-<br>
-                    <div class="header">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
-                        <div class="title">Fuel Consumption Report</div>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
-                    </div>
-                    <br>
+
+
                     <div class="container">
                         <table id="reportTable">
                             <thead>
@@ -643,7 +639,11 @@ function generateReport() {
 
     // Proceed with form submission if needed
     // You can trigger form submission or further action here
-}        
+
+    // Refresh the page
+    location.reload();
+}
+       
         
         
         function deleteRow(id) {
@@ -805,11 +805,57 @@ function printReport() {
         })
         .catch(error => console.error('Error fetching data:', error));
 }
-        function openExcelSelection() {
-            const table = document.getElementById("reportTable");
-            const workbook = XLSX.utils.table_to_book(table, { sheet: "Fuel Consumption" });
-            XLSX.writeFile(workbook, "FuelConsumptionReport.xlsx");
-        }
+function downloadExcel() {
+    // Retrieve filter values from the current page
+    const year = document.getElementById('yearFilter').value || '';
+    const category = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : '';
+    const fuelType = document.getElementById('fuelTypeFilter') ? document.getElementById('fuelTypeFilter').value : '';
+
+    // Build the query string based on filters
+    let queryString = '';
+    if (year) queryString += `year=${year}&`;
+    if (category) queryString += `category=${category}&`;
+    if (fuelType) queryString += `fuelType=${fuelType}`;
+
+    // Remove trailing "&" if present
+    queryString = queryString.endsWith('&') ? queryString.slice(0, -1) : queryString;
+    const fetchUrl = queryString ? `/emu_fuel/all?${queryString}` : `/emu_fuel/all`;
+
+    // Fetch data from the server
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                alert('No data available to export.');
+                return;
+            }
+
+            // Convert the data into a worksheet and create a workbook
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Fuel Consumption');
+
+            // Add custom headers if necessary
+            XLSX.utils.sheet_add_aoa(worksheet, [[
+                'Campus', 'Date', 'Driver', 'Type', 'Vehicle Type', 'Plate Number',
+                'Category', 'Fuel Type', 'Quantity (Liters)', 'Total Amount',
+                'CO₂ Emission (kg)', 'NH₄ Emission (kg CO₂-e)', 'N₂O Emission (kg CO₂-e)',
+                'Total Emission (kg CO₂-e)', 'Total Emission (t CO₂-e)'
+            ]], { origin: 'A1' });
+
+            // Save the workbook to an Excel file
+            XLSX.writeFile(workbook, 'FuelConsumptionReport.xlsx');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
 
         function deleteRow(id) {
             // Implement AJAX call to delete the row
@@ -836,30 +882,36 @@ function printReport() {
                 console.error('Delete error:', error);
             });
         }
-        document.addEventListener('DOMContentLoaded', function() {
-        // Dynamically populate the year filter with the past 10 years
+        document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedYear = urlParams.get('year');
+    
+    if (selectedYear) {
         const yearFilter = document.getElementById('yearFilter');
-        const currentYear = new Date().getFullYear();
-
-        for (let year = currentYear; year >= currentYear - 5; year--) {
-            const option = document.createElement('option');
-            option.value = year;
-            option.text = year;
-            yearFilter.appendChild(option);
+        const options = yearFilter.options;
+        
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === selectedYear) {
+                options[i].selected = true;
+                break;
+            }
         }
-    });
+    }
+});
 
 function filterByYear() {
-    const year = document.getElementById('yearFilter').value;
+    const selectedYear = document.getElementById('yearFilter').value;
     let url = '/emu_fuel?page=1';  // Start at the first page
-
-    if (year) {
-        url += `&year=${year}`;
+    
+    if (selectedYear) {
+        url += `&year=${selectedYear}`;
     }
 
     // Redirect to the filtered page
     window.location.href = url;
 }
+
+
 
     </script>
 

@@ -7,6 +7,7 @@
     <title>Water Consumption</title>
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         table {
@@ -436,14 +437,6 @@
                             </div>
                         </div>
                     </div>
-
-            
-                      <!-- Header for Water Consumption Report -->
-                      <div class="header text-center mt-4">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                        <h2>Water Consumption Report</h2>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                    </div>
                     <!-- Data table -->
                     <h2 class="mt-4"></h2>
                     <table class="table table-bordered">
@@ -657,19 +650,15 @@ function applyFilters() {
 
 
 function printReport() {
-    // Get the filter values
-    const year = document.getElementById('yearFilter').value;
-    const category = document.getElementById('categoryFilter').value;
+    const year = document.getElementById('yearFilter')?.value || '';
+    const category = document.getElementById('categoryFilter')?.value || '';
 
-    // Build query string based on filters
     let queryString = '';
     if (year) queryString += `year=${year}&`;
     if (category) queryString += `category=${category}`;
 
-    // Trim trailing "&" if present
     const fetchUrl = queryString ? `/water_consumption/all?${queryString}` : `/water_consumption/all`;
 
-    // Fetch data for printing
     fetch(fetchUrl)
         .then(response => response.json())
         .then(data => {
@@ -710,51 +699,72 @@ function printReport() {
             `).join('');
 
             const printContents = `
-                <div class="header">
-                    <img src="${window.location.origin}/static/images/bsu.png" alt="BSU Logo" style="width: 50px; height: auto;">
+                <div style="text-align: center;">
                     <h2>Water Consumption Report</h2>
-                    <img src="${window.location.origin}/static/images/csd.png" alt="CSD Logo" style="width: 50px; height: auto;">
                 </div>
                 <table border="1" cellspacing="0" cellpadding="5">
                     ${tableHeader}
                     <tbody>${tableBody}</tbody>
                 </table>`;
 
-            // Temporarily replace the document body content for printing
             const originalContents = document.body.innerHTML;
             document.body.innerHTML = printContents;
             window.print();
-            document.body.innerHTML = originalContents; // Restore original content after printing
+            document.body.innerHTML = originalContents;
         })
         .catch(error => console.error('Error fetching data:', error));
 }
 
+function downloadExcel() {
+    const year = document.getElementById('yearFilter').value;
+    const category = document.getElementById('categoryFilter').value;
 
+    let queryString = '';
+    if (year) queryString += `year=${encodeURIComponent(year)}&`;
+    if (category) queryString += `category=${encodeURIComponent(category)}`;
 
-        // Function to download the data as an Excel file
-        function downloadExcel() {
-            const table = document.querySelector('table');
-            let csv = [];
-            const rows = table.querySelectorAll('tr');
+    const fetchUrl = queryString ? `/water_consumption/all?${queryString}` : `/water_consumption/all`;
 
-            for (let row of rows) {
-                const cols = row.querySelectorAll('td, th');
-                const csvRow = [];
-                for (let col of cols) {
-                    csvRow.push(col.innerText);
-                }
-                csv.push(csvRow.join(','));
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data); // Debugging: Inspect the fetched data
+
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
             }
 
-            const csvString = csv.join('\n');
-            const blob = new Blob([csvString], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'water_consumption_report.csv');
-            a.click();
-            URL.revokeObjectURL(url); // Clean up
-        }
+            // Convert dates to strings if needed
+            data.forEach(record => {
+                if (record.Date && !(typeof record.Date === 'string')) {
+                    record.Date = new Date(record.Date).toISOString().split('T')[0];
+                }
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Water Consumption");
+
+            XLSX.utils.sheet_add_aoa(worksheet, [[
+                "Campus", "Category", "Date", "Previous Reading (m³)", "Current Reading (m³)", 
+                "Consumption (m³)", "Total Amount (₱)", "Price per m³ (₱)", 
+                "Factor (kg CO₂/m³)", "Factor (t CO₂/m³)"
+            ]], { origin: "A1" });
+
+            XLSX.writeFile(workbook, "WaterConsumptionReport.xlsx");
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error.message);
+            alert('An error occurred while exporting the data. Error details: ' + error.message);
+        });
+}
+
 
         // Function to delete a row using AJAX
 function deleteRow(id) {

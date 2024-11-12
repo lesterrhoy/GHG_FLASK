@@ -84,6 +84,58 @@
                         <li class="breadcrumb-item active">Consumption Trends</li>
                     </ol>
 
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <p style="margin-bottom: 0; line-height: 1.5; text-align: justify;">
+                                The Procurement Dashboard illustrates an overview of forecasted trends and historical data related to resource metrics. The visualized data shows significant variations across different months, highlighting initial increases followed by a decline and eventual stabilization. This insight helps in anticipating future changes and supports strategic planning for better resource management and sustainability.                            </p>
+                        </div>
+                    </div>
+                    <!-- Total Emission Card -->
+<div class="row mb-4">
+    <div class="col-xl-12">
+        <div class="card bg-dark text-white h-100">
+            <div class="card-body">
+                <div class="card-title">Total Emission</div>
+                <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Consumption Cards -->
+<div class="row">
+    <!-- Food Consumption Card -->
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="card-title">Food Consumption</div>
+                <div><strong>Current Emission:</strong> {{ current_emission_data.food }} CO₂e</div>
+                <div><strong>Quantity:</strong> {{ food_waste_data[-1]['QuantityOfServing'] if food_waste_data else 0 }} servings</div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="food_consumption">View Details</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LPG Consumption Card -->
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="card-title">LPG Consumption</div>
+                <div><strong>Current Emission:</strong> {{ current_emission_data.lpg }} CO₂e</div>
+                <div><strong>Volume:</strong> {{ lpg_data[-1]['TotalTankVolume'] if lpg_data else 0 }} liters</div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="lpg_consumption">View Details</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
                     <!-- Charts for Each Consumption -->
                     <div class="row">
                         <!-- Food Waste Consumption Forecast Chart -->
@@ -113,41 +165,6 @@
                         </div>
                     </div>
 
-                    <!-- Data Table for Procurement Data -->
-                    <div class="row">
-                        <div class="col-xl-12">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-table me-1"></i>
-                                    Procurement Data for {{ session['campus'] }}
-                                </div>
-                                <div class="card-body">
-                                    <table id="datatablesSimple" class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Campus</th>
-                                                <th>Procurement Field 1</th>
-                                                <th>Procurement Field 2</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for record in procurement_data %}
-                                            <tr>
-                                                <td>{{ record['id'] }}</td>
-                                                <td>{{ record['campus'] }}</td>
-                                                <td>{{ record['procurement_field_1'] }}</td>
-                                                <td>{{ record['procurement_field_2'] }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
 
             <footer class="py-4 bg-light mt-auto">
                 <div class="container-fluid px-4">
@@ -169,51 +186,60 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/simple-datatables.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Helper function to get month names
-        function getMonthNames(startMonthIndex, totalMonths) {
-            const monthNames = [
-                "January", "February", "March", "April", "May", "June", 
-                "July", "August", "September", "October", "November", "December"
-            ];
+        // Helper function to get month labels with year formatting (MM/YY)
+        function getMonthLabels(startMonthIndex, startYear, totalMonths) {
             let labels = [];
             for (let i = 0; i < totalMonths; i++) {
-                let month = monthNames[(startMonthIndex + i) % 12];
-                if (i >= 12) {  // Mark future trend months
-                    month += " (Future)";
-                }
-                labels.push(month);
+                let monthIndex = (startMonthIndex + i) % 12;
+                let year = startYear + Math.floor((startMonthIndex + i) / 12);
+                let month = (monthIndex + 1).toString().padStart(2, '0');
+                let yearShort = year.toString().slice(-2);
+                labels.push(`${month}/${yearShort}`);
             }
             return labels;
         }
     
-        // Get the current month index
-        const currentMonthIndex = new Date().getMonth();
-        
-        // Generate labels for 12 months plus 2 future months
-        const labels = getMonthNames(currentMonthIndex, 14);
+        // Define start month and year for the labels
+        const startMonthIndex = 6; // July (index 6, as months are 0-based)
+        const startYear = 2023;
+    
+        // Generate labels from 07/23 to 08/24 (14 months)
+        const labels = getMonthLabels(startMonthIndex, startYear, 14);
     
         // Data for Food Waste Chart
         const foodWasteForecast = {{ forecast_data.food_waste_forecast | tojson }};
         const foodWasteChartCtx = document.getElementById('foodWasteChart').getContext('2d');
-    
-        // Define custom colors for the line
-        const foodWasteLineColors = foodWasteForecast.map((_, index) => index >= 12 ? 'red' : 'blue');
     
         new Chart(foodWasteChartCtx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Food Waste Data',
-                    data: foodWasteForecast,
+                    label: 'Historical Data',
+                    data: foodWasteForecast.slice(0, 12).concat(foodWasteForecast[12]), // Connect line with first forecast point
+                    borderColor: 'red',
+                    pointBackgroundColor: function(context) {
+                        // Make the dot at index 12 (07/24) fully black
+                        if (context.dataIndex === 12) {
+                            return 'black';
+                        }
+                        return 'red'; // All other historical points are red
+                    },
+                    pointBorderColor: 'red',
                     borderWidth: 2,
                     fill: false,
-                    segment: {
-                        borderColor: (ctx) => {
-                            return ctx.p0DataIndex >= 12 ? 'red' : 'blue';
-                        }
-                    },
-                    pointBackgroundColor: foodWasteLineColors
+                    tension: 0.4, // Make the line smooth
+                    pointStyle: 'circle'
+                },
+                {
+                    label: 'Forecast Data',
+                    data: Array(12).fill(null).concat(foodWasteForecast.slice(12)),
+                    borderColor: 'black',
+                    pointBackgroundColor: 'black',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4, // Make the line smooth
+                    pointStyle: 'circle'
                 }]
             },
             options: {
@@ -221,6 +247,27 @@
                 scales: {
                     x: { title: { display: true, text: 'Month' } },
                     y: { title: { display: true, text: 'Consumption (kg)' } }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            usePointStyle: true,
+                            fontColor: '#333',
+                            padding: 15,
+                            generateLabels: function(chart) {
+                                const data = chart.data.datasets;
+                                return data.map((dataset, i) => ({
+                                    text: dataset.label,
+                                    fillStyle: dataset.pointBackgroundColor === 'black' ? 'black' : 'red',
+                                    strokeStyle: dataset.borderColor,
+                                    lineWidth: 0,
+                                    hidden: !chart.isDatasetVisible(i),
+                                    pointStyle: 'circle' // Use circle for point style
+                                }));
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -229,24 +276,36 @@
         const lpgForecast = {{ forecast_data.lpg_forecast | tojson }};
         const lpgChartCtx = document.getElementById('lpgChart').getContext('2d');
     
-        // Define custom colors for the line
-        const lpgLineColors = lpgForecast.map((_, index) => index >= 12 ? 'red' : 'blue');
-    
         new Chart(lpgChartCtx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'LPG Data',
-                    data: lpgForecast,
+                    label: 'Historical Data',
+                    data: lpgForecast.slice(0, 12).concat(lpgForecast[12]), // Connect line with first forecast point
+                    borderColor: 'blue',
+                    pointBackgroundColor: function(context) {
+                        // Make the dot at index 12 (07/24) fully black
+                        if (context.dataIndex === 12) {
+                            return 'black';
+                        }
+                        return 'blue'; // All other historical points are blue
+                    },
+                    pointBorderColor: 'blue',
                     borderWidth: 2,
                     fill: false,
-                    segment: {
-                        borderColor: (ctx) => {
-                            return ctx.p0DataIndex >= 12 ? 'red' : 'blue';
-                        }
-                    },
-                    pointBackgroundColor: lpgLineColors
+                    tension: 0.4, // Make the line smooth
+                    pointStyle: 'circle'
+                },
+                {
+                    label: 'Forecast Data',
+                    data: Array(12).fill(null).concat(lpgForecast.slice(12)),
+                    borderColor: 'black',
+                    pointBackgroundColor: 'black',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4, // Make the line smooth
+                    pointStyle: 'circle'
                 }]
             },
             options: {
@@ -254,10 +313,35 @@
                 scales: {
                     x: { title: { display: true, text: 'Month' } },
                     y: { title: { display: true, text: 'Consumption (liters)' } }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            usePointStyle: true,
+                            fontColor: '#333',
+                            padding: 15,
+                            generateLabels: function(chart) {
+                                const data = chart.data.datasets;
+                                return data.map((dataset, i) => ({
+                                    text: dataset.label,
+                                    fillStyle: dataset.pointBackgroundColor === 'black' ? 'black' : 'blue',
+                                    strokeStyle: dataset.borderColor,
+                                    lineWidth: 0,
+                                    hidden: !chart.isDatasetVisible(i),
+                                    pointStyle: 'circle' // Use circle for point style
+                                }));
+                            }
+                        }
+                    }
                 }
             }
         });
     </script>
+    
+    
+    
+    
 
     
 </body>

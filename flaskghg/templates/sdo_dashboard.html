@@ -60,6 +60,148 @@
                         <li class="breadcrumb-item active">Consumption Trends</li>
                     </ol>
 
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <p style="margin-bottom: 0; line-height: 1.5; text-align: justify;">
+                                The Sustainable Development Office dashboard presents an overview of the annual patterns in consumption and emissions. 
+                            Initially, there is a notable fluctuation at the start of the year, reflecting potential seasonal or operational shifts. 
+                            As the year advances, these metrics stabilize, exhibiting a trend of consistency with only slight variations, indicating more controlled or predictable sustainability practices over time. 
+                            This trend may suggest the implementation of effective management strategies or a natural plateau in consumption and emissions as external factors are mitigated or managed.
+                            </p>
+                        </div>
+                    </div>
+                    
+<!-- Total Emission Card -->
+<div class="row mb-4">
+    <div class="col-xl-12">
+        <div class="card bg-dark text-white h-100">
+            <div class="card-body">
+                <div class="card-title">Total Emission</div>
+                <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
+                <p class="small">This value represents the cumulative CO₂ emissions from all monitored sources.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <!-- Electricity Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Electricity</div>
+                    <div><strong>Current Emission:</strong> {{ current_emission_data.electricity }} CO₂e</div>
+                    <p class="small">Current emission from electricity usage.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fuel Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Fuel</div>
+                    <div><strong>Current Emission:</strong> {{ current_emission_data.fuel }} CO₂e</div>
+                    <p class="small">Current emission from fuel consumption.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waste Segregated Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Waste Segregated</div>
+                    <div><strong>Quantity:</strong> {{ waste_segregation_data[-1]['QuantityInKG'] if waste_segregation_data else 0 }} kg</div>
+                    <div><strong>GHG Emission:</strong> {{ waste_segregation_data[-1]['GHGEmissionKGCO2e'] if waste_segregation_data else 0 }} CO₂e</div>
+                    <p class="small">Amount of segregated waste contributing to emissions reduction.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waste Unsegregated Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Waste Unsegregated</div>
+                    <div><strong>Quantity:</strong> {{ waste_unsegregation_data[-1]['QuantityInKG'] if waste_unsegregation_data else 0 }} kg</div>
+                    <div><strong>GHG Emission:</strong> {{ waste_unsegregation_data[-1]['GHGEmissionKGCO2e'] if waste_unsegregation_data else 0 }} CO₂e</div>
+                    <p class="small">Amount of unsegregated waste impacting emissions.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treated Water Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Treated Water</div>
+                    <div><strong>Volume:</strong> {{ treated_water_data[-1]['TreatedWaterVolume'] if treated_water_data else 0 }} liters</div>
+                    <p class="small">Volume of water treated to reduce environmental impact.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Water Consumption Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Water Consumption</div>
+                    <div><strong>Consumption:</strong> {{ water_data[-1]['Consumption'] if water_data else 0 }} liters</div>
+                    <p class="small">Current water consumption in liters.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LPG Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">LPG</div>
+                    <div><strong>Current Emission:</strong> {{ current_emission_data.lpg }} CO₂e</div>
+                    <p class="small">Current emission from LPG consumption.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Food Waste Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-light text-dark h-100">
+                <div class="card-body">
+                    <div class="card-title">Food Waste</div>
+                    <div><strong>Quantity:</strong> {{ food_waste_data[-1]['QuantityOfServing'] if food_waste_data else 0 }} servings</div>
+                    <p class="small">Quantity of food waste impacting emissions.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accommodation Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-light text-dark h-100">
+                <div class="card-body">
+                    <div class="card-title">Accommodation</div>
+                    <div><strong>Rooms Occupied:</strong> {{ accommodation_data[-1]['NumOccupiedRoom'] if accommodation_data else 0 }}</div>
+                    <p class="small">Current accommodation occupancy impacting emissions.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flight Card -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body">
+                    <div class="card-title">Flight</div>
+                    <div><strong>Current Emission:</strong> {{ current_emission_data.flight }} CO₂e</div>
+                    <p class="small">Emission from recent flights.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
                     <!-- Charts for Each Consumption -->
                     <div class="row">
                         <!-- Electricity Consumption Chart -->
@@ -214,92 +356,110 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Helper function to get month names
-        function getMonthNames(startMonthIndex, totalMonths) {
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            let labels = [];
-            for (let i = 0; i < totalMonths; i++) {
-                let month = monthNames[(startMonthIndex + i) % 12];
-                if (i >= 12) {  // Mark future trend months
-                    month += " (Future)";
-                }
-                labels.push(month);
-            }
-            return labels;
-        }
-    
-        // Get the current month index and generate labels for 12 months plus 2 future months
-        const currentMonthIndex = new Date().getMonth();
-        const labels = getMonthNames(currentMonthIndex, 14);
-    
-        // Forecast data passed from server
-        const forecastData = {{ forecast_data | tojson }};
-    
-        // Helper function to create a line chart with connected historical and forecasted data
-        function createForecastChart(chartId, label, data) {
-            const ctx = document.getElementById(chartId).getContext('2d');
-    
-            // Separate historical and forecast data
-            const historicalData = data.slice(0, 12); // First 12 points for historical data
-            const forecastData = data.slice(12);      // Last 2 points for forecasted data
-    
-            // Combine historical and forecast data into a single dataset for continuous line
-            const combinedData = [...historicalData, ...forecastData];
-    
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: `${label} (Historical + Forecast)`,
-                            data: combinedData,
-                            borderColor: 'blue',
-                            fill: false,
-                            pointBackgroundColor: (ctx) => ctx.dataIndex < 12 ? 'blue' : 'red', // Blue for historical, red for forecast points
-                            borderWidth: 2
-                        },
-                        {
-                            label: `${label} (Forecast)`,
-                            data: [...Array(12).fill(null), ...forecastData], // Offset forecast data to start after historical data
-                            borderColor: 'red',
-                            fill: false,
-                            borderDash: [5, 5],  // Dashed line for forecast
-                            pointBackgroundColor: 'red',
-                            borderWidth: 2
-                        }
-                    ]
+       // Helper function to get month labels with year formatting (MM/YY)
+function getMonthLabels(startMonthIndex, startYear, totalMonths) {
+    let labels = [];
+    for (let i = 0; i < totalMonths; i++) {
+        let monthIndex = (startMonthIndex + i) % 12;
+        let year = startYear + Math.floor((startMonthIndex + i) / 12);
+        let month = (monthIndex + 1).toString().padStart(2, '0');
+        let yearShort = year.toString().slice(-2);
+        labels.push(`${month}/${yearShort}`);
+    }
+    return labels;
+}
+
+// Define the start month and year for the labels
+const startMonthIndex = 6; // July is the 7th month, index 6 (0-based)
+const startYear = 2023;
+
+// Generate labels from 07/23 to 08/24 (14 months)
+const labels = getMonthLabels(startMonthIndex, startYear, 14);
+
+// Forecast data passed from server
+const forecastData = {{ forecast_data | tojson }};
+
+// Updated color palette for each graph with dark border and bright forecast border
+const colorPalette = [
+    { border: 'darkblue', forecastBorder: 'red' },
+    { border: 'darkgreen', forecastBorder: 'red' },
+    { border: 'darkorange', forecastBorder: 'red' },
+    { border: 'indigo', forecastBorder: 'red' },
+    { border: 'saddlebrown', forecastBorder: 'red' },
+    { border: 'darkslategray', forecastBorder: 'red' },
+    { border: 'deeppink', forecastBorder: 'red' },
+    { border: 'goldenrod', forecastBorder: 'red' },
+    { border: 'dimgray', forecastBorder: 'red' },
+    { border: 'darkred', forecastBorder: 'red' }
+];
+
+// Helper function to create a line chart with connected historical and forecasted data
+function createForecastChart(chartId, label, data, colorIndex) {
+    const ctx = document.getElementById(chartId).getContext('2d');
+
+    // Separate historical and forecast data
+    const historicalData = data.slice(0, 12); // First 12 points for historical data
+    const forecastData = data.slice(12);      // Last 2 points for forecasted data
+
+    // Combine historical and forecast data into a single dataset for continuous line
+    const combinedData = [...historicalData, ...forecastData];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: `${label} (Historical)`,
+                    data: combinedData,
+                    borderColor: colorPalette[colorIndex].border,
+                    fill: false,
+                    pointBackgroundColor: (ctx) => ctx.dataIndex < 12 ? colorPalette[colorIndex].border : colorPalette[colorIndex].forecastBorder,
+                    borderWidth: 2
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                usePointStyle: true
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { title: { display: true, text: 'Month' } },
-                        y: { title: { display: true, text: 'Consumption/Emissions' } }
+                {
+                    label: `${label} (Forecast)`,
+                    data: [...Array(12).fill(null), ...forecastData], // Offset forecast data to start after historical data
+                    borderColor: colorPalette[colorIndex].forecastBorder,
+                    fill: false,
+                    borderDash: [5, 5],  // Dashed line for forecast
+                    pointBackgroundColor: colorPalette[colorIndex].forecastBorder,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        usePointStyle: true
                     }
                 }
-            });
+            },
+            scales: {
+                x: { title: { display: true, text: 'Month' } },
+                y: { title: { display: true, text: 'Consumption/Emissions' } }
+            }
         }
-    
-        // Generate charts for each category
-        createForecastChart('electricityChart', 'Electricity Consumption', forecastData.electricity_forecast);
-        createForecastChart('fuelChart', 'Fuel Consumption', forecastData.fuel_forecast);
-        createForecastChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast);
-        createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast);
-        createForecastChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast);
-        createForecastChart('waterChart', 'Water Consumption', forecastData.water_forecast);
-        createForecastChart('lpgChart', 'LPG Consumption', forecastData.lpg_forecast);
-        createForecastChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast);
-        createForecastChart('accommodationChart', 'Accommodation Emissions', forecastData.accommodation_forecast);
-        createForecastChart('flightChart', 'Flight Emissions', forecastData.flight_forecast);
+    });
+}
+
+// Generate charts for each category with distinct colors
+createForecastChart('electricityChart', 'Electricity Consumption', forecastData.electricity_forecast, 0);
+createForecastChart('fuelChart', 'Fuel Consumption', forecastData.fuel_forecast, 1);
+createForecastChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, 2);
+createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, 3);
+createForecastChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, 4);
+createForecastChart('waterChart', 'Water Consumption', forecastData.water_forecast, 5);
+createForecastChart('lpgChart', 'LPG Consumption', forecastData.lpg_forecast, 6);
+createForecastChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast, 7);
+createForecastChart('accommodationChart', 'Accommodation Emissions', forecastData.accommodation_forecast, 8);
+createForecastChart('flightChart', 'Flight Emissions', forecastData.flight_forecast, 9);
+
     </script>
+    
     
     
 

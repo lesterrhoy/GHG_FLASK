@@ -29,10 +29,10 @@
            }
    
            th {
-               background-color: #d50000; /* Red background for table headers */
-               color: white; /* White text for better contrast */
-               font-size: 11px; /* Reduce font size for headers to prevent overflow */
-           }
+                 background-color: #d50000 !important; /* Red background for table headers */
+                 color: white !important; /* White text for better contrast */
+                 font-size: 11px; /* Reduce font size for headers to prevent overflow */
+             }
            #yearFilter, #quarterFilter, #monthFilter {
            margin: 10px 0; /* Adds top and bottom margin */
             }
@@ -377,21 +377,60 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <button id="openModalBtn" class="btn btn-primary" style="background-color:#0076CE; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
-                    </div>
-                       <!-- Buttons to Print and Download above the table -->
-                       <div class="buttons-container mb-3" style="display: flex; justify-content: center; gap: 10px;">
-                        <button onclick="printLPGReport()">Print Report</button>
-                        <button onclick="downloadLPGExcel()">Export to Excel</button>
+
+                    <div id="LpgSection">
+                        <div class="mb-4 text-center">
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        </div>
                     </div>
 
-                    <div class="header">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
-                        <div class="title">LPG Consumption Report</div>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
+                    <div class="mb-4">
+                        <label for="yearFilter">Year:</label>
+                        <select id="yearFilter" onchange="filterLPGReport()">
+                            <option value="">All</option>
+                            <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+                        </select>
+                    
+                        <label for="monthFilter">Month:</label>
+                        <select id="monthFilter" onchange="filterLPGReport()">
+                            <option value="">All</option>
+                            <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
+                            <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
+                            <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
+                            <option value="April" {% if selected_month == 'April' %}selected{% endif %}>April</option>
+                            <option value="May" {% if selected_month == 'May' %}selected{% endif %}>May</option>
+                            <option value="June" {% if selected_month == 'June' %}selected{% endif %}>June</option>
+                            <option value="July" {% if selected_month == 'July' %}selected{% endif %}>July</option>
+                            <option value="August" {% if selected_month == 'August' %}selected{% endif %}>August</option>
+                            <option value="September" {% if selected_month == 'September' %}selected{% endif %}>September</option>
+                            <option value="October" {% if selected_month == 'October' %}selected{% endif %}>October</option>
+                            <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
+                            <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
+                        </select>
+                    
+                        <label for="officeFilter">Office:</label>
+                        <select id="officeFilter" onchange="filterLPGReport()">
+                            <option value="">All</option>
+                            <option value="Procurement" {% if selected_office == 'Procurement' %}selected{% endif %}>Procurement</option>
+                            <option value="Auxiliary Services" {% if selected_office == 'Auxiliary Services' %}selected{% endif %}>Auxiliary Services</option>
+                            <option value="RGO" {% if selected_office == 'RGO' %}selected{% endif %}>RGO</option>
+                        </select>
                     </div>
-                    <br>
+
+                      <!-- Buttons to Print and Download above the table -->
+<div class="buttons-container mb-3" style="display: flex; justify-content: center; gap: 10px;">
+    <button id="printReportBtn" class="btn btn-primary" style="width: 200px;">Print Report</button>
+    <button onclick="downloadLPGExcel()" class="btn btn-primary" style="width: 200px; background-color: #d50000; color: white; border: none;">Export to Excel</button>
+</div>
+
+
+                    
+                    
+                    
 
                     <table id="reportTable" class="table table-bordered">
                         <thead>
@@ -493,9 +532,11 @@
                         <label for="year">Year:</label>
                         <select id="year" name="year" required>
                             <option value=""></option>
+                            <option value="2020">2020</option>
                             <option value="2021">2021</option>
                             <option value="2022">2022</option>
                             <option value="2023">2023</option>
+                            <option value="2024">2024</option>
                         </select>
 
                         <label for="month">Month:</label>
@@ -552,6 +593,23 @@
     </div>
 
     <script>
+        function filterLPGReport() {
+    const year = document.getElementById('yearFilter').value;
+    const month = document.getElementById('monthFilter').value;
+    const office = document.getElementById('officeFilter').value;
+
+    // Build the query string based on selected filters
+    let queryString = [];
+    if (year) queryString.push(`year=${encodeURIComponent(year)}`);
+    if (month) queryString.push(`month=${encodeURIComponent(month)}`);
+    if (office) queryString.push(`office=${encodeURIComponent(office)}`);
+    queryString = queryString.length > 0 ? '?' + queryString.join('&') : '';
+
+    // Redirect to the current page with the query string to apply the filter or reset it
+    window.location.href = window.location.pathname + queryString;
+}
+
+
        function deleteRow(recordId) {
     if (!confirm("Are you sure you want to delete this record?")) return; // Confirm deletion
 
@@ -602,62 +660,129 @@
         // Dummy data for pagination and filters
         const reportData = {{ lpg_data | safe }};
 
-        // Function to print the LPG consumption report
-    function printLPGReport() {
-        const originalContents = document.body.innerHTML; // Save the original content
+        document.getElementById('printReportBtn').addEventListener('click', printLPGReport);
 
-        // Get the table header (excluding the "Actions" column)
-        const tableHeader = `
-            <thead>
+function printLPGReport() {
+    const year = document.getElementById('yearFilter')?.value || '';
+    const month = document.getElementById('monthFilter')?.value || '';
+    const office = document.getElementById('officeFilter')?.value || '';
+
+    let queryString = `?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}`;
+
+    fetch(`/lpg_consumption/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                alert('Error fetching data: ' + data.error);
+                return;
+            }
+
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Office</th>
+                        <th>Concessionaire Type</th>
+                        <th>Qty (no. of tanks)</th>
+                        <th>Tank Weight</th>
+                        <th>Tank Volume</th>
+                        <th>Total Tank Volume</th>
+                        <th>GHG Emission (KG CO2e)</th>
+                        <th>GHG Emission (T CO2e)</th>
+                    </tr>
+                </thead>`;
+
+            const tableBody = data.map(report => `
                 <tr>
-                    <th>Campus</th>
-                    <th>Year</th>
-                    <th>Month</th>
-                    <th>Office</th>
-                    <th>Concessionaire Type</th>
-                    <th>Qty (no. of tanks)</th>
-                    <th>Tank Weight</th>
-                    <th>Tank Volume</th>
-                    <th>Total Tank Volume</th>
-                    <th>GHG Emission (KG CO2e)</th>
-                    <th>GHG Emission (T CO2e)</th>
+                    <td>${report.Campus}</td>
+                    <td>${report.YearTransact}</td>
+                    <td>${report.Month}</td>
+                    <td>${report.Office}</td>
+                    <td>${report.ConcessionariesType}</td>
+                    <td>${report.TankQuantity}</td>
+                    <td>${report.TankWeight}</td>
+                    <td>${report.TankVolume}</td>
+                    <td>${report.TotalTankVolume}</td>
+                    <td>${report.GHGEmissionKGCO2e}</td>
+                    <td>${report.GHGEmissionTCO2e}</td>
                 </tr>
-            </thead>`;
+            `).join('');
 
-        // Get the table body without the "Actions" column
-        const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-            .map(row => {
-                const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell
-                return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
-            })
-            .join('');
+            const printContents = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2>LPG Consumption Report</h2>
+                </div>
+                <table border="1" style="width: 100%; border-collapse: collapse;">
+                    ${tableHeader}
+                    <tbody>
+                        ${tableBody}
+                    </tbody>
+                </table>`;
 
-        // Create a print layout
-        const printContents = `
-            <div class="header" style="text-align: center; margin-bottom: 20px;">
-                <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                <h2>LPG Consumption Report</h2>
-                <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
-            </div>
-            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
-                ${tableHeader}
-                <tbody>
-                    ${tableBody}
-                </tbody>
-            </table>
-        `;
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+            alert('An error occurred while fetching the report data.');
+        });
+}
 
-        document.body.innerHTML = printContents; // Replace body content with table
-        window.print(); // Print the current window
-        document.body.innerHTML = originalContents; // Restore original content
-    }
 
-    // Function to export the LPG consumption table to Excel
-    function downloadLPGExcel() {
-        const table = document.getElementById("reportTable");
-        const workbook = XLSX.utils.table_to_book(table, { sheet: "LPG Consumption" });
-        XLSX.writeFile(workbook, "LPGConsumptionReport.xlsx");
-    }
+function downloadLPGExcel() {
+    // Get filter values from the dropdowns if present
+    const year = document.getElementById('yearFilter')?.value || '';
+    const month = document.getElementById('monthFilter')?.value || '';
+    const office = document.getElementById('officeFilter')?.value || '';
+
+    // Build the query string based on the filter values
+    let queryString = `?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}`;
+
+    // Fetch the data from the server
+    fetch(`/lpg_consumption/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                alert('Error fetching data: ' + data.error);
+                return;
+            }
+
+            // Create a new workbook and worksheet
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "LPG Consumption");
+
+            // Add column headers to the worksheet
+            XLSX.utils.sheet_add_aoa(worksheet, [[
+                "Campus", "Year", "Month", "Office", "Concessionaire Type", 
+                "Qty (no. of tanks)", "Tank Weight", "Tank Volume", 
+                "Total Tank Volume", "GHG Emission (KG CO2e)", "GHG Emission (T CO2e)"
+            ]], { origin: "A1" });
+
+            // Write the Excel file
+            XLSX.writeFile(workbook, "LPGConsumptionReport.xlsx");
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
+
 
     </script>
 </body>

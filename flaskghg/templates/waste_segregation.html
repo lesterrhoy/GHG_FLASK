@@ -7,6 +7,8 @@
     <title>Waste Segregation</title>
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         table {table {
@@ -471,44 +473,45 @@
                         </div>
                     </div>
 
-                    <!-- Filter section -->
-                    <div class="mb-4">
-                        <label for="monthFilter">Filter by Month:</label>
-                        <select id="monthFilter" onchange="applyFilter()">
-                            <option value="">All Months</option>
-                            <option value="January">January</option>
-                            <option value="February">February</option>
-                            <option value="March">March</option>
-                            <option value="April">April</option>
-                            <option value="May">May</option>
-                            <option value="June">June</option>
-                            <option value="July">July</option>
-                            <option value="August">August</option>
-                            <option value="September">September</option>
-                            <option value="October">October</option>
-                            <option value="November">November</option>
-                            <option value="December">December</option>
-                        </select>
+                  <!-- Filter section -->
+<div class="mb-4">
+    <label for="monthFilter">Filter by Month:</label>
+    <select id="monthFilter" onchange="applyFilter()">
+        <option value="">All Months</option>
+        <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
+        <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
+        <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
+        <option value="April" {% if selected_month == 'April' %}selected{% endif %}>April</option>
+        <option value="May" {% if selected_month == 'May' %}selected{% endif %}>May</option>
+        <option value="June" {% if selected_month == 'June' %}selected{% endif %}>June</option>
+        <option value="July" {% if selected_month == 'July' %}selected{% endif %}>July</option>
+        <option value="August" {% if selected_month == 'August' %}selected{% endif %}>August</option>
+        <option value="September" {% if selected_month == 'September' %}selected{% endif %}>September</option>
+        <option value="October" {% if selected_month == 'October' %}selected{% endif %}>October</option>
+        <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
+        <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
+    </select>
 
-                        <label for="quarterFilter">Filter by Quarter:</label>
-                        <select id="quarterFilter" onchange="applyFilter()">
-                            <option value="">All Quarters</option>
-                            <option value="Q1">Q1</option>
-                            <option value="Q2">Q2</option>
-                            <option value="Q3">Q3</option>
-                            <option value="Q4">Q4</option>
-                        </select>
+    <label for="quarterFilter">Filter by Quarter:</label>
+    <select id="quarterFilter" onchange="applyFilter()">
+        <option value="">All Quarters</option>
+        <option value="Q1" {% if selected_quarter == 'Q1' %}selected{% endif %}>Q1</option>
+        <option value="Q2" {% if selected_quarter == 'Q2' %}selected{% endif %}>Q2</option>
+        <option value="Q3" {% if selected_quarter == 'Q3' %}selected{% endif %}>Q3</option>
+        <option value="Q4" {% if selected_quarter == 'Q4' %}selected{% endif %}>Q4</option>
+    </select>
 
-                        <label for="yearFilter">Filter by Year:</label>
-                        <select id="yearFilter" onchange="applyFilter()">
-                            <option value="">All Years</option>
-                            <option value="2020">2020</option>
-                            <option value="2021">2021</option>
-                            <option value="2022">2022</option>
-                            <option value="2023">2023</option>
-                            <option value="2024">2024</option>
-                        </select>
-                    </div>
+    <label for="yearFilter">Filter by Year:</label>
+    <select id="yearFilter" onchange="applyFilter()">
+        <option value="">All Years</option>
+        <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
+        <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
+        <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
+        <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
+        <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+    </select>
+</div>
+
 
                     <!-- Modal for Adding Records -->
                     <div class="modal" id="myModal">
@@ -609,14 +612,6 @@
                         <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
                     </div>
 
-                    <br>
-
-                    <div class="header text-center mt-4">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                        <h2>Waste Segregated Consumption Report</h2>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                    </div>
-                    <br>
                     <div class="container">
                         <table id="reportTable">
                             <thead>
@@ -858,14 +853,15 @@
 
     // Build the query string
     let queryString = '';
-    if (month) queryString += `month=${month}&`;
-    if (quarter) queryString += `quarter=${quarter}&`;
-    if (year) queryString += `year=${year}`;
+    if (month) queryString += `month=${encodeURIComponent(month)}&`;
+    if (quarter) queryString += `quarter=${encodeURIComponent(quarter)}&`;
+    if (year) queryString += `year=${encodeURIComponent(year)}`;
 
     // Remove trailing "&" if any, and redirect to filtered page
     queryString = queryString ? '?' + queryString.slice(0, -1) : '';
     window.location.href = `/waste_segregation${queryString}`;
 }
+
 
     
 function deleteRow(id) {
@@ -893,21 +889,22 @@ function deleteRow(id) {
 }
 
     
-        function printReport() {
+function printReport() {
     // Get filter values
     const month = document.getElementById('monthFilter').value;
     const quarter = document.getElementById('quarterFilter').value;
     const year = document.getElementById('yearFilter').value;
 
-    // Build query string based on active filters
+    // Build the query string for the fetch URL
     let queryString = '';
-    if (month) queryString += `month=${month}&`;
-    if (quarter) queryString += `quarter=${quarter}&`;
-    if (year) queryString += `year=${year}`;
+    if (month) queryString += `month=${encodeURIComponent(month)}&`;
+    if (quarter) queryString += `quarter=${encodeURIComponent(quarter)}&`;
+    if (year) queryString += `year=${encodeURIComponent(year)}`;
 
-    // Fetch URL based on query string
+    // Determine fetch URL
     const fetchUrl = queryString ? `/waste_segregation/all?${queryString}` : `/waste_segregation/all`;
 
+    // Fetch data and build print content
     fetch(fetchUrl)
         .then(response => response.json())
         .then(data => {
@@ -930,7 +927,7 @@ function deleteRow(id) {
                         <th>GHG Emission (t CO₂-e)</th>
                     </tr>
                 </thead>`;
-            
+
             const tableBody = data.map(report => `
                 <tr>
                     <td>${report.Campus}</td>
@@ -948,7 +945,7 @@ function deleteRow(id) {
             const printContents = `
                 <div class="header">
                     <img src="${window.location.origin}/static/images/bsu.png" alt="BSU Logo" style="width: 50px; height: auto;">
-                    <h2>Waste Segregated Consumption Report</h2>
+                    <h2>Waste Segregation Report</h2>
                     <img src="${window.location.origin}/static/images/csd.png" alt="CSD Logo" style="width: 50px; height: auto;">
                 </div>
                 <table border="1" cellspacing="0" cellpadding="5">
@@ -956,56 +953,64 @@ function deleteRow(id) {
                     <tbody>${tableBody}</tbody>
                 </table>`;
 
-            // Temporarily replace the document body with the print contents
+            // Print the report
             const originalContents = document.body.innerHTML;
             document.body.innerHTML = printContents;
-
-            // Trigger print and restore original content
             window.print();
             document.body.innerHTML = originalContents;
         })
         .catch(error => console.error('Error fetching data:', error));
 }
 
+function downloadExcel() {
+    const month = document.getElementById('monthFilter').value;
+    const quarter = document.getElementById('quarterFilter').value;
+    const year = document.getElementById('yearFilter').value;
 
-    
-        // Function to download the data as an Excel file
-        function downloadExcel() {
-            const table = document.querySelector('table');
-            let csv = [];
-            const rows = table.querySelectorAll('tr');
-    
-            for (let row of rows) {
-                const cols = row.querySelectorAll('td, th');
-                const csvRow = [];
-                for (let col of cols) {
-                    csvRow.push(col.innerText);
-                }
-                csv.push(csvRow.join(','));
+    let queryString = '';
+    if (month) queryString += `month=${encodeURIComponent(month)}&`;
+    if (quarter) queryString += `quarter=${encodeURIComponent(quarter)}&`;
+    if (year) queryString += `year=${encodeURIComponent(year)}`;
+    queryString = queryString ? '?' + queryString : '';
+
+    fetch(`/waste_segregation/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
             }
-    
-            const csvString = csv.join('\n');
-            const blob = new Blob([csvString], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'waste_segregation_report.csv');
-            a.click();
-            URL.revokeObjectURL(url); // Clean up
-        }
-    
-        // Call renderTable() initially to display the first page
-        document.addEventListener('DOMContentLoaded', () => {
-            renderTable();
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            try {
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Waste Segregation Data');
+
+                XLSX.utils.sheet_add_aoa(worksheet, [[
+                    'Campus', 'Year', 'Quarter', 'Month', 'Main Category',
+                    'Subcategory', 'Quantity (kg)', 'GHG Emission (kg CO₂-e)', 'GHG Emission (t CO₂-e)'
+                ]], { origin: 'A1' });
+
+                XLSX.writeFile(workbook, 'WasteSegregationReport.xlsx');
+            } catch (exportError) {
+                console.error('Error exporting data:', exportError);
+                alert('An error occurred while processing the data export.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
         });
-    
-        // Close modal when clicking outside of it
-        window.onclick = function(event) {
-            const modal = document.getElementById('myModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        };
+}
+
+
+
+
     </script>
     
 

@@ -27,13 +27,10 @@
      }
 
      th {
-         background-color: #d50000; /* Red background for table headers */
-         color: white; /* White text for better contrast */
+         background-color: #d50000 !important; /* Red background for table headers */
+         color: white !important; /* White text for better contrast */
          font-size: 11px; /* Reduce font size for headers to prevent overflow */
      }
-     #yearFilter, #quarterFilter, #monthFilter {
-     margin: 10px 0; /* Adds top and bottom margin */
-      }
 
      body {
          font-family: 'Roboto', sans-serif;
@@ -359,21 +356,37 @@ button:last-child:hover {
                         </div>
                     </div>
 
-                    
-                    <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                    <div id="AccommoSection">
+                    <div class="mb-4 text-center">
+                        <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                    </div>
+                    </div>
+    
+                    <div class="mb-4">
+                        <label for="yearFilter">Filter by Year:</label>
+                        <select id="yearFilter" onchange="filterData()">
+                            <option value="">All Years</option>
+                            <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
+                        </select>
+
+                        <label for="officeFilter">Filter by Office:</label>
+                        <select id="officeFilter" onchange="filterData()">
+                            <option value="">All Offices</option>
+                            <option value="RGO" {% if selected_office == "RGO" %}selected{% endif %}>RGO</option>
+                            <option value="OVCDEA" {% if selected_office == "OVCDEA" %}selected{% endif %}>OVCDEA</option>
+                        </select>
+                    </div>
                     
                     <div class="buttons-container mt-3 text-center">
-                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                        <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                        <button class="btn" style="background-color: #d50000; color: white;" onclick="downloadExcel()">Download Excel</button>
                     </div>
+                    
                     <br>
-                    <div class="header">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
-                        <div class="title">Accommodation Consumption Report</div>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
-                    </div>
-                    <br>
-
                     <!-- Data Table -->
                     <table id="reportTable" class="table table-bordered">
                         <thead>
@@ -755,6 +768,17 @@ button:last-child:hover {
     </div>
 
     <script>
+            function filterData() {
+        const year = document.getElementById('yearFilter').value;
+        const office = document.getElementById('officeFilter').value;
+
+        let queryString = '';
+        if (year) queryString += `?year=${year}`;
+        if (office) queryString += (queryString ? '&' : '?') + `office=${office}`;
+
+        window.location.href = `/accommodation${queryString}`;
+    }
+
         function openCalculatorModal() {
             document.getElementById('myModal').style.display = 'block';
         }
@@ -765,18 +789,107 @@ button:last-child:hover {
 
         const reportData = {{ accommodation_data | safe }};
 
+    
         function printReport() {
-    const originalContents = document.body.innerHTML; // Save original page content
+    const yearFilter = document.getElementById('yearFilter').value;
+    const officeFilter = document.getElementById('officeFilter').value;
 
-    // Define the entire print layout including the table structure, excluding the "Actions" column
-    const printContents = `
-        <div style="text-align: center; margin-top: 20px;">
-            <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" style="width: 50px; vertical-align: middle;">
-            <h2 style="display: inline; margin: 0 20px;">Accommodation Consumption Report</h2>
-            <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" style="width: 50px; vertical-align: middle;">
-        </div>
-        <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; margin-top: 20px;">
-            <thead>
+    // Construct URL with query parameters for filtering
+    let url = '/accommodation/print';
+    const params = new URLSearchParams();
+    if (yearFilter) params.append('year', yearFilter);
+    if (officeFilter) params.append('office', officeFilter);
+    if (params.toString()) url += '?' + params.toString();
+
+    // Fetch all data for printing
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // Build table content from the fetched data
+            const tableRows = data.map(row => `
+                <tr>
+                    <td>${row.Campus}</td>
+                    <td>${row.Office}</td>
+                    <td>${row.YearTransact}</td>
+                    <td>${row.TravellerName}</td>
+                    <td>${row.TravelPurpose}</td>
+                    <td>${row.TravelDateFrom}</td>
+                    <td>${row.TravelDateTo}</td>
+                    <td>${row.Country}</td>
+                    <td>${row.TravelType}</td>
+                    <td>${row.NumOccupiedRoom}</td>
+                    <td>${row.NumNightPerRoom}</td>
+                    <td>${row.GHGEmissionKGC02e}</td>
+                    <td>${row.GHGEmissionTC02e}</td>
+                </tr>
+            `).join('');
+
+            // Define the print layout with fetched data
+            const printContents = `
+                <div style="text-align: center; margin-top: 20px;">
+                    <img src="/static/images/bsu.png" alt="Logo 1" style="width: 50px; vertical-align: middle;">
+                    <h2 style="display: inline; margin: 0 20px;">Accommodation Consumption Report</h2>
+                    <img src="/static/images/csd.png" alt="Logo 2" style="width: 50px; vertical-align: middle;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Office</th>
+                            <th>Year</th>
+                            <th>Traveller</th>
+                            <th>Event Name</th>
+                            <th>Travel Date From</th>
+                            <th>Travel Date To</th>
+                            <th>Country</th>
+                            <th>Local/International</th>
+                            <th>Occupied Rooms</th>
+                            <th>Nights per Room</th>
+                            <th>kg CO₂e</th>
+                            <th>t CO₂e</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            `;
+
+            // Print the content
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => {
+            console.error("Error fetching data for printing:", error);
+            alert("An error occurred while fetching data for printing.");
+        });
+}
+
+
+
+function downloadExcel() {
+    const yearFilter = document.getElementById('yearFilter').value;
+    const officeFilter = document.getElementById('officeFilter').value;
+
+    // Construct URL with query parameters for filtering
+    let url = '/accommodation/download';
+    const params = new URLSearchParams();
+    if (yearFilter) params.append('year', yearFilter);
+    if (officeFilter) params.append('office', officeFilter);
+    if (params.toString()) url += '?' + params.toString();
+
+    // Fetch all data for downloading
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error fetching data: " + data.error);
+                return;
+            }
+
+            // Create a new table for Excel generation
+            const tempTable = document.createElement('table');
+            const headerRow = `
                 <tr>
                     <th>Campus</th>
                     <th>Office</th>
@@ -792,40 +905,41 @@ button:last-child:hover {
                     <th>kg CO₂e</th>
                     <th>t CO₂e</th>
                 </tr>
-            </thead>
-            <tbody>
-                ${Array.from(document.querySelectorAll("#reportData tr")).map(row => {
-                    // Remove the last cell (Actions column) from each row
-                    const cells = Array.from(row.cells).slice(0, -1);
-                    return `<tr>${cells.map(cell => `<td>${cell.innerHTML}</td>`).join('')}</tr>`;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
+            `;
+            tempTable.innerHTML = `<thead>${headerRow}</thead><tbody></tbody>`;
 
-    document.body.innerHTML = printContents; // Replace body content with print layout
-    window.print(); // Trigger the print dialog
-    document.body.innerHTML = originalContents; // Restore original page content after printing
+            // Populate table rows with data
+            data.forEach(row => {
+                const tableRow = `
+                    <tr>
+                        <td>${row.Campus}</td>
+                        <td>${row.Office}</td>
+                        <td>${row.YearTransact}</td>
+                        <td>${row.TravellerName}</td>
+                        <td>${row.TravelPurpose}</td>
+                        <td>${row.TravelDateFrom}</td>
+                        <td>${row.TravelDateTo}</td>
+                        <td>${row.Country}</td>
+                        <td>${row.TravelType}</td>
+                        <td>${row.NumOccupiedRoom}</td>
+                        <td>${row.NumNightPerRoom}</td>
+                        <td>${row.GHGEmissionKGC02e}</td>
+                        <td>${row.GHGEmissionTC02e}</td>
+                    </tr>
+                `;
+                tempTable.querySelector('tbody').innerHTML += tableRow;
+            });
+
+            // Convert the temporary table to a workbook and download as Excel
+            const wb = XLSX.utils.table_to_book(tempTable, { sheet: "Accommodation Report" });
+            XLSX.writeFile(wb, "AccommodationReport.xlsx");
+        })
+        .catch(error => {
+            console.error("Error fetching data for download:", error);
+            alert("An error occurred while fetching data for download.");
+        });
 }
 
-function downloadExcel() {
-    const originalTable = document.getElementById("reportTable");
-
-    if (!originalTable) {
-        alert("Table not found. Please ensure the report table has data.");
-        return;
-    }
-
-    // Create a temporary table without the "Actions" column
-    const tempTable = originalTable.cloneNode(true);
-    Array.from(tempTable.querySelectorAll("tr")).forEach(row => {
-        row.removeChild(row.lastElementChild); // Remove last cell in each row (Actions column)
-    });
-
-    // Convert the temporary table to a workbook and download as Excel
-    const wb = XLSX.utils.table_to_book(tempTable, { sheet: "Report" });
-    XLSX.writeFile(wb, "AccommodationReport.xlsx");
-}
 
 function deleteAccommodation(id) {
     if (confirm("Are you sure you want to delete this accommodation record?")) {
@@ -938,9 +1052,7 @@ function generateReport() {
     document.getElementById('accommodationForm').submit();
     closeModal();
 }
-
-
-
+        
     </script>
 </body>
 </html>

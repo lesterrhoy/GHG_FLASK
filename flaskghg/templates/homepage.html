@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Center for Sustainable Development</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* General Styles */
+    body, h1, p, a, button {
+      font-family: Arial, sans-serif;
+    }
+
+    h2 {
+      font-family: Arial, sans-serif;
+      font-style: italic;
+      color: #FF0000; /* Bright red */
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 15px; }
+
+    /* Header */
+    .header {
+      background-color: #ffffff;
+      border-bottom: 2px solid #ccc;
+      padding: 1rem 0;
+    }
+    .header-logo img {
+      width: 90px;
+    }
+    .header-nav a {
+      color: #333;
+      margin: 0 1rem;
+      text-transform: uppercase;
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s ease; /* Smooth color transition */
+    }
+    .header-nav a:hover {
+      color: #004b87;
+    }
+
+    /* Banner */
+    .banner {
+      background-image: url('{{ url_for('static', filename='images/csd.jpg') }}'); /* Use Flask's static folder path */
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      padding: 5rem 0;
+      position: relative;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards; /* Fade-in animation */
+    }
+
+    /* Banner Text Animation */
+    .banner-content h1, .banner-content p {
+      animation: slideDown 1s ease forwards; /* Slide down */
+      opacity: 0;
+    }
+    .banner-content h1 {
+      animation-delay: 0.5s;
+    }
+    .banner-content p {
+      animation-delay: 1s;
+    }
+
+    /* Content Section */
+    .content-section {
+      padding: 3rem 0;
+    }
+    .content-section h2 {
+      font-size: 2rem;
+      color: #A40000;
+      text-align: left;
+      border-bottom: 2px solid #A40000;
+      padding-bottom: 0.5rem;
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .content-section p, .content-section ol, .side-section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    /* Footer */
+    .footer img {
+      transition: transform 0.3s ease; /* Logo hover effect */
+    }
+    .footer img:hover {
+      transform: scale(1.05); /* Slightly enlarges logos */
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Trigger content sections on scroll */
+    .content-section h2.show, .content-section p.show, .content-section ol.show, .side-section.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="header-logo">
+        <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Batangas State University Logo">
+      </div>
+      <nav class="header-nav">
+        <a href="#about">About</a>
+        <a href="{{ url_for('login') }}">Login</a>
+
+      </nav>
+    </div>
+  </header>
+
+  <!-- Banner Section -->
+  <section class="banner">
+    <div class="container banner-content">
+      <h1></h1>
+      <P></P>
+    </div>
+  </section>
+
+  <!-- Main Content Section -->
+  <div class="container content-section">
+    <div class="row">
+      <!-- Main Content -->
+      <div class="col-md-8">
+        <h2>Welcome to the Center for Sustainable Development</h2>
+        <p><strong><span style="color: #FF0000; font-style: italic;">University Vision</strong><br>A premier national university that develops leaders in the global knowledge economy.</p>
+        <p><strong><span style="color: #FF0000; font-style: italic;">University Mission</span></strong><br>
+          A university committed to producing leaders by providing a 21st century learning environment through innovations in education, multidisciplinary research, and community and industry partnerships in order to nurture the spirit of nationhood, propel the national economy, and engage the world for sustainable development.
+        </p>
+
+        <!-- Mandates Section -->
+        <h2 style="color: #FF0000; font-style: italic;">Mandates of the Center for Sustainable Development</h2>
+        <ol>
+          <li>Be the hub for SDGs-related information and activities</li>
+          <li>Initiate the preparation of the Sustainability Plan</li>
+          <li>Foster collaboration that brings together people, ideas, and resources</li>
+          <li>Initiate programs and practices that integrate sustainability into the university, including policy formulation</li>
+          <li>Provide education and outreach to the University and its campuses, and surrounding community about sustainability</li>
+          <li>Communicate sustainability knowledge, progress, and activities</li>
+          <li>Support and coordinate the Sustainability Council/Committee</li>
+          <li>Further efforts to meet the goals of the university’s Sustainability Plan and sustainability commitments</li>
+          <li>Equip campuses to envision and implement their unique contribution to sustainability</li>
+          <li>Measure, assess, and continually improve university sustainability efforts</li>
+          <li>Embed sustainability into the University’s culture and traditions</li>
+          <li>Coordinate with the campus student sustainability leadership program</li>
+          <li>Provide training for sustainability coordinators</li>
+        </ol>
+
+        <!-- Objectives Section -->
+        <h2 style="color: #FF0000; font-style: italic;">Objectives of Center for Sustainable Development</h2>
+        <ol>
+          <li>To contribute to global efforts towards achieving the SDGs both locally and internationally</li>
+          <li>To advance its institutional vision for and commitment to sustainability and codify it to SDGs</li>
+          <li>To instill among students and graduates a well-rounded education and global awareness, equipping them with the knowledge, understanding, skills, and attributes needed to work and live in a way that safeguards environmental, social, and economic well-being, both in the present and for future generations</li>
+          <li>To promote SDGs in the field of research and academics as well as in the management and operations of the University</li>
+          <li>To contribute to the sustainable development of the country through collaborations and dialogue, aiming to realize a more resilient society</li>
+        </ol>
+
+        <!-- Logo Section -->
+        <h2 style="color: #FF0000; font-style: italic;">Logo of the Center for Sustainable Development</h2>
+        <div>
+          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Center for Sustainable Development Logo" style="width: 200px;">
+        </div>
+      </div>
+
+      <!-- Side Section for SDG -->
+      <div class="col-md-4 side-section">
+        <img src="{{ url_for('static', filename='images/sdg-wheel.jpg') }}" alt="SDG Wheel" class="sdg-icon">
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer" style="background-color: #333; color: #ccc; padding: 2rem 0;">
+    <div class="container">
+      <div class="row">
+        <!-- Contact Information -->
+        <div class="col-md-8">
+          <h3>Contact Us</h3>
+          <p>
+            <strong>Center for Sustainable Development</strong><br>
+            Batangas State University<br>
+            Rizal Avenue, Batangas City 4200<br><br>
+            <strong>Landline</strong><br>
+            +63 43 980-0385<br>
+            local 1114 or 1546<br><br>
+            <strong>Email</strong><br>
+            <a href="mailto:president@g.batstate-u.edu.ph" style="color: #fff; text-decoration: underline;">president@g.batstate-u.edu.ph</a>
+          </p>
+        </div>
+
+        <!-- Logos (Aligned Right) -->
+        <div class="col-md-4 text-end">
+          <img src="{{ url_for('static', filename='images/redspartan.jpg') }}" alt="Red Spartans Logo" style="width: 150px; margin-right: 10px;">
+          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="CSD Logo" style="width: 150px;">
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Fade-in content sections on scroll
+    document.addEventListener('scroll', () => {
+      const elements = document.querySelectorAll('.content-section h2, .content-section p, .content-section ol, .side-section');
+      elements.forEach(el => {
+        const position = el.getBoundingClientRect().top;
+        if (position < window.innerHeight - 50) {
+          el.classList.add('show');
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

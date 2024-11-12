@@ -75,6 +75,116 @@
                         <li class="breadcrumb-item active">Consumption's Trend</li>
                     </ol>
 
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <p style="margin-bottom: 0; line-height: 1.5; text-align: justify;">
+                                The Environmental Management Unit dashboard presents an overview of historical and forecasted trends across various data points. It visualizes monthly patterns that initially show notable fluctuations, which gradually stabilize as the year advances. This clear representation supports informed decision-making and strategic planning for continuous improvement in sustainability efforts.
+                            </p>
+                        </div>
+                    </div>
+                    
+
+                     <!-- Total Emission Card -->
+                     <div class="row mb-4">
+                        <div class="col-xl-12">
+                            <div class="card bg-dark text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Total Emission</div>
+                                    <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- Individual Consumption Cards -->
+                    <div class="row">
+                        <!-- Electricity Card -->
+                        <div class="col-xl-2 col-md-4 mb-4">
+                            <div class="card bg-primary text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Electricity</div>
+                                    <div><strong>Current Emission:</strong> {{ current_emission_data.electricity }} CO₂e</div>
+                                </div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="electricity_consumption">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fuel Card -->
+                        <div class="col-xl-2 col-md-4 mb-4">
+                            <div class="card bg-warning text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Fuel</div>
+                                    <div><strong>Current Emission:</strong> {{ current_emission_data.fuel }} CO₂e</div>
+                                </div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="emu_fuel">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Waste Segregated Card -->
+                        <div class="col-xl-2 col-md-4 mb-4">
+                            <div class="card bg-success text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Waste Segregated</div>
+                                    <div><strong>Quantity:</strong> {{ waste_segregation_data[-1] if waste_segregation_data else 0 }} kg</div>
+                                </div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="waste_segregation">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Waste Unsegregated Card -->
+                        <div class="col-xl-2 col-md-4 mb-4">
+                            <div class="card bg-danger text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Waste Unsegregated</div>
+                                    <div><strong>Quantity:</strong> {{ waste_unsegregation_data[-1] if waste_unsegregation_data else 0 }} kg</div>
+                                </div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="waste_unsegregation">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Treated Water Card -->
+                        <div class="col-xl-2 col-md-4 mb-4">
+                            <div class="card bg-info text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Treated Water</div>
+                                    <div><strong>Volume:</strong> {{ treated_water_data[-1] if treated_water_data else 0 }} liters</div>
+                                </div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="treated_water">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Water Consumption Card -->
+                        <div class="col-xl-2 col-md-4 mb-4">
+                            <div class="card bg-secondary text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Water Consumption</div>
+                                    <div><strong>Consumption:</strong> {{ water_data[-1] if water_data else 0 }} liters</div>
+                                </div>
+                                <div class="card-footer d-flex align-items-center justify-content-between">
+                                    <a class="small text-white stretched-link" href="water_consumption">View Details</a>
+                                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                     <!-- Charts for Each Consumption -->
                     <div class="row">
                         <!-- Electricity Consumption Chart -->
@@ -179,78 +289,111 @@
     <script src="js/scripts.js"></script>
 
     <script>
-        // Helper function to get month names
-        function getMonthNames(startMonthIndex, totalMonths) {
-            const monthNames = [
-                "January", "February", "March", "April", "May", "June", 
-                "July", "August", "September", "October", "November", "December"
-            ];
-            let labels = [];
-            for (let i = 0; i < totalMonths; i++) {
-                let month = monthNames[(startMonthIndex + i) % 12];
-                if (i >= 12) {  // Mark future trend months
-                    month += " (Future)";
-                }
-                labels.push(month);
-            }
-            return labels;
-        }
+// Helper function to get month labels with year formatting (MM/YY)
+function getMonthLabels(startMonthIndex, startYear, totalMonths) {
+    let labels = [];
+    for (let i = 0; i < totalMonths; i++) {
+        let monthIndex = (startMonthIndex + i) % 12;
+        let year = startYear + Math.floor((startMonthIndex + i) / 12);
+        let month = (monthIndex + 1).toString().padStart(2, '0'); // Convert month to two-digit format
+        let yearShort = year.toString().slice(-2); // Get the last two digits of the year
+        labels.push(`${month}/${yearShort}`);
+    }
+    return labels;
+}
 
-        // Get the current month index
-        const currentMonthIndex = new Date().getMonth();
-        
-        // Generate labels for 12 months plus 2 future months
-        const labels = getMonthNames(currentMonthIndex, 14);
+// Define start month and year for the labels
+const startMonthIndex = 6; // July is the 7th month, index 6
+const startYear = 2023;
 
-        // Function to create a chart with connected lines
-        function createChart(chartId, label, data, historicalColor, forecastColor) {
-            const ctx = document.getElementById(chartId).getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Historical Data & Forecast',
-                        data: data,
-                        borderColor: function (context) {
-                            const index = context.dataIndex;
-                            return index >= 12 ? forecastColor : historicalColor;
-                        },
-                        fill: false,
-                        borderWidth: 2,
-                        pointBackgroundColor: function (context) {
-                            const index = context.dataIndex;
-                            return index >= 12 ? forecastColor : historicalColor;
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    title: { display: true, text: label + ' Forecast' },
-                    scales: {
-                        x: { title: { display: true, text: 'Month' } },
-                        y: { title: { display: true, text: 'Value' }, beginAtZero: true }
+// Generate labels from 07/23 to 08/24 (14 months)
+const labels = getMonthLabels(startMonthIndex, startYear, 14);
+
+// Function to create a chart with connected lines and formatted x-axis labels
+function createChart(chartId, label, data, historicalColor, forecastColor) {
+    const historicalData = data.slice(0, 12); // First 12 data points for historical data
+    const forecastData = data.slice(12); // Remaining data points for forecast data
+
+    // Combine historical data with the first point of forecast data to create a connected line
+    const combinedData = [...historicalData, forecastData[0]];
+
+    const ctx = document.getElementById(chartId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Historical Data',
+                    data: combinedData,
+                    borderColor: historicalColor,
+                    backgroundColor: historicalColor,
+                    fill: false,
+                    borderWidth: 2,
+                    pointBackgroundColor: function (context) {
+                        // Change the color of the 13th point (07/24) to black
+                        return context.dataIndex === 12 ? forecastColor : historicalColor;
                     },
-                    legend: {
-                        display: true,
-                        labels: {
-                            usePointStyle: true
-                        }
-                    }
+                    pointBorderColor: function (context) {
+                        return context.dataIndex === 12 ? forecastColor : historicalColor;
+                    },
+                    showLine: true // Line and points visible
+                },
+                {
+                    label: 'Forecast Data',
+                    data: Array(12).fill(null).concat(forecastData), // Ensure alignment by padding with nulls
+                    borderColor: forecastColor,
+                    backgroundColor: forecastColor,
+                    fill: false,
+                    borderWidth: 2,
+                    pointBackgroundColor: forecastColor,
+                    pointBorderColor: forecastColor,
+                    showLine: true // Line and points visible
                 }
-            });
+            ]
+        },
+        options: {
+            responsive: true,
+            title: { display: true, text: label + ' Forecast' },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Month' },
+                    ticks: {
+                        callback: function (value, index, values) {
+                            return labels[index]; // Ensures the labels stay in MM/YY format
+                        },
+                        maxRotation: 0, // Keeps the text horizontal
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    title: { display: true, text: 'Value' },
+                    beginAtZero: true
+                }
+            },
+            legend: {
+                display: true,
+                labels: {
+                    usePointStyle: true
+                }
+            }
         }
+    });
+}
 
-        // Extract forecast data from the template context
-        const forecastData = {{ forecast_data | tojson }};
+// Extract forecast data from the template context
+const forecastData = {{ forecast_data | tojson }};
 
-        // Create charts for each forecast using the updated function
-        createChart('electricityChart', 'Electricity', forecastData.electricity_forecast, 'blue', 'orange');
-        createChart('fuelChart', 'Fuel', forecastData.fuel_forecast, 'blue', 'orange');
-        createChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, 'blue', 'orange');
-        createChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, 'blue', 'orange');
-        createChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, 'blue', 'orange');
-        createChart('waterChart', 'Water Consumption', forecastData.water_forecast, 'blue', 'orange');
+// Create charts for each forecast using the updated function
+createChart('electricityChart', 'Electricity', forecastData.electricity_forecast, 'red', 'black');
+createChart('fuelChart', 'Fuel', forecastData.fuel_forecast, '#DDA63A', 'black');
+createChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, '#4C9F38', 'black');
+createChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, '#C5192D', 'black');
+createChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, '#19486A', 'black');
+createChart('waterChart', 'Water Consumption', forecastData.water_forecast, '#3F7E44', 'black');
+
+
+
     </script>
     
 </body>

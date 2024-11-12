@@ -6,179 +6,139 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #000000;
-            margin: 0;
-        }
-        
+        /* Layout and Sidenav Styling */
         #layoutSidenav {
             display: flex;
             min-height: 100vh;
+            overflow: hidden;
         }
-
+    
         #layoutSidenav_nav {
             width: 250px;
             background-color: #495057;
-            color: #fff;
         }
-
+    
         #layoutSidenav_nav .nav-link {
-            color: #e9ecef;
+            color: #fff;
             font-weight: 500;
-            padding: 12px 20px;
         }
-
+    
         #layoutSidenav_nav .nav-link:hover {
-            color: #ced4da;
-            background-color: #343a40;
+            color: #fff;
+            background-color: #495057;
         }
-
+    
         #layoutSidenav_content {
             flex-grow: 1;
             padding: 20px;
-            background-color: #ffffff;
+            background-color: #f8f9fa;
         }
-
+    
+        /* Header Styling */
         .header {
-            background-color: #c2ccd5;
-            color: #000000;
-            padding: 20px 0;
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
         }
-
+    
         .header h1 {
-            font-size: 24px;
+            font-size: 1.5rem;
             margin: 0;
-            text-align: center;
-            flex-grow: 1;
+            color: #fff;
         }
-
+    
         .header img {
             height: 80px;
-            width: auto;
         }
 
-        .container {
-            margin-top: 20px;
-        }
-
-        h2, h3 {
-            color: #333333;
-            font-weight: 600;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
+        /* Filter container styling */
         .filter-container {
             display: flex;
-            justify-content: flex-end;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
             margin-bottom: 15px;
+        }
+
+        /* Compact dropdown styling */
+        .filter-container label {
+            margin: 0;
+            font-weight: bold;
         }
 
         .filter-container select {
-            width: 160px;
             padding: 5px;
-            font-size: 14px;
-            margin: 0 10px;
+            font-size: 0.9rem;
+            border-radius: 4px;
         }
 
         /* Table Styling */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
-            margin-top: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
         }
 
         th, td {
-            padding: 12px;
-            border: 1px solid #000000;
+            padding: 4px; /* Reduced padding */
             text-align: center;
+            border: 1px solid #ddd;
         }
 
         th {
-            background-color: #ffffff;
-            color: rgb(0, 0, 0);
-            font-weight: 500;
+            background-color: #f2f2f2;
+            color: #000;
         }
-
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        .pagination-container {
+    
+        .footer {
             text-align: center;
-            margin-top: 20px;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
         }
-
+    
+        @media print {
+            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
+                display: none !important;
+            }
+            body, .container, .header, .card, .card-header, .card-body, table {
+                background-color: white !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+        }
+    
+        /* Button styling */
+        .btn {
+            width: 100px;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+    
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
             color: white;
         }
-
-        .modal-content {
-            border-radius: 8px;
-        }
-
-        /* Export button styling */
-        .btn-export {
-            background-color: #28a745;
+    
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
             color: white;
-            border: none;
-            padding: 8px 16px;
-            font-size: 14px;
-            border-radius: 4px;
-            margin-top: 15px;
-            cursor: pointer;
-        }
-
-        .btn-export:hover {
-            background-color: #218838;
-        }
-
-        .modal-header, .modal-footer {
-            border: none;
-        }
-
-        @media (max-width: 768px) {
-            #layoutSidenav {
-                flex-direction: column;
-            }
-
-            #layoutSidenav_nav {
-                width: 100%;
-                height: auto;
-            }
-
-            #layoutSidenav_content {
-                padding: 10px;
-            }
-
-            .filter-container {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .filter-container select {
-                margin: 5px 0;
-            }
         }
     </style>
 </head>
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">EXTERNAL <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">
+            EXTERNAL <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span>
+        </a>
         <div class="ms-auto"></div>
         <ul class="navbar-nav">
             <li class="nav-item">
@@ -189,64 +149,49 @@
         </ul>
     </nav>
 
+    <!-- Sidebar and Main Content Layout -->
     <div id="layoutSidenav">
+        <!-- Sidebar Navigation -->
         <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+            <nav class="sb-sidenav accordion sb-sidenav-dark">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
-                        <div class="sb-sidenav-menu-heading">Core</div>
                         <a class="nav-link" href="{{ url_for('external_dashboard') }}">
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Office</div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseExternal" aria-expanded="false" aria-controls="collapseExternal">
-                            <div class="sb-nav-link-icon"><i class="fas fa-plane"></i></div>
-                            External
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapseExternal" aria-labelledby="headingExternal" data-bs-parent="#sidenavAccordion">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="{{ url_for('flight') }}">Flight</a>
-                                <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
-                            </nav>
-                        </div>
-                        <a class="nav-link" href="{{ url_for('ea_report') }}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            Report
-                        </a>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('flight') }}">Flight</a>
+                        <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
                     </div>
                 </div>
             </nav>
         </div>
 
-        <!-- Main Content -->
         <div id="layoutSidenav_content">
             <main>
-                <body class="sb-nav-fixed">
-                    <!-- Header -->
-                    <div class="header">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" class="logo">
-                        <h1>External Affairs Consumption Report</h1>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" class="logo">
+                <div class="container-fluid px-4">
+                    <div class="header d-flex justify-content-between align-items-center my-4">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
+                        <h1 class="text-center">External Affairs Consumption Report</h1>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
                     </div>
 
-                    <br>
-
-                      <!-- Filters for Month and Year -->
-                      <div class="filter-container mb-3">
-                        <label for="yearFilter">Year: </label>
-                        <select id="yearFilter" onchange="applyYearFilter()">
-                            <option value="">All Years</option>
-                            {% for year in years %}
-                            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="filter-container mb-4">
+                        <form method="get" action="{{ url_for('ea_report') }}" class="d-flex align-items-center" style="gap: 10px;">
+                            <label for="year" class="fw-bold">Year:</label>
+                            <select name="year" id="year" class="form-select" style="width: 150px;" onchange="this.form.submit()">
+                                <option value="">Select</option>
+                                {% for y in years %}
+                                <option value="{{ y }}" {% if request.args.get('year') == y %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
                     </div>
+                    
 
-                    <h2 class="mt-5">Flight Data</h2>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped table-bordered" id="flightData">
+                    <h2>Flight Data</h2>
+                        <table class="table table-bordered" id="flightData">
                             <thead>
                                 <tr>
                                     <th>Campus</th>
@@ -284,10 +229,9 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
 
-                    <h2 class="mt-5">Accommodation Data</h2>
-                    <div class="table-responsive">
+
+                    <h2>Accommodation Data</h2>
                         <table class="table table-bordered" id="accommodationData">
                             <thead>
                                 <tr>
@@ -326,7 +270,6 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
 
                     <div class="text-center mt-4">
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exportModal">Save As</button>
@@ -336,41 +279,29 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="exportModalLabel">Export Options</h5>
+                                    <h5 class="modal-title" id="exportModalLabel">Select Consumption Report</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
                                     <form id="exportForm">
                                         <div class="mb-3">
-                                            <label for="consumptionType" class="form-label">Select Consumption Type:</label>
+                                            <label for="consumptionType" class="form-label">Select Consumption:</label>
                                             <select class="form-select" id="consumptionType">
-                                                <option value="flight">Flight</option>
-                                                <option value="accommodation">Accommodation</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="exportFormat" class="form-label">Select Export Format:</label>
-                                            <select class="form-select" id="exportFormat">
-                                                <option value="pdf">PDF</option>
-                                                <option value="excel">Excel</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3" id="printLayoutGroup">
-                                            <label for="printLayout" class="form-label">Select Print Layout:</label>
-                                            <select class="form-select" id="printLayout">
-                                                <option value="portrait">Portrait</option>
-                                                <option value="landscape">Landscape</option>
+                                                <option value="flightData">Flight</option>
+                                                <option value="accommodationData">Accommodation</option>
                                             </select>
                                         </div>
                                     </form>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-primary" onclick="handleExport()">Export</button>
+                                    <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                                    <button type="button" class="btn btn-success" onclick="generateExcel()">Download Excel</button>
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
 
                     <footer class="footer bg-light mt-auto">
                         <div class="container-fluid px-4">
@@ -403,114 +334,75 @@
         window.location.href = url.toString();
     }
     
-        function handleExport() {
-            const consumptionType = document.getElementById("consumptionType").value;
-            const exportFormat = document.getElementById("exportFormat").value;
-    
-            // Close the modal
-            let exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
-            exportModal.hide();
-    
-            // Handle export based on selected format
-            if (exportFormat === "pdf") {
-                exportPDF(consumptionType);
-            } else if (exportFormat === "excel") {
-                exportExcel(consumptionType);
+    function printReport() {
+    const consumptionType = document.getElementById('consumptionType').value;
+    const tableElement = document.getElementById(consumptionType);
+
+    if (!tableElement) {
+        alert('Please select a valid table.');
+        return;
+    }
+
+    // Create a temporary table element for filtered or all data
+    const tempTable = tableElement.cloneNode(true);
+    const rows = Array.from(tempTable.querySelectorAll('tbody tr'));
+
+    // Check if we should only print filtered data
+    const filtered = Array.from(rows).some(row => row.style.display === 'none');
+    if (filtered) {
+        rows.forEach(row => {
+            if (row.style.display === 'none') {
+                row.remove(); // Remove hidden rows for filtered data
             }
-        }
-    
-        function exportPDF(consumptionType) {
-            const tableElement = document.getElementById(consumptionType === 'flight' ? 'flightData' : 'accommodationData');
-            
-            if (!tableElement) {
-                alert('No data available to export.');
-                return;
-            }
-    
-            // Hide pagination controls before generating the PDF
-            const paginationControls = document.querySelectorAll('.pagination-container');
-            paginationControls.forEach(control => control.style.display = 'none');
-    
-            // Create a container for the PDF content
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.padding = '20px';
-            pdfContainer.style.fontFamily = 'Arial, sans-serif';
-            pdfContainer.style.color = '#333';
-    
-            const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.alignItems = 'center';
-            header.style.justifyContent = 'space-between';
-            header.style.marginBottom = '10px';
-    
-            const logo1 = document.createElement('img');
-            logo1.src = "{{ url_for('static', filename='images/bsu.png') }}";
-            logo1.alt = "Logo 1";
-            logo1.style.height = '60px';
-            header.appendChild(logo1);
-    
-            // Set dynamic title based on consumption type
-            const titleContainer = document.createElement('div');
-            titleContainer.style.textAlign = 'center';
-            titleContainer.innerHTML = `
-                <h1 style="font-size: 20px; color: #2b7a78; margin: 0;">${consumptionType.charAt(0).toUpperCase() + consumptionType.slice(1)} Consumption Report</h1>
-                <p style="font-size: 12px; color: #555; margin-top: 5px;">Generated on ${new Date().toLocaleDateString()}</p>
-            `;
-            header.appendChild(titleContainer);
-    
-            const logo2 = document.createElement('img');
-            logo2.src = "{{ url_for('static', filename='images/csd.png') }}";
-            logo2.alt = "Logo 2";
-            logo2.style.height = '60px';
-            header.appendChild(logo2);
-    
-            pdfContainer.appendChild(header);
-    
-            const styledTable = tableElement.cloneNode(true);
-            styledTable.style.width = '100%';
-            styledTable.style.borderCollapse = 'collapse';
-            styledTable.querySelectorAll('th, td').forEach(cell => {
-                cell.style.padding = '8px';
-                cell.style.border = '1px solid #ddd';
-                cell.style.fontSize = '10px';
-            });
-    
-            pdfContainer.appendChild(styledTable);
-    
-            const footer = document.createElement('div');
-            footer.style.textAlign = 'center';
-            footer.style.marginTop = '20px';
-            footer.style.fontSize = '10px';
-            footer.style.color = '#777';
-            footer.innerHTML = `
-                <hr style="border: 1px solid #ddd;">
-                <p>© 2024 ${consumptionType.charAt(0).toUpperCase() + consumptionType.slice(1)} Consumption Report. All Rights Reserved.</p>
-            `;
-            pdfContainer.appendChild(footer);
-    
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: `${consumptionType.charAt(0).toUpperCase() + consumptionType.slice(1)}_Consumption_Report.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-    
-            html2pdf().set(opt).from(pdfContainer).save().then(() => {
-                paginationControls.forEach(control => control.style.display = '');
-            });
-        }
-    
-        function exportExcel(consumptionType) {
-            // Construct the URL for Excel download
-            const url = "{{ url_for('download_excel', year=request.args.get('year'), consumption_type='') }}".replace("''", consumptionType);
-            window.location.href = url; // Redirect to the download URL
-        }
-    
-        document.getElementById("exportFormat").addEventListener("change", function() {
-            const printLayoutGroup = document.getElementById("printLayoutGroup");
-            printLayoutGroup.style.display = this.value === "pdf" ? "block" : "none";
         });
+    }
+
+    openPrintWindow(tempTable);
+}
+
+function openPrintWindow(tempTable) {
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>Print Report</title>');
+    printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">');
+    printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { padding: 8px; text-align: center; border: 1px solid #ddd; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<div style="text-align: center; margin-bottom: 20px;"><h2>Consumption Report</h2></div>');
+    printWindow.document.write(tempTable.outerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function generateExcel() {
+    const consumptionType = document.getElementById('consumptionType').value;
+    const tableElement = document.getElementById(consumptionType);
+
+    if (!tableElement) {
+        alert('Please select a valid table.');
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    const rows = Array.from(tableElement.querySelectorAll('tr'));
+
+    // Check if we should only include visible rows (filtered data)
+    rows.forEach(row => {
+        if (row.style.display !== 'none') {
+            const cols = row.querySelectorAll('td, th');
+            const csvRow = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
+            csvContent += csvRow + "\r\n";
+        }
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${consumptionType}_report.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
     </script>
     
 </body>
