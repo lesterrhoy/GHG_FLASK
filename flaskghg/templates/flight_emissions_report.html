@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Flight Emissions Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        .sb-topnav .navbar-nav .nav-item .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: white;
+        }
+        .sb-topnav .navbar-nav .nav-item .nav-link i {
+            margin-right: 5px;
+        }
+        .sb-sidenav-menu {
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        #layoutSidenav_nav .sb-sidenav-menu {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        /* Landscape print styling */
+        @media print {
+            @page {
+                size: landscape;
+            }
+        }
+    </style>
+</head>
+
+<body class="sb-nav-fixed">
+    <!-- Navbar at the top -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('csd_dashboard') }}">CSD Dashboard</a>
+        <div class="ms-auto"></div>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar and Main Content Layout -->
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            REPORT
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('electricity_report') }}">Electricity Report</a>
+                                <a class="nav-link" href="{{ url_for('fuel_emissions_report') }}">Fuel Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('water_report') }}">Water Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('treated_water_report') }}">Treated Water Report</a>
+                                <a class="nav-link" href="{{ url_for('waste_segregation_report') }}">Waste Segregation Report</a>
+                                <a class="nav-link" href="{{ url_for('waste_unseg_report') }}">Waste Unsegregation Report</a>
+                                <a class="nav-link" href="{{ url_for('food_consumption_report') }}">Food Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('lpg_consumption_report') }}">LPG Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('flight_emissions_report') }}">Flight Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h2 class="mt-4">Flight Emissions Report</h2>
+                    <!-- Filter Form -->
+<form method="GET" action="{{ url_for('flight_emissions_report') }}" class="mb-4" id="filterForm">
+    <div class="row">
+        <div class="col-md-3">
+            <label for="campus">Campus:</label>
+            <select id="campus" name="campus" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Campuses</option>
+                <option value="Alangilan" {% if campus == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                <option value="ARASOF-Nasugbu" {% if campus == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                <option value="Balayan" {% if campus == 'Balayan' %}selected{% endif %}>Balayan</option>
+                <option value="Central" {% if campus == 'Central' %}selected{% endif %}>Central</option>
+                <option value="JPLPC-Malvar" {% if campus == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                <option value="Lemery" {% if campus == 'Lemery' %}selected{% endif %}>Lemery</option>
+                <option value="Lipa" {% if campus == 'Lipa' %}selected{% endif %}>Lipa</option>
+                <option value="Lobo" {% if campus == 'Lobo' %}selected{% endif %}>Lobo</option>
+                <option value="Mabini" {% if campus == 'Mabini' %}selected{% endif %}>Mabini</option>
+                <option value="Pablo Borbon" {% if campus == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                <option value="Rosario" {% if campus == 'Rosario' %}selected{% endif %}>Rosario</option>
+                <option value="San Juan" {% if campus == 'San Juan' %}selected{% endif %}>San Juan</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="office">Office:</label>
+            <select id="office" name="office" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Offices</option>
+                <option value="Procurement" {% if request.args.get('office') == 'Procurement' %}selected{% endif %}>Procurement</option>
+                <option value="Auxillary Services" {% if request.args.get('office') == 'Auxillary Services' %}selected{% endif %}>Auxillary Services</option>
+                <option value="RGO" {% if request.args.get('office') == 'RGO' %}selected{% endif %}>RGO</option>
+                <option value="GSO" {% if request.args.get('office') == 'GSO' %}selected{% endif %}>GSO</option>
+                <option value="OVCRDES" {% if request.args.get('office') == 'OVCRDES' %}selected{% endif %}>OVCRDES</option>
+                <option value="OC" {% if request.args.get('office') == 'OC' %}selected{% endif %}>OC</option>
+                <option value="CICS" {% if request.args.get('office') == 'CICS' %}selected{% endif %}>CICS</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="year">Year:</label>
+            <select id="year" name="year" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                <option value="">All Years</option>
+                {% for y in range(2020, 2025) %}
+                    <option value="{{ y }}" {% if request.args.get('year') == y|string %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</form>
+
+                    {% if data %}
+                        <table class="table table-bordered mt-4" id="flight_data">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Office</th>
+                                    <th>Year</th>
+                                    <th>Traveller</th>
+                                    <th>Purpose</th>
+                                    <th>Travel Date</th>
+                                    <th>Origin</th>
+                                    <th>Destination</th>
+                                    <th>Class</th>
+                                    <th>One Way/Round Trip</th>
+                                    <th>kg CO₂e</th>
+                                    <th>t CO₂e</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for flight in data %}
+                                <tr>
+                                    <td>{{ flight.Campus }}</td>
+                                    <td>{{ flight.Office }}</td>
+                                    <td>{{ flight.Year }}</td>
+                                    <td>{{ flight.TravellerName }}</td>
+                                    <td>{{ flight.TravelPurpose }}</td>
+                                    <td>{{ flight.TravelDate }}</td>
+                                    <td>{{ flight.Origin }}</td>
+                                    <td>{{ flight.Destination }}</td>
+                                    <td>{{ flight.Class }}</td>
+                                    <td>{{ flight.OnewayRoundTrip }}</td>
+                                    <td>{{ flight.GHGEmissionKGC02e }}</td>
+                                    <td>{{ flight.GHGEmissionTC02e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+              <!-- Pagination Controls -->
+<div class="pagination-container mt-3">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-start">
+            {% if total_pages > 1 %}
+                <!-- Previous Button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('flight_emissions_report', page=current_page - 1, campus=campus, office=office, year=year) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page Indicator -->
+                <li class="page-item disabled">
+                    <span class="page-link">Page {{ current_page }} of {{ total_pages }}</span>
+                </li>
+                
+                <!-- Next Button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('flight_emissions_report', page=current_page + 1, campus=campus, office=office, year=year) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+                    {% else %}
+                        <p>No data available for this report.</p>
+                    {% endif %}
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
