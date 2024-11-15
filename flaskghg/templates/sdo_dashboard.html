@@ -199,6 +199,16 @@
         </div>
     </div>
 </div>
+<form id="yearForm" action="{{ url_for('sdo_dashboard') }}" method="get">
+    <label for="year">Select Year:</label>
+    <select name="year" id="year" onchange="document.getElementById('yearForm').submit();">
+        {% for year in range(current_year, current_year - 10, -1) %}
+            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+    </select>
+</form>
+
+
 
 
 
@@ -352,115 +362,125 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-       // Helper function to get month labels with year formatting (MM/YY)
-function getMonthLabels(startMonthIndex, startYear, totalMonths) {
-    let labels = [];
-    for (let i = 0; i < totalMonths; i++) {
-        let monthIndex = (startMonthIndex + i) % 12;
-        let year = startYear + Math.floor((startMonthIndex + i) / 12);
-        let month = (monthIndex + 1).toString().padStart(2, '0');
-        let yearShort = year.toString().slice(-2);
-        labels.push(`${month}/${yearShort}`);
-    }
-    return labels;
-}
-
-// Define the start month and year for the labels
-const startMonthIndex = 6; // July is the 7th month, index 6 (0-based)
-const startYear = 2023;
-
-// Generate labels from 07/23 to 08/24 (14 months)
-const labels = getMonthLabels(startMonthIndex, startYear, 14);
-
-// Forecast data passed from server
-const forecastData = {{ forecast_data | tojson }};
-
-// Updated color palette for each graph with dark border and bright forecast border
-const colorPalette = [
-    { border: 'darkblue', forecastBorder: 'red' },
-    { border: 'darkgreen', forecastBorder: 'red' },
-    { border: 'darkorange', forecastBorder: 'red' },
-    { border: 'indigo', forecastBorder: 'red' },
-    { border: 'saddlebrown', forecastBorder: 'red' },
-    { border: 'darkslategray', forecastBorder: 'red' },
-    { border: 'deeppink', forecastBorder: 'red' },
-    { border: 'goldenrod', forecastBorder: 'red' },
-    { border: 'dimgray', forecastBorder: 'red' },
-    { border: 'darkred', forecastBorder: 'red' }
-];
-
-// Helper function to create a line chart with connected historical and forecasted data
-function createForecastChart(chartId, label, data, colorIndex) {
-    const ctx = document.getElementById(chartId).getContext('2d');
-
-    // Separate historical and forecast data
-    const historicalData = data.slice(0, 12); // First 12 points for historical data
-    const forecastData = data.slice(12);      // Last 2 points for forecasted data
-
-    // Combine historical and forecast data into a single dataset for continuous line
-    const combinedData = [...historicalData, ...forecastData];
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: `${label} (Historical)`,
-                    data: combinedData,
-                    borderColor: colorPalette[colorIndex].border,
-                    fill: false,
-                    pointBackgroundColor: (ctx) => ctx.dataIndex < 12 ? colorPalette[colorIndex].border : colorPalette[colorIndex].forecastBorder,
-                    borderWidth: 2
-                },
-                {
-                    label: `${label} (Forecast)`,
-                    data: [...Array(12).fill(null), ...forecastData], // Offset forecast data to start after historical data
-                    borderColor: colorPalette[colorIndex].forecastBorder,
-                    fill: false,
-                    borderDash: [5, 5],  // Dashed line for forecast
-                    pointBackgroundColor: colorPalette[colorIndex].forecastBorder,
-                    borderWidth: 2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        usePointStyle: true
-                    }
-                }
-            },
-            scales: {
-                x: { title: { display: true, text: 'Month' } },
-                y: { title: { display: true, text: 'Consumption/Emissions' } }
-            }
+   <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Helper function to generate month labels in MM/YY format
+    function getMonthLabels(startMonthIndex, startYear, totalMonths) {
+        const labels = [];
+        for (let i = 0; i < totalMonths; i++) {
+            const monthIndex = (startMonthIndex + i) % 12;
+            const year = startYear + Math.floor((startMonthIndex + i) / 12);
+            const month = (monthIndex + 1).toString().padStart(2, '0');
+            labels.push(`${month}/${year.toString().slice(-2)}`);
         }
-    });
-}
+        return labels;
+    }
 
-// Generate charts for each category with distinct colors
-createForecastChart('electricityChart', 'Electricity Consumption', forecastData.electricity_forecast, 0);
-createForecastChart('fuelChart', 'Fuel Consumption', forecastData.fuel_forecast, 1);
-createForecastChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, 2);
-createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, 3);
-createForecastChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, 4);
-createForecastChart('waterChart', 'Water Consumption', forecastData.water_forecast, 5);
-createForecastChart('lpgChart', 'LPG Consumption', forecastData.lpg_forecast, 6);
-createForecastChart('foodWasteChart', 'Food Waste', forecastData.food_waste_forecast, 7);
-createForecastChart('accommodationChart', 'Accommodation Emissions', forecastData.accommodation_forecast, 8);
-createForecastChart('flightChart', 'Flight Emissions', forecastData.flight_forecast, 9);
+    // Define the starting month (January) and the selected year for labels
+    const startMonthIndex = 0;
+    const startYear = {{ selected_year }};
 
-    </script>
-    
-    
-    
+    // Generate labels for 12 months of actual data + 2 months forecast
+    const labels = getMonthLabels(startMonthIndex, startYear, 14);
 
-</html>
+    // Actual data passed from the server
+    const actualData = {
+        electricity: {{ electricity_data | tojson }},
+        fuel: {{ fuel_data | tojson }},
+        waste_segregation: {{ waste_segregation_data | tojson }},
+        waste_unsegregation: {{ waste_unsegregation_data | tojson }},
+        treated_water: {{ treated_water_data | tojson }},
+        water: {{ water_data | tojson }},
+        lpg: {{ lpg_data | tojson }},
+        food_waste: {{ food_waste_data | tojson }},
+        accommodation: {{ accommodation_data | tojson }},
+        flight: {{ flight_data | tojson }},
+        total_emission: {{ total_emission_data | tojson }}  // Included for total_emission chart
+    };
+
+    // Forecast data passed from the server
+    const forecastData = {{ forecast_data | tojson }};
+
+    // Color palette configuration for each chart
+    const colorPalette = [
+        { border: 'darkblue', forecastBorder: 'red' },
+        { border: 'darkgreen', forecastBorder: 'red' },
+        { border: 'darkorange', forecastBorder: 'red' },
+        { border: 'indigo', forecastBorder: 'red' },
+        { border: 'saddlebrown', forecastBorder: 'red' },
+        { border: 'darkslategray', forecastBorder: 'red' },
+        { border: 'deeppink', forecastBorder: 'red' },
+        { border: 'goldenrod', forecastBorder: 'red' },
+        { border: 'dimgray', forecastBorder: 'red' },
+        { border: 'darkred', forecastBorder: 'red' },
+        { border: 'purple', forecastBorder: 'red' } // For total_emission chart
+    ];
+
+    // Helper function to create a line chart displaying actual and forecasted data
+    function createForecastChart(chartId, label, actualData, forecastData, colorIndex) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: `${label} (Actual)`,
+                        data: actualData, // Actual data for 12 months
+                        borderColor: colorPalette[colorIndex].border,
+                        backgroundColor: colorPalette[colorIndex].border,
+                        fill: false,
+                        pointBackgroundColor: colorPalette[colorIndex].border,
+                        borderWidth: 2,
+                        pointRadius: 3
+                    },
+                    {
+                        label: `${label} (Forecast)`,
+                        data: [...Array(12).fill(null), ...forecastData], // Forecast data for next 2 months
+                        borderColor: colorPalette[colorIndex].forecastBorder,
+                        fill: false,
+                        borderDash: [5, 5], // Dashed line style for forecast
+                        pointBackgroundColor: colorPalette[colorIndex].forecastBorder,
+                        borderWidth: 2,
+                        pointRadius: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            usePointStyle: true
+                        }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Month' } },
+                    y: { title: { display: true, text: 'Consumption/Emissions' } }
+                }
+            }
+        });
+    }
+
+    // Generate charts for each category using actual and forecasted data
+    createForecastChart('electricityChart', 'Electricity Consumption', actualData.electricity, forecastData.electricity_forecast, 0);
+    createForecastChart('fuelChart', 'Fuel Consumption', actualData.fuel, forecastData.fuel_forecast, 1);
+    createForecastChart('wasteSegregatedChart', 'Waste Segregated', actualData.waste_segregation, forecastData.waste_segregation_forecast, 2);
+    createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', actualData.waste_unsegregation, forecastData.waste_unsegregation_forecast, 3);
+    createForecastChart('treatedWaterChart', 'Treated Water', actualData.treated_water, forecastData.treated_water_forecast, 4);
+    createForecastChart('waterChart', 'Water Consumption', actualData.water, forecastData.water_forecast, 5);
+    createForecastChart('lpgChart', 'LPG Consumption', actualData.lpg, forecastData.lpg_forecast, 6);
+    createForecastChart('foodWasteChart', 'Food Waste', actualData.food_waste, forecastData.food_waste_forecast, 7);
+    createForecastChart('accommodationChart', 'Accommodation Emissions', actualData.accommodation, forecastData.accommodation_forecast, 8);
+    createForecastChart('flightChart', 'Flight Emissions', actualData.flight, forecastData.flight_forecast, 9);
+    createForecastChart('totalEmissionChart', 'Total Emission', actualData.total_emission, forecastData.total_emission_forecast, 10); // Total Emission chart
+</script>
+
+
+

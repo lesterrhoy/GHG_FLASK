@@ -135,6 +135,14 @@
     </div>
 </div>
 
+<form id="yearFilterForm" action="{{ url_for('procurement_dashboard') }}" method="get" style="margin-bottom: 20px;">
+    <label for="yearSelect">Select Year:</label>
+    <select name="year" id="yearSelect" onchange="document.getElementById('yearFilterForm').submit();">
+        {% for year in range(2020, current_year + 1) %}
+            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+    </select>
+</form>
 
                     <!-- Charts for Each Consumption -->
                     <div class="row">
@@ -199,12 +207,9 @@
             return labels;
         }
     
-        // Define start month and year for the labels
-        const startMonthIndex = 6; // July (index 6, as months are 0-based)
-        const startYear = 2023;
-    
-        // Generate labels from 07/23 to 08/24 (14 months)
-        const labels = getMonthLabels(startMonthIndex, startYear, 14);
+        const selectedYear = {{ selected_year }};
+        const isForecastYear = selectedYear === 2024;
+        const labels = getMonthLabels(0, selectedYear, isForecastYear ? 14 : 12);  // 14 months for 2024, 12 otherwise
     
         // Data for Food Waste Chart
         const foodWasteForecast = {{ forecast_data.food_waste_forecast | tojson }};
@@ -215,57 +220,35 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Historical Data',
-                    data: foodWasteForecast.slice(0, 12).concat(foodWasteForecast[12]), // Connect line with first forecast point
-                    borderColor: 'red',
+                    label: 'Food Waste Data (Historical + Forecast)',
+                    data: foodWasteForecast,
+                    borderColor: isForecastYear ? 'black' : 'red',  // Black line only for 2024 forecasts
                     pointBackgroundColor: function(context) {
-                        // Make the dot at index 12 (07/24) fully black
-                        if (context.dataIndex === 12) {
+                        // Pure black points for forecast (only for 2024) in Nov/Dec (index 10, 11); otherwise red
+                        if (isForecastYear && context.dataIndex >= 10 && foodWasteForecast[context.dataIndex] !== null) {
                             return 'black';
+                        } else if (foodWasteForecast[context.dataIndex] !== null) {
+                            return 'red';  // Red points for historical data
                         }
-                        return 'red'; // All other historical points are red
+                        return null;  // No color for null values
                     },
-                    pointBorderColor: 'red',
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4, // Make the line smooth
-                    pointStyle: 'circle'
-                },
-                {
-                    label: 'Forecast Data',
-                    data: Array(12).fill(null).concat(foodWasteForecast.slice(12)),
-                    borderColor: 'black',
-                    pointBackgroundColor: 'black',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4, // Make the line smooth
-                    pointStyle: 'circle'
+                    tension: 0.4
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
                     x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'Consumption (kg)' } }
+                    y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
                 },
                 plugins: {
                     legend: {
                         display: true,
                         labels: {
                             usePointStyle: true,
-                            fontColor: '#333',
-                            padding: 15,
-                            generateLabels: function(chart) {
-                                const data = chart.data.datasets;
-                                return data.map((dataset, i) => ({
-                                    text: dataset.label,
-                                    fillStyle: dataset.pointBackgroundColor === 'black' ? 'black' : 'red',
-                                    strokeStyle: dataset.borderColor,
-                                    lineWidth: 0,
-                                    hidden: !chart.isDatasetVisible(i),
-                                    pointStyle: 'circle' // Use circle for point style
-                                }));
-                            }
+                            padding: 15
                         }
                     }
                 }
@@ -281,57 +264,35 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Historical Data',
-                    data: lpgForecast.slice(0, 12).concat(lpgForecast[12]), // Connect line with first forecast point
-                    borderColor: 'blue',
+                    label: 'LPG Data (Historical + Forecast)',
+                    data: lpgForecast,
+                    borderColor: isForecastYear ? 'black' : 'blue',  // Black line only for 2024 forecasts
                     pointBackgroundColor: function(context) {
-                        // Make the dot at index 12 (07/24) fully black
-                        if (context.dataIndex === 12) {
+                        // Pure black points for forecast (only for 2024) in Nov/Dec (index 10, 11); otherwise blue
+                        if (isForecastYear && context.dataIndex >= 10 && lpgForecast[context.dataIndex] !== null) {
                             return 'black';
+                        } else if (lpgForecast[context.dataIndex] !== null) {
+                            return 'blue';  // Blue points for historical data
                         }
-                        return 'blue'; // All other historical points are blue
+                        return null;  // No color for null values
                     },
-                    pointBorderColor: 'blue',
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4, // Make the line smooth
-                    pointStyle: 'circle'
-                },
-                {
-                    label: 'Forecast Data',
-                    data: Array(12).fill(null).concat(lpgForecast.slice(12)),
-                    borderColor: 'black',
-                    pointBackgroundColor: 'black',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4, // Make the line smooth
-                    pointStyle: 'circle'
+                    tension: 0.4
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
                     x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'Consumption (liters)' } }
+                    y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
                 },
                 plugins: {
                     legend: {
                         display: true,
                         labels: {
                             usePointStyle: true,
-                            fontColor: '#333',
-                            padding: 15,
-                            generateLabels: function(chart) {
-                                const data = chart.data.datasets;
-                                return data.map((dataset, i) => ({
-                                    text: dataset.label,
-                                    fillStyle: dataset.pointBackgroundColor === 'black' ? 'black' : 'blue',
-                                    strokeStyle: dataset.borderColor,
-                                    lineWidth: 0,
-                                    hidden: !chart.isDatasetVisible(i),
-                                    pointStyle: 'circle' // Use circle for point style
-                                }));
-                            }
+                            padding: 15
                         }
                     }
                 }
@@ -342,7 +303,6 @@
     
     
     
-
     
 </body>
 </html>

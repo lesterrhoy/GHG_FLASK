@@ -195,146 +195,95 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Helper function to get month labels with year formatting (MM/YY)
-        function getMonthLabels(startMonthIndex, startYear, totalMonths) {
-            let labels = [];
-            for (let i = 0; i < totalMonths; i++) {
-                let monthIndex = (startMonthIndex + i) % 12;
-                let year = startYear + Math.floor((startMonthIndex + i) / 12);
-                let month = (monthIndex + 1).toString().padStart(2, '0');
-                let yearShort = year.toString().slice(-2);
-                labels.push(`${month}/${yearShort}`);
-            }
-            return labels;
-        }
+    // Labels for each year from 2020 to 2026 (including forecast)
+    const yearLabels = ['2020', '2021', '2022', '2023', '2024', '2025', '2026'];
 
-        // Define start month and year for the labels
-        const startMonthIndex = 6; // July (index 6, as months are 0-based)
-        const startYear = 2023;
+    // Data for Flight Emissions Chart
+    const flightAnnualData = {{ forecast_data.flight_annual | tojson }};
+    const flightForecast = {{ forecast_data.flight_forecast | tojson }};
+    const flightCombinedData = flightAnnualData.concat(flightForecast); // Combine historical and forecast data
 
-        // Generate labels from 07/23 to 08/24 (14 months)
-        const labels = getMonthLabels(startMonthIndex, startYear, 14);
-
-        // Data for Flight Emissions Chart
-        const flightForecast = {{ forecast_data.flight_forecast | tojson }};
-        const flightChartCtx = document.getElementById('flightChart').getContext('2d');
-
-        new Chart(flightChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Historical Data',
-                    data: flightForecast.slice(0, 12).concat(flightForecast[12]), // Connect line with first forecast point
+    const flightChartCtx = document.getElementById('flightChart').getContext('2d');
+    new Chart(flightChartCtx, {
+        type: 'line',
+        data: {
+            labels: yearLabels,
+            datasets: [
+                {
+                    label: 'Flight Emissions',
+                    data: flightCombinedData,  // Combined data for both historical and forecast
                     borderColor: 'blue',
                     pointBackgroundColor: function(context) {
-                        return context.dataIndex === 12 ? 'black' : 'blue'; // Make 07/24 dot black
+                        return context.dataIndex >= 5 ? 'black' : 'blue'; // Forecast points in black
                     },
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4, // Make the line smooth
+                    tension: 0.4, // Smooth line
                     pointStyle: 'circle'
-                },
-                {
-                    label: 'Forecast Data',
-                    data: Array(12).fill(null).concat(flightForecast.slice(12)),
-                    borderColor: 'black',
-                    pointBackgroundColor: 'black',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4, // Make the line smooth
-                    pointStyle: 'circle'
-                }]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Year' } },
+                y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
             },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            usePointStyle: true,
-                            fontColor: '#333',
-                            padding: 15,
-                            generateLabels: function(chart) {
-                                const data = chart.data.datasets;
-                                return data.map((dataset, i) => ({
-                                    text: dataset.label,
-                                    fillStyle: dataset.pointBackgroundColor === 'black' ? 'black' : 'blue',
-                                    strokeStyle: dataset.borderColor,
-                                    lineWidth: 0,
-                                    hidden: !chart.isDatasetVisible(i),
-                                    pointStyle: 'circle' // Use circle for point style
-                                }));
-                            }
-                        }
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
                     }
                 }
             }
-        });
+        }
+    });
 
-        // Data for Accommodation Emissions Chart
-        const accommodationForecast = {{ forecast_data.accommodation_forecast | tojson }};
-        const accommodationChartCtx = document.getElementById('accommodationChart').getContext('2d');
+    // Data for Accommodation Emissions Chart (same structure as above)
+    const accommodationAnnualData = {{ forecast_data.accommodation_annual | tojson }};
+    const accommodationForecast = {{ forecast_data.accommodation_forecast | tojson }};
+    const accommodationCombinedData = accommodationAnnualData.concat(accommodationForecast); // Combined data
 
-        new Chart(accommodationChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Historical Data',
-                    data: accommodationForecast.slice(0, 12).concat(accommodationForecast[12]), // Connect line with first forecast point
+    const accommodationChartCtx = document.getElementById('accommodationChart').getContext('2d');
+    new Chart(accommodationChartCtx, {
+        type: 'line',
+        data: {
+            labels: yearLabels,
+            datasets: [
+                {
+                    label: 'Accommodation Emissions',
+                    data: accommodationCombinedData, // Combined data for both historical and forecast
                     borderColor: 'red',
                     pointBackgroundColor: function(context) {
-                        return context.dataIndex === 12 ? 'black' : 'red'; // Make 07/24 dot black
+                        return context.dataIndex >= 5 ? 'black' : 'red'; // Forecast points in black
                     },
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4, // Make the line smooth
+                    tension: 0.4,
                     pointStyle: 'circle'
-                },
-                {
-                    label: 'Forecast Data',
-                    data: Array(12).fill(null).concat(accommodationForecast.slice(12)),
-                    borderColor: 'black',
-                    pointBackgroundColor: 'black',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4, // Make the line smooth
-                    pointStyle: 'circle'
-                }]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Year' } },
+                y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
             },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            usePointStyle: true,
-                            fontColor: '#333',
-                            padding: 15,
-                            generateLabels: function(chart) {
-                                const data = chart.data.datasets;
-                                return data.map((dataset, i) => ({
-                                    text: dataset.label,
-                                    fillStyle: dataset.pointBackgroundColor === 'black' ? 'black' : 'red',
-                                    strokeStyle: dataset.borderColor,
-                                    lineWidth: 0,
-                                    hidden: !chart.isDatasetVisible(i),
-                                    pointStyle: 'circle' // Use circle for point style
-                                }));
-                            }
-                        }
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
                     }
                 }
             }
-        });
-    </script>
+        }
+    });
+</script>
+
+    
 </body>

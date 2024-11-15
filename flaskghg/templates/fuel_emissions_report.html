@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Bundle with Popper -->
@@ -31,12 +32,95 @@
             max-height: 90vh; /* Adjust this value to set your desired height */
             overflow-y: auto;
         }
-        /* Landscape print styling */
-        @media print {
-            @page {
-                size: landscape;
-            }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
         }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+      /* Print-Specific Styling */
+    @media print {
+        @page {
+            size: landscape;
+            margin: 10mm;
+        }
+
+        /* Reduce font size and padding to fit more content on the page */
+        body, table {
+            font-size: 10px;
+        }
+
+        th, td {
+            padding: 4px;
+        }
+
+        /* Ensure table and content fit within the printable area */
+        table {
+            width: 100%;
+            max-width: 100%;
+            border: 1px solid #000;
+        }
+
+        /* Avoid breaking inside table rows */
+        tr, td, th {
+            page-break-inside: avoid;
+        }
+
+        /* Hide non-printable elements */
+        #printReportBtn, .pagination-container, .filter-container, .sb-topnav, #layoutSidenav_nav {
+            display: none;
+        }
+
+        /* Remove extra margins and padding around the main content */
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Header for report title */
+        #reportHeader {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Footer for page numbers */
+        .page-footer {
+            text-align: center;
+            font-size: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        #exportToExcelBtn {
+        display: none;
+    }
+    }
     </style>
 </head>
 
@@ -105,6 +189,7 @@
                 <div class="container-fluid px-4">
                     <h2 class="mt-4">Fuel Emissions Report</h2>
 <!-- Filter Form for Campus and Year -->
+<div class="filter-container">
 <form method="GET" action="{{ url_for('fuel_emissions_report') }}" class="mb-4" id="filterForm">
     <div class="row">
         <!-- Campus Filter -->
@@ -141,10 +226,10 @@
         </div>
     </div>
 </form>
+</div>
 
-
-
-                    {% if data %}
+{% if data %}
+                        <!-- Main Table -->
                         <table class="table table-bordered mt-4" id="fuel_emissions">
                             <thead>
                                 <tr>
@@ -165,7 +250,7 @@
                                     <th>Total Emission (t CO₂-e)</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="fuel_emissions_data">
                                 {% for report in data %}
                                 <tr>
                                     <td>{{ report['campus'] }}</td>
@@ -212,11 +297,104 @@
                                 </ul>
                             </nav>
                         </div>
-                        
                     {% else %}
                         <p>No data available for this report.</p>
                     {% endif %}
+
+                    <button id="printReportBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
+                        Print Report
+                    </button>
+                    <button id="exportToExcelBtn" onclick="downloadExcel()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
+                        Export to Excel
+                    </button>
+                    
                 </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("printReportBtn").addEventListener("click", function() {
+            const campus = document.getElementById("campus").value;
+            const year = document.getElementById("year").value;
+            const url = `/report/fuel_emissions/all_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById("fuel_emissions_data");
+                    tableBody.innerHTML = "";
+
+                    data.forEach(report => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${report.campus}</td>
+                            <td>${report.date}</td>
+                            <td>${report.driver}</td>
+                            <td>${report.type}</td>
+                            <td>${report.vehicle_equipment}</td>
+                            <td>${report.plate_no}</td>
+                            <td>${report.category}</td>
+                            <td>${report.fuel_type}</td>
+                            <td>${report.quantity_liters}</td>
+                            <td>${report.total_amount}</td>
+                            <td>${report.co2_emission}</td>
+                            <td>${report.nh4_emission}</td>
+                            <td>${report.n2o_emission}</td>
+                            <td>${report.total_emission}</td>
+                            <td>${report.total_emission_t}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    window.print();
+                })
+                .catch(error => console.error("Error fetching data for printing:", error));
+        });
+        function downloadExcel() {
+            const campus = document.getElementById("campus").value;
+            const year = document.getElementById("year").value;
+            const url = `/report/fuel_emissions/all_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        alert("No data available to export.");
+                        return;
+                    }
+
+                    // Prepare data for Excel
+                    const worksheetData = [
+                        [
+                            "Campus", "Date", "Driver", "Type", "Vehicle Type", "Plate Number",
+                            "Category", "Fuel Type", "Quantity (Liters)", "Total Amount",
+                            "CO₂ Emission (kg)", "NH₄ Emission (kg CO₂-e)", "N₂O Emission (kg CO₂-e)",
+                            "Total Emission (kg CO₂-e)", "Total Emission (t CO₂-e)"
+                        ]
+                    ];
+
+                    // Add data rows
+                    data.forEach(report => {
+                        worksheetData.push([
+                            report.campus, report.date, report.driver, report.type, report.vehicle_equipment,
+                            report.plate_no, report.category, report.fuel_type, report.quantity_liters,
+                            report.total_amount, report.co2_emission, report.nh4_emission, report.n2o_emission,
+                            report.total_emission, report.total_emission_t
+                        ]);
+                    });
+
+                    // Create a workbook and worksheet
+                    const workbook = XLSX.utils.book_new();
+                    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Fuel Emissions Report");
+
+                    // Export workbook to Excel file
+                    XLSX.writeFile(workbook, "Fuel_Emissions_Report.xlsx");
+                })
+                .catch(error => console.error("Error fetching data for Excel export:", error));
+        }
+    </script>
             </main>
         </div>
     </div>

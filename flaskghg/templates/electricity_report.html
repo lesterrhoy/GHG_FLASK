@@ -12,6 +12,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+
 
     <style>
         .sb-topnav .navbar-nav .nav-item .nav-link {
@@ -28,16 +30,94 @@
             max-height: 90vh;
         }
         #layoutSidenav_nav .sb-sidenav-menu {
-    max-height: 90vh; /* Adjust this value to set your desired height */
-    overflow-y: auto;
-    
-}
-/* Landscape print styling */
-@media print {
-            @page {
-                size: landscape;
-            }
+            max-height: 90vh; /* Adjust this value to set your desired height */
+            overflow-y: auto;
         }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        @media print {
+        @page {
+            size: landscape;
+            margin: 10mm;
+        }
+
+        /* Reduce font size and padding to fit more content on the page */
+        body, table {
+            font-size: 10px;
+        }
+
+        th, td {
+            padding: 4px;
+        }
+
+        /* Ensure table and content fit within the printable area */
+        table {
+            width: 100%;
+            max-width: 100%;
+            border: 1px solid #000;
+        }
+
+        /* Avoid breaking inside table rows */
+        tr, td, th {
+            page-break-inside: avoid;
+        }
+
+        /* Hide non-printable elements including filter form */
+        #filterForm, #printReportBtn, .pagination-container, .sb-topnav, #layoutSidenav_nav, #downloadExcelBtn {
+            display: none;
+        }
+
+        /* Remove extra margins and padding around the main content */
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Header for report title */
+        #reportHeader {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Footer for page numbers */
+        .page-footer {
+            text-align: center;
+            font-size: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    }
     </style>
 </head>
 
@@ -184,7 +264,7 @@
                                     <th>T CO₂ per KWH</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="electricityData">
                                 {% for row in data %}
                                 <tr>
                                     <td>{{ row['campus'] }}</td>
@@ -239,26 +319,90 @@
    
             <!-- Print and Export Buttons -->
             <div class="mb-3">
-                <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                <button type="button" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                <button id="printReportBtn" class="btn btn-primary" onclick="printAllData()">Print Report</button>
+                <button id="downloadExcelBtn" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
             </div>
 
-    <script>
-        function printReport() {
-            const printContent = document.getElementById('electricityTable').outerHTML;
-            const printWindow = window.open('', '', 'width=800,height=600');
-            printWindow.document.write('<html><head><title>Print Report</title>');
-            printWindow.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">');
-            printWindow.document.write('</head><body>');
-            printWindow.document.write(printContent);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.print();
-        }
-
-        function downloadExcel() {
-            alert("Excel download functionality not yet implemented.");
-        }
-    </script>
+            <script>
+                function printAllData() {
+                    const campus = document.getElementById("campus").value;
+                    const category = document.getElementById("category").value;
+                    const month = document.getElementById("month").value;
+                    const quarter = document.getElementById("quarter").value;
+                    const year = document.getElementById("year").value;
+        
+                    const url = `/fetch_all_electricity_data?campus=${encodeURIComponent(campus)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}&quarter=${encodeURIComponent(quarter)}&year=${encodeURIComponent(year)}`;
+        
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            const tableBody = document.getElementById("electricityData");
+                            tableBody.innerHTML = ""; // Clear existing data
+        
+                            data.forEach(row => {
+                                const tr = document.createElement("tr");
+                                tr.innerHTML = `
+                                    <td>${row.campus}</td>
+                                    <td>${row.category}</td>
+                                    <td>${row.month}</td>
+                                    <td>${row.quarter}</td>
+                                    <td>${row.year}</td>
+                                    <td>${row.prev_reading}</td>
+                                    <td>${row.current_reading}</td>
+                                    <td>${row.multiplier}</td>
+                                    <td>${row.total_amount}</td>
+                                    <td>${row.consumption}</td>
+                                    <td>${row.price_per_kwh}</td>
+                                    <td>${row.kg_co2_per_kwh}</td>
+                                    <td>${row.t_co2_per_kwh}</td>
+                                `;
+                                tableBody.appendChild(tr);
+                            });
+        
+                            // Trigger print dialog
+                            window.print();
+                        })
+                        .catch(error => console.error("Error fetching data for print:", error));
+                }
+        
+                function downloadExcel() {
+                    const campus = document.getElementById("campus").value;
+                    const category = document.getElementById("category").value;
+                    const month = document.getElementById("month").value;
+                    const quarter = document.getElementById("quarter").value;
+                    const year = document.getElementById("year").value;
+        
+                    const url = `/fetch_all_electricity_data?campus=${encodeURIComponent(campus)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}&quarter=${encodeURIComponent(quarter)}&year=${encodeURIComponent(year)}`;
+        
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.length === 0) {
+                                alert("No data available to export.");
+                                return;
+                            }
+        
+                            const worksheetData = [
+                                ["Campus", "Category", "Month", "Quarter", "Year", "Prev Reading", "Current Reading", "Multiplier", "Total Amount", "Consumption", "Price Per KWH", "KG CO₂ per KWH", "T CO₂ per KWH"]
+                            ];
+        
+                            data.forEach(row => {
+                                worksheetData.push([
+                                    row.campus, row.category, row.month, row.quarter, row.year,
+                                    row.prev_reading, row.current_reading, row.multiplier,
+                                    row.total_amount, row.consumption, row.price_per_kwh,
+                                    row.kg_co2_per_kwh, row.t_co2_per_kwh
+                                ]);
+                            });
+        
+                            const workbook = XLSX.utils.book_new();
+                            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+                            XLSX.utils.book_append_sheet(workbook, worksheet, "Electricity Report");
+        
+                            XLSX.writeFile(workbook, "Electricity_Consumption_Report.xlsx");
+                        })
+                        .catch(error => console.error("Error fetching data for Excel export:", error));
+                }
+            </script>
 </body>
 </html>

@@ -291,59 +291,92 @@ def fetch_all_data():
     
     return jsonify(data)
 
+from datetime import datetime
+# Route for the EMU dashboard
 # Route for the EMU dashboard
 @app.route('/emu')
 def emu_dashboard():
     if 'loggedIn' not in session:
         return redirect(url_for('login'))
 
-    # Retrieve the campus from session, default to 'default_campus' if not set
     campus = session.get('campus', 'default_campus')
+    selected_year = int(request.args.get('year', datetime.now().year))
+    current_year = datetime.now().year
 
-    # Initialize report and emission data
     electricity_data = []
     fuel_data = []
     waste_segregation_data = []
     waste_unsegregation_data = []
     treated_water_data = []
     water_data = []
-    current_emission_data = {"electricity": 0, "fuel": 0, "water": 0}  # Store current emissions
+    current_emission_data = {"electricity": 0, "fuel": 0, "water": 0}
 
     try:
-        # Establish database connection
         conn = get_db_connection()
         if conn is None:
-            raise Error("Could not establish database connection.")
+            raise Exception("Could not establish database connection.")
         
         cursor = conn.cursor(dictionary=True)
 
-        # Fetch data for the specific campus
-        cursor.execute("SELECT consumption FROM electricity_consumption WHERE campus = %s", (campus,))
-        electricity_data = [float(row['consumption']) for row in cursor.fetchall()]
+        # Fetch kg_co2_per_kwh for electricity consumption
+        cursor.execute(
+            "SELECT kg_co2_per_kwh FROM electricity_consumption WHERE campus = %s AND year = %s",
+            (campus, selected_year)
+        )
+        electricity_data = [float(row['kg_co2_per_kwh']) for row in cursor.fetchall()] or [0] * 12
 
-        cursor.execute("SELECT total_emission FROM fuel_emissions WHERE campus = %s", (campus,))
-        fuel_data = [float(row['total_emission']) for row in cursor.fetchall()]
+        # Fetch total_emission for fuel emissions
+        cursor.execute(
+            "SELECT total_emission FROM fuel_emissions WHERE campus = %s AND YEAR(date) = %s",
+            (campus, selected_year)
+        )
+        fuel_data = [float(row['total_emission']) for row in cursor.fetchall()] or [0] * 12
 
-        cursor.execute("SELECT QuantityInKG FROM tblsolidwastesegregated WHERE Campus = %s", (campus,))
-        waste_segregation_data = [float(row['QuantityInKG']) for row in cursor.fetchall()]
+        # Fetch GHGEmissionKGCO2e for segregated waste
+        cursor.execute(
+            "SELECT GHGEmissionKGCO2e FROM tblsolidwastesegregated WHERE Campus = %s AND Year = %s",
+            (campus, selected_year)
+        )
+        waste_segregation_data = [float(row['GHGEmissionKGCO2e']) for row in cursor.fetchall()] or [0] * 12
 
-        cursor.execute("SELECT QuantityInKG FROM tblsolidwasteunsegregated WHERE Campus = %s", (campus,))
-        waste_unsegregation_data = [float(row['QuantityInKG']) for row in cursor.fetchall()]
+        # Fetch GHGEmissionKGCO2e for unsegregated waste
+        cursor.execute(
+            "SELECT GHGEmissionKGCO2e FROM tblsolidwasteunsegregated WHERE Campus = %s AND Year = %s",
+            (campus, selected_year)
+        )
+        waste_unsegregation_data = [float(row['GHGEmissionKGCO2e']) for row in cursor.fetchall()] or [0] * 12
 
-        cursor.execute("SELECT TreatedWaterVolume FROM tbltreatedwater WHERE Campus = %s", (campus,))
-        treated_water_data = [float(row['TreatedWaterVolume']) for row in cursor.fetchall()]
+        # Fetch FactorKGCO2e for treated water
+        cursor.execute(
+            "SELECT FactorKGCO2e FROM tbltreatedwater WHERE Campus = %s AND YEAR(Date) = %s",
+            (campus, selected_year)
+        )
+        treated_water_data = [float(row['FactorKGCO2e']) for row in cursor.fetchall()] or [0] * 12
 
-        cursor.execute("SELECT Consumption FROM tblwater WHERE Campus = %s", (campus,))
-        water_data = [float(row['Consumption']) for row in cursor.fetchall()]
+        # Fetch FactorKGCO2e for water consumption
+        cursor.execute(
+            "SELECT FactorKGCO2e FROM tblwater WHERE Campus = %s AND YEAR(Date) = %s",
+            (campus, selected_year)
+        )
+        water_data = [float(row['FactorKGCO2e']) for row in cursor.fetchall()] or [0] * 12
 
-        # Fetch current emissions for each type and convert to float
-        cursor.execute("SELECT current_emission FROM electricity_emissions WHERE campus = %s ORDER BY date DESC LIMIT 1", (campus,))
+        # Fetch current emissions
+        cursor.execute(
+            "SELECT current_emission FROM electricity_emissions WHERE campus = %s AND YEAR(date) = %s ORDER BY date DESC LIMIT 1",
+            (campus, selected_year)
+        )
         current_emission_data["electricity"] = float(cursor.fetchone()['current_emission']) if cursor.rowcount else 0
 
-        cursor.execute("SELECT current_emission FROM fuel_emissions WHERE campus = %s ORDER BY date DESC LIMIT 1", (campus,))
+        cursor.execute(
+            "SELECT current_emission FROM fuel_emissions WHERE campus = %s AND YEAR(date) = %s ORDER BY date DESC LIMIT 1",
+            (campus, selected_year)
+        )
         current_emission_data["fuel"] = float(cursor.fetchone()['current_emission']) if cursor.rowcount else 0
 
-        cursor.execute("SELECT current_emission FROM water_emissions WHERE campus = %s ORDER BY date DESC LIMIT 1", (campus,))
+        cursor.execute(
+            "SELECT current_emission FROM water_emissions WHERE campus = %s AND YEAR(date) = %s ORDER BY date DESC LIMIT 1",
+            (campus, selected_year)
+        )
         current_emission_data["water"] = float(cursor.fetchone()['current_emission']) if cursor.rowcount else 0
 
     except mysql.connector.Error as e:
@@ -355,7 +388,7 @@ def emu_dashboard():
         if conn:
             conn.close()
 
-    # Compute the total emissions across all categories
+    # Compute the total emissions
     total_emission = (
         float(current_emission_data["electricity"]) +
         float(current_emission_data["fuel"]) +
@@ -366,23 +399,24 @@ def emu_dashboard():
         float(water_data[-1] if water_data else 0)
     )
 
-    # Function to forecast using ARIMA
-    def forecast_consumption(data, periods=14):  # Forecast for the next 14 periods
-        if len(data) > 0:
+    # Forecast function and extend to November and December for current year
+    def forecast_consumption(data, periods=12):
+        # Set forecast periods to 14 if the selected year is current year
+        forecast_periods = 14 if selected_year == current_year else periods
+        if len(data) > 0 and any(data):  # Only forecast if there is actual non-zero data
             try:
-                data = np.array(data, dtype=float)  # Ensure data is numeric
+                data = np.array(data, dtype=float)
                 model = ARIMA(data, order=(5, 1, 0))
                 model_fit = model.fit()
-                forecast = model_fit.forecast(steps=periods)
+                forecast = model_fit.forecast(steps=forecast_periods)
                 return forecast.tolist()
             except Exception as e:
                 flash(f"ARIMA Error: {e}", "danger")
                 print(f"ARIMA Error: {e}")
-                return [0] * periods
+                return [0] * forecast_periods
         else:
-            return [0] * periods
+            return [0] * forecast_periods
 
-    # Forecast data for all parameters
     forecast_data = {
         "electricity_forecast": forecast_consumption(electricity_data),
         "fuel_forecast": forecast_consumption(fuel_data),
@@ -392,22 +426,21 @@ def emu_dashboard():
         "water_forecast": forecast_consumption(water_data),
     }
 
-    # Print forecast data for debugging
-    print("Forecast Data for Campus:", campus, forecast_data)
-    print("Current Emission Data:", current_emission_data)
-    print("Total Emission:", total_emission)
+    return render_template(
+        'emu_index.html',
+        electricity_data=electricity_data,
+        fuel_data=fuel_data,
+        waste_segregation_data=waste_segregation_data,
+        waste_unsegregation_data=waste_unsegregation_data,
+        treated_water_data=treated_water_data,
+        water_data=water_data,
+        forecast_data=forecast_data,
+        current_emission_data=current_emission_data,
+        total_emission=total_emission,
+        selected_year=selected_year,
+        current_year=current_year
+    )
 
-    # Render the template and pass data
-    return render_template('emu_index.html',
-                           electricity_data=electricity_data,
-                           fuel_data=fuel_data,
-                           waste_segregation_data=waste_segregation_data,
-                           waste_unsegregation_data=waste_unsegregation_data,
-                           treated_water_data=treated_water_data,
-                           water_data=water_data,
-                           forecast_data=forecast_data,
-                           current_emission_data=current_emission_data,
-                           total_emission=total_emission)
 
 
 
@@ -1992,6 +2025,47 @@ def fuel_emissions_report():
         year=year  # Pass year to retain filter selection
     )
 
+def fetch_all_filtered_fuel_emissions_data(campus, year):
+    base_query = "SELECT * FROM fuel_emissions"
+    filters = []
+    parameters = []
+    
+    if campus:
+        filters.append("campus = %s")
+        parameters.append(campus)
+    
+    if year:
+        filters.append("YEAR(date) = %s")
+        parameters.append(year)
+    
+    query = base_query + (" WHERE " + " AND ".join(filters) if filters else "")
+    
+    data = []
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, parameters)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Error fetching data: {err}")
+    finally:
+        if 'cursor' in locals() and cursor is not None:
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+    
+    return data
+
+@app.route('/report/fuel_emissions/all_data')
+def all_fuel_emissions_data():
+    campus = request.args.get('campus', '')
+    year = request.args.get('year', '')
+    
+    # Fetch all data based on the filters
+    data = fetch_all_filtered_fuel_emissions_data(campus, year)
+    
+    # Return data as JSON
+    return jsonify(data)
 
 
 # Helper function to fetch data from the database with pagination and filters
@@ -2810,180 +2884,214 @@ def export_data():
         traceback.print_exc()
         return "An error occurred during data export.", 500
 
-    
-@app.route('/sdo_dashboard')
+
+from datetime import datetime 
+
+@app.route('/sdo_dashboard', methods=['GET', 'POST'])
 def sdo_dashboard():
-    # Check if the user is logged in by verifying the session variable
     if 'loggedIn' not in session:
-        # Ensure 'login' is the correct endpoint for redirection
-        return redirect(url_for('login'))  # Redirect to login if user is not logged in
+        return redirect(url_for('signin'))
 
-    # Retrieve the campus from session and handle any missing data
-    campus = session.get('campus')  # Use get to avoid KeyError if 'campus' is not set
+    campus = session.get('campus', 'default_campus')
+    selected_year = int(request.args.get('year', datetime.now().year))
+    current_year = datetime.now().year
 
-    # Debugging: Ensure the campus is correctly identified
-    print(f"Fetching data for campus: {campus}")
-    
-    if not campus:
-        flash("Campus not set. Please log in again.", "danger")
-        return redirect(url_for('login'))
+    # Initialize default data lists for each month and each type of consumption
+    electricity_data = [0] * 12
+    fuel_data = [0] * 12
+    accommodation_data = [0] * 12
+    flight_data = [0] * 12
+    food_waste_data = [0] * 12
+    lpg_data = [0] * 12
+    waste_segregation_data = [0] * 12
+    waste_unsegregation_data = [0] * 12
+    treated_water_data = [0] * 12
+    water_data = [0] * 12
+    total_emission_data = [0] * 12
 
-    # Initialize report data
-    electricity_data = []
-    fuel_data = []
-    waste_segregation_data = []
-    waste_unsegregation_data = []
-    treated_water_data = []
-    water_data = []
-    lpg_data = []
-    food_waste_data = []
-    accommodation_data = []
-    flight_data = []
+    # Initialize forecast data for each category
+    forecast_data = {
+        "electricity_forecast": [0] * 2,
+        "fuel_forecast": [0] * 2,
+        "waste_segregation_forecast": [0] * 2,
+        "waste_unsegregation_forecast": [0] * 2,
+        "treated_water_forecast": [0] * 2,
+        "water_forecast": [0] * 2,
+        "lpg_forecast": [0] * 2,
+        "food_waste_forecast": [0] * 2,
+        "accommodation_forecast": [0] * 2,
+        "flight_forecast": [0] * 2,
+        "total_emission_forecast": [0] * 2
+    }
+
+    # Initialize current emission data with default values
+    current_emission_data = {
+        "electricity": 0,
+        "fuel": 0,
+        "water": 0
+    }
 
     try:
         conn = get_db_connection()
         if conn is None:
             raise Exception("Could not establish database connection.")
-        
+
         cursor = conn.cursor(dictionary=True)
+        
+        # Map months to indices
+        month_to_index = {
+            "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
+            "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11
+        }
+        
+        # Fetch data from `electricity_consumption`
+        cursor.execute("SELECT Month, kg_co2_per_kwh FROM electricity_consumption WHERE campus = %s AND year = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                electricity_data[month_index] = float(row['kg_co2_per_kwh'])
 
-        # Fetch data from the database
-        cursor.execute("SELECT * FROM electricity_consumption WHERE campus = %s", (campus,))
-        electricity_data = cursor.fetchall()
+        # Fetch data from `fuel_emissions`
+        cursor.execute("SELECT MONTHNAME(date) AS Month, SUM(total_emission) AS total_emission FROM fuel_emissions WHERE campus = %s AND YEAR(date) = %s GROUP BY MONTH(date)", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                fuel_data[month_index] = float(row['total_emission'])
 
-        cursor.execute("SELECT * FROM fuel_emissions WHERE campus = %s", (campus,))
-        fuel_data = cursor.fetchall()
+        # Fetch data from `tblaccommodation`
+        cursor.execute("SELECT Month, GHGEmissionKGC02e FROM tblaccommodation WHERE Campus = %s AND Year = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                accommodation_data[month_index] = float(row['GHGEmissionKGC02e'])
 
-        cursor.execute("SELECT * FROM tblsolidwastesegregated WHERE Campus = %s", (campus,))
-        waste_segregation_data = cursor.fetchall()
+        # Fetch data from `tblflight`
+        cursor.execute("SELECT Month, GHGEmissionKGC02e FROM tblflight WHERE Campus = %s AND Year = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                flight_data[month_index] = float(row['GHGEmissionKGC02e'])
 
-        cursor.execute("SELECT * FROM tblsolidwasteunsegregated WHERE Campus = %s", (campus,))
-        waste_unsegregation_data = cursor.fetchall()
+        # Fetch GHGEmissionKGCO2e specifically from `tblfoodwaste`
+        cursor.execute("SELECT Month, GHGEmissionKGCO2e FROM tblfoodwaste WHERE Campus = %s AND YearTransaction = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                food_waste_data[month_index] = float(row['GHGEmissionKGCO2e'])
 
-        cursor.execute("SELECT * FROM tbltreatedwater WHERE Campus = %s", (campus,))
-        treated_water_data = cursor.fetchall()
+        # Fetch GHGEmissionKGCO2e specifically from `tbllpg`
+        cursor.execute("SELECT Month, GHGEmissionKGCO2e FROM tbllpg WHERE Campus = %s AND YearTransact = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                lpg_data[month_index] = float(row['GHGEmissionKGCO2e'])
 
-        cursor.execute("SELECT * FROM tblwater WHERE Campus = %s", (campus,))
-        water_data = cursor.fetchall()
+        # Fetch data from `tblsolidwastesegregated`
+        cursor.execute("SELECT Month, GHGEmissionKGCO2e FROM tblsolidwastesegregated WHERE Campus = %s AND Year = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                waste_segregation_data[month_index] = float(row['GHGEmissionKGCO2e'])
 
-        cursor.execute("SELECT * FROM tbllpg WHERE Campus = %s", (campus,))
-        lpg_data = cursor.fetchall()
+        # Fetch data from `tblsolidwasteunsegregated`
+        cursor.execute("SELECT Month, GHGEmissionKGCO2e FROM tblsolidwasteunsegregated WHERE Campus = %s AND Year = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                waste_unsegregation_data[month_index] = float(row['GHGEmissionKGCO2e'])
 
-        cursor.execute("SELECT * FROM tblfoodwaste WHERE Campus = %s", (campus,))
-        food_waste_data = cursor.fetchall()
+        # Fetch data from `tbltreatedwater`
+        cursor.execute("SELECT Month, FactorKGCO2e FROM tbltreatedwater WHERE Campus = %s", (campus,))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                treated_water_data[month_index] = float(row['FactorKGCO2e'])
 
-        cursor.execute("SELECT * FROM tblaccommodation WHERE Campus = %s", (campus,))
-        accommodation_data = cursor.fetchall()
+        # Fetch data from `tblwater`
+        cursor.execute("SELECT Month, FactorKGCO2e FROM tblwater WHERE Campus = %s AND YEAR(Date) = %s", (campus, selected_year))
+        for row in cursor.fetchall():
+            month_index = month_to_index.get(row['Month'], -1)
+            if month_index >= 0:
+                water_data[month_index] = float(row['FactorKGCO2e'])
 
-        cursor.execute("SELECT * FROM tblflight WHERE Campus = %s", (campus,))
-        flight_data = cursor.fetchall()
+        # Fetch current emissions for electricity, fuel, and water for the latest available month
+        cursor.execute("SELECT current_emission FROM electricity_emissions WHERE campus = %s AND YEAR(date) = %s ORDER BY date DESC LIMIT 1", (campus, selected_year))
+        result = cursor.fetchone()
+        if result:
+            current_emission_data["electricity"] = float(result['current_emission'])
+
+        cursor.execute("SELECT current_emission FROM fuel_emissions WHERE campus = %s AND YEAR(date) = %s ORDER BY date DESC LIMIT 1", (campus, selected_year))
+        result = cursor.fetchone()
+        if result:
+            current_emission_data["fuel"] = float(result['current_emission'])
+
+        cursor.execute("SELECT current_emission FROM water_emissions WHERE campus = %s AND YEAR(date) = %s ORDER BY date DESC LIMIT 1", (campus, selected_year))
+        result = cursor.fetchone()
+        if result:
+            current_emission_data["water"] = float(result['current_emission'])
 
     except Exception as e:
-        print(f"Database Error: {e}")  # Debugging
         flash(f"Database Error: {e}", "danger")
-        return render_template("error.html", message=f"Database Error: {e}")
+        print(f"Database Error: {e}")
     finally:
-        if 'cursor' in locals() and cursor:
+        if cursor:
             cursor.close()
-        if 'conn' in locals() and conn:
+        if conn:
             conn.close()
 
-    # Function to extract values and convert to float
-    def get_consumption_values(data, key):
-        values = [float(row[key]) for row in data if key in row and row[key] is not None]
-        print(f"Extracted Values for {key}: {values}")  # Debugging
-        return values
-
-    # Function to forecast consumption using ARIMA
-    def forecast_consumption(data, periods=14):
-        if len(data) > 1:  # Ensure there is enough data for ARIMA
+    # Forecast function for CO2 emissions (limited to two months)
+    def forecast_consumption(data, periods=2):
+        if any(data):  # Only forecast if there is actual non-zero data
             try:
-                model = ARIMA(data, order=(5, 1, 0))  # Adjust order based on data pattern
+                data = np.array(data, dtype=float)
+                model = ARIMA(data, order=(5, 1, 0))
                 model_fit = model.fit()
                 forecast = model_fit.forecast(steps=periods)
                 return forecast.tolist()
             except Exception as e:
-                print(f"ARIMA Error: {e}")  # Debugging
                 flash(f"ARIMA Error: {e}", "danger")
-                avg_value = sum(data) / len(data)
-                return [avg_value] * periods
+                print(f"ARIMA Error: {e}")
+                return [0] * periods
         else:
-            print("Insufficient Data for ARIMA, Returning Zeros")  # Debugging
             return [0] * periods
 
-    # Extract values
-    electricity_values = get_consumption_values(electricity_data, 'consumption')
-    fuel_values = get_consumption_values(fuel_data, 'quantity_liters')
-    waste_segregation_values = get_consumption_values(waste_segregation_data, 'QuantityInKG')
-    waste_unsegregation_values = get_consumption_values(waste_unsegregation_data, 'QuantityInKG')
-    treated_water_values = get_consumption_values(treated_water_data, 'TreatedWaterVolume')
-    water_values = get_consumption_values(water_data, 'Consumption')
-    lpg_values = get_consumption_values(lpg_data, 'TotalTankVolume')
-    food_waste_values = get_consumption_values(food_waste_data, 'QuantityOfServing')
-    accommodation_values = get_consumption_values(accommodation_data, 'NumOccupiedRoom')
-    flight_values = get_consumption_values(flight_data, 'GHGEmissionKGC02e')
+    # Generate forecast data for each category
+    for data_name, data_list in [
+        ("electricity_forecast", electricity_data),
+        ("fuel_forecast", fuel_data),
+        ("accommodation_forecast", accommodation_data),
+        ("flight_forecast", flight_data),
+        ("food_waste_forecast", food_waste_data),
+        ("lpg_forecast", lpg_data),
+        ("waste_segregation_forecast", waste_segregation_data),
+        ("waste_unsegregation_forecast", waste_unsegregation_data),
+        ("treated_water_forecast", treated_water_data),
+        ("water_forecast", water_data),
+        ("total_emission_forecast", total_emission_data)
+    ]:
+        if selected_year == current_year or any(data_list):
+            forecast_data[data_name] = forecast_consumption(data_list[:12])
 
-    # Calculate Total Emission
-    total_emission = sum([
-        sum(electricity_values),
-        sum(fuel_values),
-        sum(waste_segregation_values),
-        sum(waste_unsegregation_values),
-        sum(treated_water_values),
-        sum(water_values),
-        sum(lpg_values),
-        sum(food_waste_values),
-        sum(accommodation_values),
-        sum(flight_values)
-    ])
-    print(f"Total Emission: {total_emission}")  # Debugging
-
-    # Get Current Emission Data
-    current_emission_data = {
-        "electricity": electricity_values[-1] if electricity_values else 0,
-        "fuel": fuel_values[-1] if fuel_values else 0,
-        "waste_segregated": waste_segregation_values[-1] if waste_segregation_values else 0,
-        "waste_unsegregated": waste_unsegregation_values[-1] if waste_unsegregation_values else 0,
-        "treated_water": treated_water_values[-1] if treated_water_values else 0,
-        "water": water_values[-1] if water_values else 0,
-        "lpg": lpg_values[-1] if lpg_values else 0,
-        "food_waste": food_waste_values[-1] if food_waste_values else 0,
-        "accommodation": accommodation_values[-1] if accommodation_values else 0,
-        "flight": flight_values[-1] if flight_values else 0
-    }
-    print("Current Emission Data:", current_emission_data)  # Debugging
-
-    # Forecast data for 14 periods
-    forecast_data = {
-        "electricity_forecast": forecast_consumption(electricity_values, periods=14),
-        "fuel_forecast": forecast_consumption(fuel_values, periods=14),
-        "waste_segregation_forecast": forecast_consumption(waste_segregation_values, periods=14),
-        "waste_unsegregation_forecast": forecast_consumption(waste_unsegregation_values, periods=14),
-        "treated_water_forecast": forecast_consumption(treated_water_values, periods=14),
-        "water_forecast": forecast_consumption(water_values, periods=14),
-        "lpg_forecast": forecast_consumption(lpg_values, periods=14),
-        "food_waste_forecast": forecast_consumption(food_waste_values, periods=14),
-        "accommodation_forecast": forecast_consumption(accommodation_values, periods=14),
-        "flight_forecast": forecast_consumption(flight_values, periods=14)
-    }
-
-    # Render the dashboard template with additional data
     return render_template(
         'sdo_dashboard.html',
         electricity_data=electricity_data,
         fuel_data=fuel_data,
+        accommodation_data=accommodation_data,
+        flight_data=flight_data,
+        food_waste_data=food_waste_data,
+        lpg_data=lpg_data,
         waste_segregation_data=waste_segregation_data,
         waste_unsegregation_data=waste_unsegregation_data,
         treated_water_data=treated_water_data,
         water_data=water_data,
-        lpg_data=lpg_data,
-        food_waste_data=food_waste_data,
-        accommodation_data=accommodation_data,
-        flight_data=flight_data,
+        total_emission_data=total_emission_data,
         forecast_data=forecast_data,
-        total_emission=total_emission,
-        current_emission_data=current_emission_data
+        current_emission_data=current_emission_data,
+        selected_year=selected_year,
+        current_year=current_year,
+        datetime=datetime
     )
+
 
 
 
@@ -3103,13 +3211,16 @@ def get_full_report():
         conn.close()
 
 
-from decimal import Decimal
+
+import decimal  # Import decimal for Decimal type handling
+
 @app.route('/external_dashboard')
 def external_dashboard():
     if 'loggedIn' not in session:
         return redirect(url_for('login'))  # Redirect to login if user is not logged in
 
     campus = session.get('campus', 'default_campus')  # Ensure a default campus value
+    current_year = datetime.now().year
 
     # Initialize report data
     flight_data = []
@@ -3122,77 +3233,99 @@ def external_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Fetch flight emissions data for the specified campus
-        cursor.execute("SELECT * FROM tblflight WHERE Campus = %s", (campus,))
+        # Fetch GHG Emission data for flights for the specified campus across years 2020-2024
+        cursor.execute(
+            "SELECT Year, GHGEmissionKGC02e FROM tblflight WHERE Campus = %s AND Year BETWEEN 2020 AND 2024 ORDER BY Year",
+            (campus,)
+        )
         flight_data = cursor.fetchall()
         print(f"Flight Data for {campus}: {flight_data}")  # Debug output
 
-        # Fetch accommodation emissions data for the specified campus
-        cursor.execute("SELECT * FROM tblaccommodation WHERE Campus = %s", (campus,))
+        # Fetch GHG Emission data for accommodation for the specified campus across years 2020-2024
+        cursor.execute(
+            "SELECT YearTransact AS Year, GHGEmissionKGC02e FROM tblaccommodation WHERE Campus = %s AND YearTransact BETWEEN 2020 AND 2024 ORDER BY YearTransact",
+            (campus,)
+        )
         accommodation_data = cursor.fetchall()
         print(f"Accommodation Data for {campus}: {accommodation_data}")  # Debug output
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
         print(f"Database Error: {e}")
-        # Return an error page if a database error occurs
-        return render_template('error_page.html', error_message=str(e))
+        return redirect(url_for('external_dashboard'))
     finally:
         if 'cursor' in locals() and cursor:
             cursor.close()
         if 'conn' in locals() and conn:
             conn.close()
 
-    # Function to extract values from the data
-    def get_consumption_values(data, key):
-        return [row[key] for row in data if key in row and row[key] is not None]
+    # Convert all GHGEmissionKGC02e values to float for consistent operations
+    def convert_to_float(data, key):
+        for row in data:
+            if isinstance(row[key], decimal.Decimal):  # Check if value is decimal.Decimal
+                row[key] = float(row[key])
+        return data
 
-    # Function to forecast consumption using ARIMA
-    def forecast_consumption(data, periods=12):
+    flight_data = convert_to_float(flight_data, 'GHGEmissionKGC02e')
+    accommodation_data = convert_to_float(accommodation_data, 'GHGEmissionKGC02e')
+
+    # Aggregate emissions by year
+    def aggregate_by_year(data, key):
+        year_data = {}
+        for row in data:
+            year = row.get('Year')
+            if year not in year_data:
+                year_data[year] = 0
+            year_data[year] += row[key]
+        return [year_data.get(year, 0) for year in range(2020, 2025)]  # Data from 2020 to 2024
+
+    # Forecasting function for annual data
+    def forecast_consumption(data, periods=2):
         if len(data) > 0:
             try:
-                model = ARIMA(data, order=(5, 1, 0))  # Adjust the ARIMA order based on your data
+                model = ARIMA(data, order=(1, 1, 1))
                 model_fit = model.fit()
                 forecast = model_fit.forecast(steps=periods)
                 return forecast.tolist()
             except Exception as e:
                 flash(f"ARIMA Error: {e}", "danger")
                 print(f"ARIMA Error: {e}")
-                return [0] * periods  # Return a list of zeros instead
+                return [0] * periods
         else:
-            return [0] * periods  # Return a list of zeros if no data is available
+            return [0] * periods
 
-    # Extract values for ARIMA forecast using the correct field names
-    flight_values = get_consumption_values(flight_data, 'GHGEmissionKGC02e')
-    accommodation_values = get_consumption_values(accommodation_data, 'GHGEmissionKGC02e')
+    # Aggregate data by year for annual trends
+    flight_annual = aggregate_by_year(flight_data, 'GHGEmissionKGC02e')
+    accommodation_annual = aggregate_by_year(accommodation_data, 'GHGEmissionKGC02e')
 
-    # Convert flight and accommodation emissions to floats or Decimals for correct addition
-    flight_values = [float(val) if isinstance(val, Decimal) else val for val in flight_values]
-    accommodation_values = [float(val) if isinstance(val, Decimal) else val for val in accommodation_values]
+    # Forecast for 2025 and 2026
+    flight_forecast = forecast_consumption(flight_annual, periods=2)
+    accommodation_forecast = forecast_consumption(accommodation_annual, periods=2)
 
     # Calculate total emissions
-    total_flight_emissions = sum(flight_values)
-    total_accommodation_emissions = sum(accommodation_values)
+    total_flight_emissions = sum(flight_annual)
+    total_accommodation_emissions = sum(accommodation_annual)
     total_emissions = total_flight_emissions + total_accommodation_emissions
 
-    # Forecast data
+    # Prepare data to pass to template
     forecast_data = {
-        "flight_forecast": forecast_consumption(flight_values),
-        "accommodation_forecast": forecast_consumption(accommodation_values),
+        "flight_annual": flight_annual,
+        "accommodation_annual": accommodation_annual,
+        "flight_forecast": flight_forecast,
+        "accommodation_forecast": accommodation_forecast,
         "total_flight_emissions": total_flight_emissions,
         "total_accommodation_emissions": total_accommodation_emissions,
         "total_emissions": total_emissions
     }
 
-    # Print forecast data for debugging
     print("Forecast Data:", forecast_data)
 
-    # Render the template and pass data
     return render_template(
         'external_dashboard.html',
         flight_data=flight_data,
         accommodation_data=accommodation_data,
-        forecast_data=forecast_data
+        forecast_data=forecast_data,
+        current_year=current_year
     )
 
 @app.route('/flight', methods=['GET', 'POST'])
@@ -3703,20 +3836,35 @@ def delete_accommodation(id):
             conn.close()
 
     return jsonify(response)
+from datetime import datetime
 
+from datetime import datetime
+
+from datetime import datetime
+from datetime import datetime
+
+from datetime import datetime
 
 @app.route('/procurement_dashboard')
 def procurement_dashboard():
     if 'loggedIn' not in session:
-        return redirect(url_for('login'))  # Redirect to login if user is not logged in
+        return redirect(url_for('login'))
 
-    campus = session.get('campus')  # Use get to avoid KeyError if 'campus' is not set
+    campus = session.get('campus')
+    year_filter = int(request.args.get('year', datetime.now().year))  # Default to current year if no year selected
+    current_year = datetime.now().year
 
     # Initialize report data
     food_waste_data = []
     lpg_data = []
     current_emission_data = {"food": 0, "lpg": 0}
-    total_emission = 0  # Initialize total emission
+    total_emission = 0
+
+    # Initialize forecast_data_api with 14 slots (for up to 12 months + 2 forecast months)
+    forecast_data_api = {
+        "food_waste_forecast": [None] * 14,  
+        "lpg_forecast": [None] * 14
+    }
 
     try:
         conn = get_db_connection()
@@ -3725,37 +3873,72 @@ def procurement_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Fetch food waste data
-        if campus:  # If campus is specified, filter by campus
-            cursor.execute("SELECT * FROM tblfoodwaste WHERE Campus = %s", (campus,))
-        else:  # If campus is not specified, fetch all data
-            cursor.execute("SELECT * FROM tblfoodwaste")
+        # Fetch GHG Emission data for food waste
+        if campus and year_filter:
+            cursor.execute(
+                "SELECT Month, GHGEmissionKGCO2e FROM tblfoodwaste WHERE Campus = %s AND YearTransaction = %s ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')",
+                (campus, year_filter)
+            )
+        else:
+            cursor.execute(
+                "SELECT Month, GHGEmissionKGCO2e FROM tblfoodwaste WHERE YearTransaction = %s ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')",
+                (year_filter,)
+            )
         food_waste_data = cursor.fetchall()
-        print("Food Waste Data Length:", len(food_waste_data))  # Debugging
 
-        # Fetch LPG data
-        if campus:  # If campus is specified, filter by campus
-            cursor.execute("SELECT * FROM tbllpg WHERE Campus = %s", (campus,))
-        else:  # If campus is not specified, fetch all data
-            cursor.execute("SELECT * FROM tbllpg")
+        # Map GHG Emission data to 12 months of the year
+        months_map = {month: idx for idx, month in enumerate(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'])}
+        food_waste_forecast = [None] * 12  # Initialize with None for exactly 12 months
+        last_month_index = -1  # Track the last available data month index
+
+        for row in food_waste_data:
+            month_idx = months_map.get(row['Month'], None)
+            if month_idx is not None:
+                food_waste_forecast[month_idx] = row['GHGEmissionKGCO2e']
+                last_month_index = max(last_month_index, month_idx)
+
+        # Only add forecast data for November and December if the selected year is 2024 and data is available up to October
+        if year_filter == 2024 and last_month_index == 9:  # October is the 9th index
+            forecast_value_november = food_waste_forecast[last_month_index] * 1.05
+            forecast_value_december = forecast_value_november * 1.05
+            food_waste_forecast[10] = forecast_value_november  # November forecast
+            food_waste_forecast[11] = forecast_value_december  # December forecast
+
+        forecast_data_api["food_waste_forecast"] = food_waste_forecast
+
+        # Repeat similar steps for LPG data
+        if campus and year_filter:
+            cursor.execute(
+                "SELECT Month, GHGEmissionKGCO2e FROM tbllpg WHERE Campus = %s AND YearTransact = %s ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')",
+                (campus, year_filter)
+            )
+        else:
+            cursor.execute(
+                "SELECT Month, GHGEmissionKGCO2e FROM tbllpg WHERE YearTransact = %s ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')",
+                (year_filter,)
+            )
         lpg_data = cursor.fetchall()
-        print("LPG Data Length:", len(lpg_data))  # Debugging
 
-        # Fetch current emissions for food waste and LPG, if available
-        cursor.execute("SELECT current_emission FROM food_emissions WHERE campus = %s ORDER BY date DESC LIMIT 1", (campus,))
-        current_emission_data["food"] = float(cursor.fetchone()['current_emission']) if cursor.rowcount else 0
+        lpg_forecast = [None] * 12  # Initialize with None for exactly 12 months
+        last_month_index = -1  # Track the last month with data
 
-        cursor.execute("SELECT current_emission FROM lpg_emissions WHERE campus = %s ORDER BY date DESC LIMIT 1", (campus,))
-        current_emission_data["lpg"] = float(cursor.fetchone()['current_emission']) if cursor.rowcount else 0
+        for row in lpg_data:
+            month_idx = months_map.get(row['Month'], None)
+            if month_idx is not None:
+                lpg_forecast[month_idx] = row['GHGEmissionKGCO2e']
+                last_month_index = max(last_month_index, month_idx)
 
-        # Compute the total emissions across food and LPG
-        total_emission = (
-            float(current_emission_data["food"]) +
-            float(current_emission_data["lpg"])
-        )
+        # Only add forecast data for November and December if the selected year is 2024 and data is available up to October
+        if year_filter == 2024 and last_month_index == 9:
+            forecast_value_november = lpg_forecast[last_month_index] * 1.05
+            forecast_value_december = forecast_value_november * 1.05
+            lpg_forecast[10] = forecast_value_november  # November forecast
+            lpg_forecast[11] = forecast_value_december  # December forecast
+
+        forecast_data_api["lpg_forecast"] = lpg_forecast
 
     except Exception as e:
-        print(f"Database Error: {e}")  # Debugging
+        print(f"Database Error: {e}")
         flash(f"Database Error: {e}", "danger")
     finally:
         if 'cursor' in locals() and cursor:
@@ -3763,57 +3946,17 @@ def procurement_dashboard():
         if 'conn' in locals() and conn:
             conn.close()
 
-    # Function to extract values from the data
-    def get_consumption_values(data, key):
-        values = [float(row.get(key, 0)) for row in data if row.get(key) is not None]
-        print(f"Extracted Values for {key}: {values}")  # Debugging
-        return values
-
-    # Function to forecast consumption using ARIMA
-    def forecast_consumption(data, periods=14):
-        if len(data) > 1:  # Ensure there is enough data for ARIMA
-            try:
-                model = ARIMA(data, order=(5, 1, 0))  # Adjust the ARIMA order based on your data
-                model_fit = model.fit()
-                forecast = model_fit.forecast(steps=periods)
-                print(f"Forecast Generated: {forecast.tolist()}")  # Debugging
-                return forecast.tolist()
-            except Exception as e:
-                print(f"ARIMA Error: {e}")  # Debugging
-                flash(f"ARIMA Error: {e}", "danger")
-                return [0] * periods  # Return a list of zeros instead
-        else:
-            print("Insufficient Data for ARIMA, Returning Zeros")  # Debugging
-            return [0] * periods  # Return a list of zeros if insufficient data
-
-    # Extract values for food waste and LPG
-    food_waste_values = get_consumption_values(food_waste_data, 'QuantityOfServing')
-    lpg_values = get_consumption_values(lpg_data, 'TotalTankVolume')
-
-    # Forecast data for both food waste and LPG
-    food_waste_forecast = forecast_consumption(food_waste_values)
-    lpg_forecast = forecast_consumption(lpg_values)
-
-    # Separate forecast data for the frontend
-    forecast_data = {
-        "food_waste_forecast": food_waste_forecast,
-        "lpg_forecast": lpg_forecast,
-    }
-
-    # Debugging: Print forecast data to check values
-    print("Forecast Data:", forecast_data)
-    print("Current Emission Data:", current_emission_data)
-    print("Total Emission:", total_emission)
-
-    # Render template and pass data
     return render_template(
         'procurement_dashboard.html',
         food_waste_data=food_waste_data,
         lpg_data=lpg_data,
-        forecast_data=forecast_data,
+        forecast_data=forecast_data_api,
         current_emission_data=current_emission_data,
-        total_emission=total_emission
+        total_emission=total_emission,
+        selected_year=int(year_filter),
+        current_year=current_year
     )
+
 
 
 
