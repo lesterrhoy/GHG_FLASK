@@ -158,7 +158,7 @@
                         </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
@@ -319,51 +319,21 @@
    
             <!-- Print and Export Buttons -->
             <div class="mb-3">
-                <button id="printReportBtn" class="btn btn-primary" onclick="printAllData()">Print Report</button>
+                <button id="downloadPDFBtn" class="btn btn-danger" onclick="downloadPDF()">Download PDF</button>
                 <button id="downloadExcelBtn" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
             </div>
 
             <script>
-                function printAllData() {
-                    const campus = document.getElementById("campus").value;
-                    const category = document.getElementById("category").value;
-                    const month = document.getElementById("month").value;
-                    const quarter = document.getElementById("quarter").value;
-                    const year = document.getElementById("year").value;
-        
-                    const url = `/fetch_all_electricity_data?campus=${encodeURIComponent(campus)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}&quarter=${encodeURIComponent(quarter)}&year=${encodeURIComponent(year)}`;
-        
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            const tableBody = document.getElementById("electricityData");
-                            tableBody.innerHTML = ""; // Clear existing data
-        
-                            data.forEach(row => {
-                                const tr = document.createElement("tr");
-                                tr.innerHTML = `
-                                    <td>${row.campus}</td>
-                                    <td>${row.category}</td>
-                                    <td>${row.month}</td>
-                                    <td>${row.quarter}</td>
-                                    <td>${row.year}</td>
-                                    <td>${row.prev_reading}</td>
-                                    <td>${row.current_reading}</td>
-                                    <td>${row.multiplier}</td>
-                                    <td>${row.total_amount}</td>
-                                    <td>${row.consumption}</td>
-                                    <td>${row.price_per_kwh}</td>
-                                    <td>${row.kg_co2_per_kwh}</td>
-                                    <td>${row.t_co2_per_kwh}</td>
-                                `;
-                                tableBody.appendChild(tr);
-                            });
-        
-                            // Trigger print dialog
-                            window.print();
-                        })
-                        .catch(error => console.error("Error fetching data for print:", error));
-                }
+                 function downloadPDF() {
+                            const campus = document.getElementById("campus").value;
+                            const category = document.getElementById("category").value;
+                            const month = document.getElementById("month").value;
+                            const quarter = document.getElementById("quarter").value;
+                            const year = document.getElementById("year").value;
+
+                            const url = `/download_electricity_pdf?campus=${encodeURIComponent(campus)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}&quarter=${encodeURIComponent(quarter)}&year=${encodeURIComponent(year)}`;
+                            window.location.href = url;
+                        }
         
                 function downloadExcel() {
                     const campus = document.getElementById("campus").value;

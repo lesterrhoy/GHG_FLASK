@@ -16,6 +16,9 @@ import math
 from flask import jsonify
 from flask import flash
 from decimal import Decimal
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle  # Add this line to import necessary classes
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Use a strong secret key in production!
@@ -1898,6 +1901,86 @@ def electricity_report():
         year=year,
         quarter=quarter
     )
+@app.route('/download_electricity_pdf')
+def download_electricity_pdf():
+    campus = request.args.get("campus", None)
+    category = request.args.get("category", None)
+    month = request.args.get("month", None)
+    quarter = request.args.get("quarter", None)
+    year = request.args.get("year", None)
+
+    query = "SELECT * FROM electricity_consumption WHERE 1=1"
+    params = []
+
+    if campus:
+        query += " AND campus = %s"
+        params.append(campus)
+    if category:
+        query += " AND category = %s"
+        params.append(category)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+    if quarter:
+        query += " AND quarter = %s"
+        params.append(quarter)
+    if year:
+        query += " AND year = %s"
+        params.append(year)
+
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # Convert data to DataFrame
+    df = pd.DataFrame(data)
+    
+    # Handle empty data case
+    if df.empty:
+        return "No data available to generate PDF", 404
+
+    # Calculate column width to fit all columns within the page width
+    page_width = landscape(A4)[0] - 20  # 20 for margins
+    num_columns = len(df.columns)
+    col_width = page_width / num_columns
+
+    # Create PDF in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Headers and data rows
+
+    # Define table with dynamic column widths
+    table = Table(data_list, colWidths=[col_width] * num_columns)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),  # Smaller font for more data
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="electricity_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
 
 @app.route('/fetch_all_electricity_data')
 def fetch_all_electricity_data():
@@ -2067,29 +2150,101 @@ def all_fuel_emissions_data():
     # Return data as JSON
     return jsonify(data)
 
+@app.route('/download_fuel_emissions_pdf')
+def download_fuel_emissions_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
 
-# Helper function to fetch data from the database with pagination and filters
+    # Fetch all data based on the filters
+    query = "SELECT * FROM fuel_emissions WHERE 1=1"
+    params = []
+
+    if campus:
+        query += " AND campus = %s"
+        params.append(campus)
+    
+    if year:
+        query += " AND YEAR(date) = %s"
+        params.append(year)
+
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Handle empty data case
+    if df.empty:
+        return "No data available to generate PDF", 404
+
+    # Calculate column width to fit all columns within the page width
+    page_width = landscape(A4)[0] - 20  # 20 for total left and right margins
+    num_columns = len(df.columns)
+    col_width = page_width / num_columns
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Define table with dynamic column widths
+    table = Table(data_list, colWidths=[col_width] * num_columns)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 6),  # Further reduce font size to 6
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),  # Thinner grid lines
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="fuel_emissions_report.pdf", as_attachment=True, mimetype='application/pdf')
+
+
 def fetch_treated_water_data(page=1, per_page=20, campus=None, month=None):
-    offset = (page - 1) * per_page
-    base_query = "SELECT * FROM tbltreatedwater WHERE 1=1"  # Base query with a condition that always matches
-    total_query = "SELECT COUNT(*) AS total FROM tbltreatedwater WHERE 1=1"  # Base count query
+    base_query = "SELECT * FROM tbltreatedwater WHERE 1=1"  # Start with a condition that always matches
+    total_query = "SELECT COUNT(*) AS total FROM tbltreatedwater WHERE 1=1"
     params = []
 
     # Apply campus filter if provided
     if campus:
-        base_query += " AND Campus = %s"
-        total_query += " AND Campus = %s"
+        base_query += " AND campus = %s"
+        total_query += " AND campus = %s"
         params.append(campus)
-    
+
     # Apply month filter if provided
     if month:
-        base_query += " AND Month = %s"  # Month should now match text values like 'January'
-        total_query += " AND Month = %s"
+        base_query += " AND month = %s"
+        total_query += " AND month = %s"
         params.append(month)
 
-    # Add pagination limits
-    base_query += " LIMIT %s OFFSET %s"
-    params.extend([per_page, offset])
+    # Handle pagination if page and per_page are provided
+    if page is not None and per_page is not None:
+        offset = (page - 1) * per_page
+        base_query += " LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
 
     data = []
     total_records = 0
@@ -2097,14 +2252,18 @@ def fetch_treated_water_data(page=1, per_page=20, campus=None, month=None):
     try:
         db_connection = mysql.connector.connect(**db_config)
         cursor = db_connection.cursor(dictionary=True)
-        
-        # Fetch the current page's records with applied filters
+
+        # Fetch records with filters
         cursor.execute(base_query, params)
         data = cursor.fetchall()
 
-        # Get the total number of filtered records
-        cursor.execute(total_query, params[:-2])  # Exclude pagination params for count query
-        total_records = cursor.fetchone()["total"]
+        # Fetch total count of filtered records
+        if page is not None and per_page is not None:
+            cursor.execute(total_query, params[:-2])  # Exclude pagination params for count query
+            total_records = cursor.fetchone()["total"]
+        else:
+            cursor.execute(total_query, params)  # No pagination params for full count
+            total_records = cursor.fetchone()["total"]
 
     except mysql.connector.Error as err:
         print(f"Error fetching data: {err}")
@@ -2115,6 +2274,7 @@ def fetch_treated_water_data(page=1, per_page=20, campus=None, month=None):
             db_connection.close()
 
     return data, total_records
+
 
 
 # Route for Treated Water Report with pagination and filters
@@ -2142,62 +2302,160 @@ def treated_water_report():
         month=month
     )
 
-# Helper function to fetch filtered data from the database
-def fetch_water_data(campus=None, year=None, category=None, page=1, per_page=20):
-    offset = (page - 1) * per_page
-    query = "SELECT * FROM tblwater"
-    filters = []
-    parameters = []
-
-    # Apply campus filter
+def fetch_all_treated_water_data(campus=None, month=None):
+    query = "SELECT * FROM tbltreatedwater WHERE 1=1"
+    params = []
+    
     if campus:
-        filters.append("Campus = %s")
-        parameters.append(campus)
-
-    # Apply year filter (assumes the column name for date is 'Date' in the format YYYY-MM-DD)
-    if year:
-        filters.append("YEAR(Date) = %s")
-        parameters.append(year)
-
-    # Apply category filter
-    if category:
-        filters.append("Category = %s")
-        parameters.append(category)
-
-    # Combine filters into the query
-    if filters:
-        query += " WHERE " + " AND ".join(filters)
-
-    # Add pagination to the query
-    query += " LIMIT %s OFFSET %s"
-    parameters.extend([per_page, offset])
-
-    # Query to count total records for pagination
-    count_query = "SELECT COUNT(*) AS total FROM tblwater" + (" WHERE " + " AND ".join(filters) if filters else "")
-    total_records = 0
+        query += " AND Campus = %s"
+        params.append(campus)
+    
+    if month:
+        query += " AND Month = %s"
+        params.append(month)
+    
     data = []
-
     try:
         db_connection = mysql.connector.connect(**db_config)
         cursor = db_connection.cursor(dictionary=True)
-
-        # Execute the main query with filters
-        cursor.execute(query, parameters)
+        cursor.execute(query, params)
         data = cursor.fetchall()
-
-        # Execute the count query
-        cursor.execute(count_query, parameters[:-2])  # Exclude limit and offset for count
-        total_records = cursor.fetchone()['total']
-        
     except mysql.connector.Error as err:
-        print(f"Error fetching data: {err}")
+        print(f"Error fetching all data: {err}")
     finally:
         if 'cursor' in locals() and cursor is not None:
             cursor.close()
         if 'db_connection' in locals() and db_connection.is_connected():
             db_connection.close()
 
-    return data, total_records
+    return data
+
+@app.route('/report/treated_water/all_data')
+def all_treated_water_data():
+    campus = request.args.get('campus', '')
+    month = request.args.get('month', '')
+
+    data = fetch_all_treated_water_data(campus, month)
+    return jsonify(data)
+
+@app.route('/download_treated_water_pdf')
+def download_treated_water_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    month = request.args.get("month", None)
+
+    # Fetch all data based on the filters
+    data, _ = fetch_treated_water_data(page=None, per_page=None, campus=campus, month=month)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Handle empty data case
+    if df.empty:
+        return "No data available to generate PDF", 404
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Create table and style
+    table = Table(data_list)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="treated_water_report.pdf", as_attachment=True, mimetype='application/pdf')
+
+@app.route('/download_treated_water_data')
+def download_treated_water_data():
+    campus = request.args.get("campus")
+    month = request.args.get("month")
+
+    # Fetch all data based on the filters
+    data = fetch_all_treated_water_data(campus, month)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Treated Water Data')
+
+    output.seek(0)
+
+    # Send the file to the client
+    return send_file(output, download_name="treated_water_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/fetch_all_water_data')
+def fetch_all_water_data():
+    campus = request.args.get("campus")
+    year = request.args.get("year")
+    category = request.args.get("category")
+    
+    # Fetch all data without pagination limit
+    data, _ = fetch_water_data(campus, year, category, page=None, per_page=None)
+    
+    return jsonify(data)
+
+
+def fetch_water_data(campus=None, year=None, category=None, page=None, per_page=None):
+    offset = (page - 1) * per_page if page and per_page else 0
+    limit = per_page if per_page else 18446744073709551615  # Use a large number for no practical limit
+
+    query = "SELECT * FROM tblwater"
+    conditions = []
+    params = []
+
+    if campus:
+        conditions.append("Campus = %s")
+        params.append(campus)
+    if year:
+        conditions.append("YEAR(Date) = %s")
+        params.append(year)
+    if category:
+        conditions.append("Category = %s")
+        params.append(category)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    
+    query += " LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
+
+    try:
+        with mysql.connector.connect(**db_config) as conn:
+            with conn.cursor(dictionary=True) as cursor:
+                cursor.execute(query, params)
+                data = cursor.fetchall()
+                # Only execute count query if pagination is needed
+                if page:
+                    count_query = "SELECT COUNT(*) AS total FROM tblwater"
+                    if conditions:
+                        count_query += " WHERE " + " AND ".join(conditions)
+                    cursor.execute(count_query, params[:-2])  # remove limit and offset
+                    total_records = cursor.fetchone()['total']
+                    return data, total_records
+                return data, None
+    except mysql.connector.Error as err:
+        print(f"Error fetching data: {err}")
+        raise  # Raising the error to make it visible as an HTTP 500 error
 
 # Route for Water Consumption Report with filtering and pagination
 @app.route('/report/water')
@@ -2227,11 +2485,78 @@ def water_report():
         category=category
     )
 
+@app.route('/download_water_data')
+def download_water_data():
+    campus = request.args.get("campus")
+    year = request.args.get("year")
+    category = request.args.get("category")
+
+    # Fetch data using the existing function which should return data in a list of dicts
+    data, _ = fetch_water_data(campus, year, category, page=None, per_page=None)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel writer object and write the DataFrame
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Water Data')
+
+    output.seek(0)
+
+    # Send the file to the client
+    return send_file(output, download_name="water_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/download_water_pdf')
+def download_water_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    category = request.args.get("category", None)
+
+    # Fetch all data based on the filters
+    data, _ = fetch_water_data(page=None, per_page=None, campus=campus, year=year, category=category)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Handle empty data case
+    if df.empty:
+        return "No data available to generate PDF", 404
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Create table and style
+    table = Table(data_list)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="water_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
+
 
 # Helper function to fetch data from the database with pagination and filters
 def fetch_waste_segregation_data(page=1, per_page=20, campus=None, year=None, quarter=None, main_category=None):
-    offset = (page - 1) * per_page
-    base_query = "SELECT * FROM tblsolidwastesegregated WHERE 1=1"  # Start with a condition that always matches
+    # Start the base query with a condition that always matches
+    base_query = "SELECT * FROM tblsolidwastesegregated WHERE 1=1"
     total_query = "SELECT COUNT(*) AS total FROM tblsolidwastesegregated WHERE 1=1"
     params = []
 
@@ -2259,9 +2584,11 @@ def fetch_waste_segregation_data(page=1, per_page=20, campus=None, year=None, qu
         total_query += " AND mainCategory = %s"
         params.append(main_category)
 
-    # Add pagination
-    base_query += " LIMIT %s OFFSET %s"
-    params.extend([per_page, offset])
+    # Only add pagination if both `page` and `per_page` are not None
+    if page is not None and per_page is not None:
+        offset = (page - 1) * per_page
+        base_query += " LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
 
     data = []
     total_records = 0
@@ -2274,9 +2601,14 @@ def fetch_waste_segregation_data(page=1, per_page=20, campus=None, year=None, qu
         cursor.execute(base_query, params)
         data = cursor.fetchall()
 
-        # Fetch total count of filtered records
-        cursor.execute(total_query, params[:-2])  # Exclude pagination params for count query
-        total_records = cursor.fetchone()["total"]
+        # Fetch total count of filtered records if pagination is applied
+        if page is not None and per_page is not None:
+            cursor.execute(total_query, params[:-2])  # Exclude pagination params for count query
+            total_records = cursor.fetchone()["total"]
+        else:
+            # If no pagination, get total count without limit/offset
+            cursor.execute(total_query, params)
+            total_records = cursor.fetchone()["total"]
 
     except mysql.connector.Error as err:
         print(f"Error fetching data: {err}")
@@ -2326,6 +2658,71 @@ def waste_segregation_report():
     str=str  # Pass the `str` function explicitly to the template
 )
 
+@app.route('/download_waste_segregation_data')
+def download_waste_segregation_data():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    quarter = request.args.get("quarter", None)
+    main_category = request.args.get("main_category", None)
+
+    # Fetch all data based on the filters
+    data, _ = fetch_waste_segregation_data(page=None, per_page=None, campus=campus, year=year, quarter=quarter, main_category=main_category)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Waste Segregation Data')
+
+    output.seek(0)
+
+    # Send the file to the client
+    return send_file(output, download_name="waste_segregation_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/download_waste_segregation_pdf')
+def download_waste_segregation_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    quarter = request.args.get("quarter", None)
+    main_category = request.args.get("main_category", None)
+
+    # Fetch all data based on the filters
+    data, _ = fetch_waste_segregation_data(page=None, per_page=None, campus=campus, year=year, quarter=quarter, main_category=main_category)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Create table and style
+    table = Table(data_list)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="waste_segregation_report.pdf", as_attachment=True, mimetype='application/pdf')
 
 def fetch_waste_unsegregation_data(page=1, per_page=20, campus=None, year=None, month=None):
     offset = (page - 1) * per_page
@@ -2381,6 +2778,96 @@ def fetch_waste_unsegregation_data(page=1, per_page=20, campus=None, year=None, 
     return data, total_records
 
 
+@app.route('/download_waste_unseg_pdf')
+def download_waste_unseg_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+
+    # Fetch all data based on the filters
+    data, _ = fetch_waste_unsegregation_data(page=1, per_page=10000, campus=campus, year=year, month=month)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate PDF", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Calculate default column widths
+    page_width = landscape(A4)[0] - 20  # 20 for margins
+    num_columns = len(df.columns)
+    col_widths = [page_width / num_columns] * num_columns
+
+    # Check if "WasteType" column exists before setting its width
+    if "WasteType" in df.columns:
+        waste_type_index = df.columns.get_loc("WasteType")
+        col_widths[waste_type_index] *= 1.5  # Increase width of WasteType column by 50%
+
+    # Define table with adjusted column widths
+    table = Table(data_list, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 6),  # Reduced font size for fitting more data
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="waste_unsegregation_report.pdf", as_attachment=True, mimetype='application/pdf')
+
+@app.route('/download_waste_unseg_excel')
+def download_waste_unseg_excel():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+
+    # Fetch data based on filters
+    data, _ = fetch_waste_unsegregation_data(page=1, per_page=10000, campus=campus, year=year, month=month)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate Excel file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Waste Unsegregation Report')
+        workbook = writer.book
+        worksheet = writer.sheets['Waste Unsegregation Report']
+        
+        # Optional: Adjust column width
+        for i, col in enumerate(df.columns):
+            column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            worksheet.set_column(i, i, column_width)
+
+    buffer.seek(0)
+
+    # Send the Excel file as a downloadable file
+    return send_file(buffer, download_name="waste_unsegregation_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 @app.route('/report/waste_unsegregation')
 def waste_unseg_report():
     # Get filter values from request args with None as default
@@ -2407,7 +2894,6 @@ def waste_unseg_report():
         year=year,
         month=month
     )
-
 
 def fetch_food_data(page=1, per_page=20, campus=None, month=None, year=None, office=None):
     offset = (page - 1) * per_page
@@ -2500,6 +2986,93 @@ def food_consumption_report():
         office=office
     )
 
+@app.route('/download_food_consumption_excel')
+def download_food_consumption_excel():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    month = request.args.get("month", None)
+    year = request.args.get("year", None)
+    office = request.args.get("office", None)
+
+    # Fetch data based on filters (with a large per_page to ensure we get all data)
+    data, _ = fetch_food_data(page=1, per_page=10000, campus=campus, month=month, year=year, office=office)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate Excel file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Food Consumption Report')
+        workbook = writer.book
+        worksheet = writer.sheets['Food Consumption Report']
+        
+        # Optional: Adjust column width
+        for i, col in enumerate(df.columns):
+            column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            worksheet.set_column(i, i, column_width)
+
+    buffer.seek(0)
+
+    # Send the Excel file as a downloadable file
+    return send_file(buffer, download_name="food_consumption_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@app.route('/download_food_consumption_pdf')
+def download_food_consumption_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    month = request.args.get("month", None)
+    year = request.args.get("year", None)
+    office = request.args.get("office", None)
+
+    # Fetch all data based on the filters (setting a high per_page value to retrieve all data at once)
+    data, _ = fetch_food_data(page=1, per_page=10000, campus=campus, month=month, year=year, office=office)
+    
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Handle empty data case
+    if df.empty:
+        return "No data available to generate PDF", 404
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists for table structure
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Calculate column width to fit all columns within the page width
+    page_width = landscape(A4)[0] - 20  # 20 for total left and right margins
+    num_columns = len(df.columns)
+    col_width = page_width / num_columns
+
+    # Define table with dynamic column widths
+    table = Table(data_list, colWidths=[col_width] * num_columns)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),  # Reduced font size for fitting more data
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="food_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
 
 # Helper function to fetch data from the database with pagination and filters
 def fetch_lpg_data(page=1, per_page=20, campus=None, year=None, month=None, office=None):
@@ -2585,6 +3158,91 @@ def lpg_consumption_report():
         office=office
     )
 
+@app.route('/download_lpg_consumption_pdf')
+def download_lpg_consumption_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+    office = request.args.get("office", None)
+
+    # Fetch all data based on the filters (using a high per_page value to retrieve all data at once)
+    data, _ = fetch_lpg_data(page=1, per_page=10000, campus=campus, year=year, month=month, office=office)
+    
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Handle empty data case
+    if df.empty:
+        return "No data available to generate PDF", 404
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists for table structure
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Calculate column width to fit all columns within the page width
+    page_width = landscape(A4)[0] - 20  # 20 for total left and right margins
+    num_columns = len(df.columns)
+    col_width = page_width / num_columns
+
+    # Define table with dynamic column widths
+    table = Table(data_list, colWidths=[col_width] * num_columns)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),  # Reduced font size for fitting more data
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="lpg_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
+@app.route('/download_lpg_consumption_excel')
+def download_lpg_consumption_excel():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+    office = request.args.get("office", None)
+
+    # Fetch data based on filters (set a high `per_page` value to retrieve all data)
+    data, _ = fetch_lpg_data(page=1, per_page=10000, campus=campus, year=year, month=month, office=office)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate Excel file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='LPG Consumption Report')
+        workbook = writer.book
+        worksheet = writer.sheets['LPG Consumption Report']
+
+        # Optional: Adjust column width
+        for i, col in enumerate(df.columns):
+            column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            worksheet.set_column(i, i, column_width)
+
+    buffer.seek(0)
+
+    # Send the Excel file as a downloadable file
+    return send_file(buffer, download_name="lpg_consumption_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 # Helper function to fetch data with pagination and filters
 def fetch_flight_data(page=1, per_page=20, campus=None, office=None, year=None):
@@ -2663,7 +3321,90 @@ def flight_emissions_report():
         year=year
     )
 
+@app.route('/download_flight_emissions_pdf')
+def download_flight_emissions_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
 
+    # Fetch all data based on the filters
+    data, _ = fetch_flight_data(page=1, per_page=10000, campus=campus, office=office, year=year)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate PDF", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists for table structure
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Calculate column width to fit all columns within the page width
+    page_width = landscape(A4)[0] - 20  # 20 for total left and right margins
+    num_columns = len(df.columns)
+    col_width = page_width / num_columns
+
+    # Define table with dynamic column widths
+    table = Table(data_list, colWidths=[col_width] * num_columns)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),  # Reduced font size for fitting more data
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="flight_emissions_report.pdf", as_attachment=True, mimetype='application/pdf')
+
+@app.route('/download_flight_emissions_excel')
+def download_flight_emissions_excel():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Fetch data based on filters (set a high `per_page` value to retrieve all data)
+    data, _ = fetch_flight_data(page=1, per_page=10000, campus=campus, office=office, year=year)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate Excel file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Flight Emissions Report')
+        workbook = writer.book
+        worksheet = writer.sheets['Flight Emissions Report']
+
+        # Optional: Adjust column width
+        for i, col in enumerate(df.columns):
+            column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            worksheet.set_column(i, i, column_width)
+
+    buffer.seek(0)
+
+    # Send the Excel file as a downloadable file
+    return send_file(buffer, download_name="flight_emissions_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 # Updated helper function to fetch data with filters
 def fetch_accommodation_data(page=1, per_page=20, campus=None, office=None, year=None):
@@ -2741,6 +3482,91 @@ def accommodation_emissions_report():
         year=year
     )
 
+@app.route('/download_accommodation_emissions_pdf')
+def download_accommodation_emissions_pdf():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Fetch all data based on the filters (using a high per_page value to retrieve all data at once)
+    data, _ = fetch_accommodation_data(page=1, per_page=10000, campus=campus, office=office, year=year)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate PDF", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a PDF file in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+
+    # Convert DataFrame to list of lists for table structure
+    data_list = [df.columns.tolist()] + df.values.tolist()  # Add headers and data rows
+
+    # Calculate column width to fit all columns within the page width
+    page_width = landscape(A4)[0] - 20  # 20 for total left and right margins
+    num_columns = len(df.columns)
+    col_width = page_width / num_columns
+
+    # Define table with dynamic column widths
+    table = Table(data_list, colWidths=[col_width] * num_columns)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),  # Reduced font size for fitting more data
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.black),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ]))
+
+    # Build the PDF with the table
+    pdf.build([table])
+
+    buffer.seek(0)
+
+    # Send the PDF as a downloadable file
+    return send_file(buffer, download_name="accommodation_emissions_report.pdf", as_attachment=True, mimetype='application/pdf')
+
+
+@app.route('/download_accommodation_emissions_excel')
+def download_accommodation_emissions_excel():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Fetch data based on filters (set a high `per_page` value to retrieve all data)
+    data, _ = fetch_accommodation_data(page=1, per_page=10000, campus=campus, office=office, year=year)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate Excel file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel file in memory
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Accommodation Emissions Report')
+        workbook = writer.book
+        worksheet = writer.sheets['Accommodation Emissions Report']
+
+        # Optional: Adjust column width
+        for i, col in enumerate(df.columns):
+            column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            worksheet.set_column(i, i, column_width)
+
+    buffer.seek(0)
+
+    # Send the Excel file as a downloadable file
+    return send_file(buffer, download_name="accommodation_emissions_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
 # Route for the Center for Sustainable Development Report
@@ -4416,12 +5242,6 @@ def lpg_consumption_all():
     return jsonify(all_lpg_data)
 
 
-
-
-
-
-
-    
 
 
 @app.route('/delete_lpg/<int:id>', methods=['DELETE'])

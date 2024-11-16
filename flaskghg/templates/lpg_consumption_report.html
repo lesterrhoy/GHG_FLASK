@@ -28,15 +28,91 @@
             max-height: 90vh;
         }
         #layoutSidenav_nav .sb-sidenav-menu {
-            max-height: 90vh;
+            max-height: 90vh; /* Adjust this value to set your desired height */
             overflow-y: auto;
         }
-        /* Landscape print styling */
-        @media print {
-            @page {
-                size: landscape;
-            }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
         }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        @media print {
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+
+    /* Hide non-printable elements like filter form, pagination, and buttons */
+    #filterForm, #printReportBtn, .pagination-container, .sb-topnav, #layoutSidenav_nav {
+        display: none;
+    }
+
+    /* Ensure table fits within the printable area */
+    table {
+        width: 100%;
+        max-width: 100%;
+        font-size: 10px; /* Adjust font size for better readability in print */
+        border-collapse: collapse; /* Ensures borders between cells are not doubled */
+    }
+
+    th, td {
+        padding: 4px;
+        border: 1px solid #000; /* Make sure borders are visible */
+    }
+
+    th {
+        background-color: #f2f2f2; /* Background for headers for contrast */
+        font-weight: bold; /* Ensure header text is bold */
+    }
+
+    /* Remove extra margins and padding around the main content */
+    .container-fluid {
+        padding: 0;
+        margin: 0;
+    }
+
+    body {
+        visibility: hidden;
+    }
+
+    #layoutSidenav_content, #layoutSidenav_content * {
+        visibility: visible;
+    }
+
+    #layoutSidenav_content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+}
     </style>
 </head>
 
@@ -71,7 +147,7 @@
                         </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
@@ -201,13 +277,56 @@
         </ul>
     </nav>
 </div>
-
                     {% else %}
                         <p>No data available for this report.</p>
                     {% endif %}
                 </div>
+                <button id="downloadPDFBtn" class="btn btn-primary mb-3" style="background-color:#d50000; color: white;" onclick="downloadLPGPDF()">
+                    Download PDF
+                </button>
+                <button id="downloadExcelBtn" class="btn btn-success mb-3"  style="background-color:#d50000; color: white;" onclick="downloadLPGExcel()">
+                    Download Excel
+                </button>
             </main>
         </div>
     </div>
+
+    <script>
+        function downloadLPGPDF() {
+            // Get filter values
+            const campus = document.getElementById("campus").value;
+            const year = document.getElementById("year").value;
+            const month = document.getElementById("month").value;
+            const office = document.getElementById("office").value;
+    
+            // Construct URL with query parameters
+            let url = `/download_lpg_consumption_pdf?`;
+            url += `campus=${encodeURIComponent(campus)}&`;
+            url += `year=${encodeURIComponent(year)}&`;
+            url += `month=${encodeURIComponent(month)}&`;
+            url += `office=${encodeURIComponent(office)}`;
+    
+            // Open the PDF download in a new tab
+            window.open(url, '_blank');
+        }
+        function downloadLPGExcel() {
+        // Get filter values
+        const campus = document.getElementById("campus").value;
+        const year = document.getElementById("year").value;
+        const month = document.getElementById("month").value;
+        const office = document.getElementById("office").value;
+
+        // Construct URL with query parameters
+        let url = `/download_lpg_consumption_excel?`;
+        url += `campus=${encodeURIComponent(campus)}&`;
+        url += `year=${encodeURIComponent(year)}&`;
+        url += `month=${encodeURIComponent(month)}&`;
+        url += `office=${encodeURIComponent(office)}`;
+
+        // Trigger the download
+        window.open(url, '_blank');
+    }
+    </script>
+    
 </body>
 </html>

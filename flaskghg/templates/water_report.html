@@ -28,15 +28,71 @@
             max-height: 90vh;
         }
         #layoutSidenav_nav .sb-sidenav-menu {
-            max-height: 90vh;
+            max-height: 90vh; /* Adjust this value to set your desired height */
             overflow-y: auto;
         }
-        /* Landscape print styling */
-        @media print {
-            @page {
-                size: landscape;
-            }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
         }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+    /* Print-Specific Styling */
+    @media print {
+        @page {
+            size: landscape;
+            margin: 10mm;
+        }
+
+        /* Hide non-printable elements like filter form, pagination, and buttons */
+        #filterForm, #printReportBtn, .pagination-container, .sb-topnav, #layoutSidenav_nav {
+            display: none;
+        }
+
+        /* Ensure table fits within the printable area */
+        table {
+            width: 100%;
+            max-width: 100%;
+            font-size: 10px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 4px;
+            border: 1px solid #000;
+        }
+
+        /* Remove extra margins and padding around the main content */
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+        }
+    }
     </style>
 </head>
 
@@ -77,7 +133,7 @@
                         </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
@@ -215,8 +271,39 @@
                         <p>No data available for this report.</p>
                     {% endif %}
                 </div>
+                <div class="mb-3">
+                    <button onclick="downloadPDF()" class="btn btn-danger">Download PDF</button>
+                    <button onclick="downloadExcel()" class="btn btn-success">Download Excel</button>
+                </div>
             </main>
         </div>
     </div>
+    <script>
+      function downloadPDF() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const category = document.getElementById("category").value;
+
+    // Construct the URL with query parameters for filtering
+    const url = `/download_water_pdf?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&category=${encodeURIComponent(category)}`;
+
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
+}
+
+function downloadExcel() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const category = document.getElementById("category").value;
+
+    // Construct the URL with query parameters
+    const url = `/download_water_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&category=${encodeURIComponent(category)}`;
+
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
+}
+
+
+    </script>
 </body>
 </html>

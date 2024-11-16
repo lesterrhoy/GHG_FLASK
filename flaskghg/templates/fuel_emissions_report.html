@@ -161,7 +161,7 @@
                         </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
@@ -301,9 +301,10 @@
                         <p>No data available for this report.</p>
                     {% endif %}
 
-                    <button id="printReportBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
-                        Print Report
+                    <button id="downloadPDFBtn" onclick="downloadPDF()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
+                        Download PDF
                     </button>
+                    
                     <button id="exportToExcelBtn" onclick="downloadExcel()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
                         Export to Excel
                     </button>
@@ -314,43 +315,17 @@
     </div>
 
     <script>
-        document.getElementById("printReportBtn").addEventListener("click", function() {
-            const campus = document.getElementById("campus").value;
-            const year = document.getElementById("year").value;
-            const url = `/report/fuel_emissions/all_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}`;
+    function downloadPDF() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.getElementById("fuel_emissions_data");
-                    tableBody.innerHTML = "";
+    // Ensure the URL matches your Flask route
+    const url = `/download_fuel_emissions_pdf?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}`;
 
-                    data.forEach(report => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${report.campus}</td>
-                            <td>${report.date}</td>
-                            <td>${report.driver}</td>
-                            <td>${report.type}</td>
-                            <td>${report.vehicle_equipment}</td>
-                            <td>${report.plate_no}</td>
-                            <td>${report.category}</td>
-                            <td>${report.fuel_type}</td>
-                            <td>${report.quantity_liters}</td>
-                            <td>${report.total_amount}</td>
-                            <td>${report.co2_emission}</td>
-                            <td>${report.nh4_emission}</td>
-                            <td>${report.n2o_emission}</td>
-                            <td>${report.total_emission}</td>
-                            <td>${report.total_emission_t}</td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
+    // Trigger the download
+    window.location.href = url;
+}
 
-                    window.print();
-                })
-                .catch(error => console.error("Error fetching data for printing:", error));
-        });
         function downloadExcel() {
             const campus = document.getElementById("campus").value;
             const year = document.getElementById("year").value;

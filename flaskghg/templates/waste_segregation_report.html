@@ -28,15 +28,94 @@
             max-height: 90vh;
         }
         #layoutSidenav_nav .sb-sidenav-menu {
-            max-height: 90vh;
+            max-height: 90vh; /* Adjust this value to set your desired height */
             overflow-y: auto;
         }
-        /* Landscape print styling */
-        @media print {
-            @page {
-                size: landscape;
-            }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
         }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        @media print {
+        @page {
+            size: landscape;
+            margin: 10mm;
+        }
+
+        /* Reduce font size and padding to fit more content on the page */
+        body, table {
+            font-size: 10px;
+        }
+
+        th, td {
+            padding: 4px;
+        }
+
+        /* Ensure table and content fit within the printable area */
+        table {
+            width: 100%;
+            max-width: 100%;
+            border: 1px solid #000;
+        }
+
+        /* Avoid breaking inside table rows */
+        tr, td, th {
+            page-break-inside: avoid;
+        }
+
+        /* Hide non-printable elements including filter form */
+        #filterForm, #printReportBtn, .pagination-container, .sb-topnav, #layoutSidenav_nav, #downloadExcelBtn {
+            display: none;
+        }
+
+        /* Remove extra margins and padding around the main content */
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Header for report title */
+        #reportHeader {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Footer for page numbers */
+        .page-footer {
+            text-align: center;
+            font-size: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    }
     </style>
 </head>
 
@@ -65,13 +144,9 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <a class="nav-link" href="{{ url_for('manage_account') }}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
-                            Manage Account
-                        </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
@@ -88,6 +163,10 @@
                                 <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
                             </nav>
                         </div>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -211,8 +290,38 @@
                         <p>No data available for this report.</p>
                     {% endif %}
                 </div>
+
+                <button onclick="downloadPDF()" class="btn btn-primary" id="downloadPdfBtn">Download PDF</button>
+                <button onclick="downloadExcel()" class="btn btn-success" id="downloadExcelBtn">Download Excel</button>
             </main>
         </div>
     </div>
+    <script>
+    function downloadExcel() {
+        const campus = document.getElementById("campus").value;
+        const year = document.getElementById("year").value;
+        const quarter = document.getElementById("quarter").value;
+        const mainCategory = document.getElementById("main_category").value;
+    
+        // Construct the URL with query parameters for filtering
+        const url = `/download_waste_segregation_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&quarter=${encodeURIComponent(quarter)}&main_category=${encodeURIComponent(mainCategory)}`;
+    
+        // Redirect to the URL to initiate the download
+        window.location.href = url;
+    }
+    function downloadPDF() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const quarter = document.getElementById("quarter").value;
+    const mainCategory = document.getElementById("main_category").value;
+
+    // Construct the URL with query parameters for filtering
+    const url = `/download_waste_segregation_pdf?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&quarter=${encodeURIComponent(quarter)}&main_category=${encodeURIComponent(mainCategory)}`;
+
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
+}
+
+    </script>
 </body>
 </html>
