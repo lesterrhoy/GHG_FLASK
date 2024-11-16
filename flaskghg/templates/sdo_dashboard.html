@@ -300,7 +300,7 @@
                                     LPG Consumption Forecast
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="lpgChart"></canvas>
+                                    <canvas id="lpgChart" width="400" height="200"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -367,120 +367,191 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Helper function to generate month labels in MM/YY format
-    function getMonthLabels(startMonthIndex, startYear, totalMonths) {
-        const labels = [];
-        for (let i = 0; i < totalMonths; i++) {
-            const monthIndex = (startMonthIndex + i) % 12;
-            const year = startYear + Math.floor((startMonthIndex + i) / 12);
-            const month = (monthIndex + 1).toString().padStart(2, '0');
-            labels.push(`${month}/${year.toString().slice(-2)}`);
-        }
-        return labels;
-    }
+    const selectedYear = {{ selected_year }};
+    const isCurrentYear = selectedYear === new Date().getFullYear();
+    const labels = {{ labels | tojson }}; // Labels with month/year
+    const treatedWaterLabels = {{ month_labels | tojson }}; // Numeric month labels for treated water
 
-    // Define the starting month (January) and the selected year for labels
-    const startMonthIndex = 0;
-    const startYear = {{ selected_year }};
+    // Electricity forecast and historical data extracted from Flask context
+    const electricityForecastData = {{ forecast_data.electricity_forecast | tojson }};
+    const electricityHistoricalData = {{ electricity_data | tojson }};
 
-    // Generate labels for 12 months of actual data + 2 months forecast
-    const labels = getMonthLabels(startMonthIndex, startYear, 14);
+    // Fuel forecast and historical data extracted from Flask context
+    const fuelForecastData = {{ forecast_data.fuel_forecast | tojson }};
+    const fuelHistoricalData = {{ fuel_data | tojson }};
 
-    // Actual data passed from the server
-    const actualData = {
-        electricity: {{ electricity_data | tojson }},
-        fuel: {{ fuel_data | tojson }},
-        waste_segregation: {{ waste_segregation_data | tojson }},
-        waste_unsegregation: {{ waste_unsegregation_data | tojson }},
-        treated_water: {{ treated_water_data | tojson }},
-        water: {{ water_data | tojson }},
-        lpg: {{ lpg_data | tojson }},
-        food_waste: {{ food_waste_data | tojson }},
-        accommodation: {{ accommodation_data | tojson }},
-        flight: {{ flight_data | tojson }},
-        total_emission: {{ total_emission_data | tojson }}  // Included for total_emission chart
-    };
+    // Waste segregated forecast and historical data extracted from Flask context
+    const wasteSegregatedForecastData = {{ forecast_data.waste_segregated_forecast | tojson }};
+    const wasteSegregatedHistoricalData = {{ waste_segregated_data | tojson }};
 
-    // Forecast data passed from the server
-    const forecastData = {{ forecast_data | tojson }};
+    // Waste unsegregated forecast and historical data extracted from Flask context
+    const wasteUnsegregatedForecastData = {{ forecast_data.waste_unsegregated_forecast | tojson }};
+    const wasteUnsegregatedHistoricalData = {{ waste_unsegregated_data | tojson }};
 
-    // Color palette configuration for each chart
-    const colorPalette = [
-        { border: 'darkblue', forecastBorder: 'red' },
-        { border: 'darkgreen', forecastBorder: 'red' },
-        { border: 'darkorange', forecastBorder: 'red' },
-        { border: 'indigo', forecastBorder: 'red' },
-        { border: 'saddlebrown', forecastBorder: 'red' },
-        { border: 'darkslategray', forecastBorder: 'red' },
-        { border: 'deeppink', forecastBorder: 'red' },
-        { border: 'goldenrod', forecastBorder: 'red' },
-        { border: 'dimgray', forecastBorder: 'red' },
-        { border: 'darkred', forecastBorder: 'red' },
-        { border: 'purple', forecastBorder: 'red' } // For total_emission chart
-    ];
+    // Water consumption forecast and historical data extracted from Flask context
+    const waterForecastData = {{ forecast_data.water_forecast | tojson }};
+    const waterHistoricalData = {{ water_data | tojson }};
 
-    // Helper function to create a line chart displaying actual and forecasted data
-    function createForecastChart(chartId, label, actualData, forecastData, colorIndex) {
+    // Treated water forecast and historical data extracted from Flask context
+    const treatedWaterForecastData = {{ forecast_data.treated_water_forecast | tojson }};
+    const treatedWaterHistoricalData = {{ treated_water_data | tojson }};
+
+    // LPG forecast and historical data extracted from Flask context
+    const lpgForecastData = {{ forecast_data.lpg_forecast | tojson }};
+    const lpgHistoricalData = {{ lpg_data | tojson }};
+
+    /**
+     * Function to create a line chart displaying historical and forecast data.
+     * @param {string} chartId - The HTML ID of the canvas element.
+     * @param {string} label - Chart label, such as "Electricity Consumption".
+     * @param {Array} historicalData - Array of historical data values.
+     * @param {Array} forecastData - Array of forecasted data values.
+     * @param {Array} chartLabels - Labels for the x-axis.
+     * @param {string} historicalColor - Color for the historical data line.
+     * @param {string} forecastColor - Color for the forecast data line.
+     * @param {string} yAxisLabel - Label for the Y-axis (e.g., "kg CO2/kWh").
+     */
+    function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
         const ctx = document.getElementById(chartId).getContext('2d');
 
+        // Data arrangement for historical and forecast data
+        const completeHistoricalData = historicalData.slice(); // Copy historical data
+        const forecastOnlyData = Array(12).fill(null).concat(forecastData.slice(0, 2)); // Pad first 12 slots with null
+
+        // Create the chart
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: chartLabels,
                 datasets: [
                     {
                         label: `${label} (Actual)`,
-                        data: actualData, // Actual data for 12 months
-                        borderColor: colorPalette[colorIndex].border,
-                        backgroundColor: colorPalette[colorIndex].border,
+                        data: completeHistoricalData,
+                        borderColor: historicalColor,
+                        backgroundColor: historicalColor,
                         fill: false,
-                        pointBackgroundColor: colorPalette[colorIndex].border,
                         borderWidth: 2,
-                        pointRadius: 3
+                        pointBackgroundColor: historicalColor,
+                        showLine: true
                     },
                     {
                         label: `${label} (Forecast)`,
-                        data: [...Array(12).fill(null), ...forecastData], // Forecast data for next 2 months
-                        borderColor: colorPalette[colorIndex].forecastBorder,
+                        data: forecastOnlyData,
+                        borderColor: forecastColor,
+                        backgroundColor: forecastColor,
                         fill: false,
-                        borderDash: [5, 5], // Dashed line style for forecast
-                        pointBackgroundColor: colorPalette[colorIndex].forecastBorder,
+                        borderDash: [5, 5], // Dashed line for forecast
                         borderWidth: 2,
-                        pointRadius: 3
+                        pointBackgroundColor: forecastColor,
+                        showLine: true
                     }
                 ]
             },
             options: {
                 responsive: true,
+                title: {
+                    display: true,
+                    text: `${label} Forecast for ${selectedYear}`
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Month' },
+                        ticks: { maxRotation: 0, minRotation: 0 } // Keeps month labels horizontal
+                    },
+                    y: {
+                        title: { display: true, text: yAxisLabel },
+                        beginAtZero: true
+                    }
+                },
                 plugins: {
                     legend: {
                         display: true,
                         labels: {
-                            usePointStyle: true
+                            usePointStyle: true,
+                            padding: 20
                         }
                     }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'Consumption/Emissions' } }
                 }
             }
         });
     }
 
-    // Generate charts for each category using actual and forecasted data
-    createForecastChart('electricityChart', 'Electricity Consumption', actualData.electricity, forecastData.electricity_forecast, 0);
-    createForecastChart('fuelChart', 'Fuel Consumption', actualData.fuel, forecastData.fuel_forecast, 1);
-    createForecastChart('wasteSegregatedChart', 'Waste Segregated', actualData.waste_segregation, forecastData.waste_segregation_forecast, 2);
-    createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregated', actualData.waste_unsegregation, forecastData.waste_unsegregation_forecast, 3);
-    createForecastChart('treatedWaterChart', 'Treated Water', actualData.treated_water, forecastData.treated_water_forecast, 4);
-    createForecastChart('waterChart', 'Water Consumption', actualData.water, forecastData.water_forecast, 5);
-    createForecastChart('lpgChart', 'LPG Consumption', actualData.lpg, forecastData.lpg_forecast, 6);
-    createForecastChart('foodWasteChart', 'Food Waste', actualData.food_waste, forecastData.food_waste_forecast, 7);
-    createForecastChart('accommodationChart', 'Accommodation Emissions', actualData.accommodation, forecastData.accommodation_forecast, 8);
-    createForecastChart('flightChart', 'Flight Emissions', actualData.flight, forecastData.flight_forecast, 9);
-    createForecastChart('totalEmissionChart', 'Total Emission', actualData.total_emission, forecastData.total_emission_forecast, 10); // Total Emission chart
+    // Create charts for each data series
+    createForecastChart(
+        'electricityChart',
+        'Electricity Consumption',
+        electricityHistoricalData,
+        electricityForecastData,
+        labels,
+        'blue',
+        'red',
+        'kg CO2/kWh'
+    );
+
+    createForecastChart(
+        'fuelChart',
+        'Fuel Consumption',
+        fuelHistoricalData,
+        fuelForecastData,
+        labels,
+        'green',
+        'orange',
+        'Total Emission (kg CO2)'
+    );
+
+    createForecastChart(
+        'wasteSegregatedChart',
+        'Waste Segregation',
+        wasteSegregatedHistoricalData,
+        wasteSegregatedForecastData,
+        labels,
+        'purple',
+        'brown',
+        'GHG Emission (kg CO2)'
+    );
+
+    createForecastChart(
+        'wasteUnsegregatedChart',
+        'Waste Unsegregation',
+        wasteUnsegregatedHistoricalData,
+        wasteUnsegregatedForecastData,
+        labels,
+        'teal',
+        'gray',
+        'GHG Emission (kg CO2)'
+    );
+
+    createForecastChart(
+        'waterChart',
+        'Water Consumption',
+        waterHistoricalData,
+        waterForecastData,
+        labels,
+        'blue',
+        'lightblue',
+        'kg CO2/Liter'
+    );
+
+    createForecastChart(
+        'treatedWaterChart',
+        'Treated Water Consumption',
+        treatedWaterHistoricalData,
+        treatedWaterForecastData,
+        treatedWaterLabels,
+        'green',
+        'lime',
+        'kg CO2/m³'
+    );
+
+    createForecastChart(
+        'lpgChart',
+        'LPG Consumption',
+        lpgHistoricalData,
+        lpgForecastData,
+        labels,
+        'darkblue',
+        'gold',
+        'GHG Emission (kg CO2)'
+    );
 </script>
-
-
 
