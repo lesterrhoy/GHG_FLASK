@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDO Report</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet">
+    <!-- Add Bootstrap JS and Popper.js at the end of your HTML before closing </body> tag -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include jQuery (for Bootstrap 4) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    
+
+    <style>
+        /* Layout Styling */
+        #layoutSidenav {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+    
+        #layoutSidenav_nav {
+            width: 250px;
+            background-color: #495057;
+            flex-shrink: 0;
+        }
+    
+        #layoutSidenav_content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        #layoutSidenav_nav .nav-link {
+            color: #fff;
+            font-weight: 500;
+        }
+    
+        #layoutSidenav_nav .nav-link:hover {
+            color: #fff;
+            background-color: #6c757d;
+        }
+    
+        .header {
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+    
+        .header img {
+            height: 60px;
+        }
+    
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+    
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+    
+        th {
+            background-color: #f2f2f2;
+            color: #000;
+        }
+        .content-area {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; /* Enable scrolling */
+}
+.text-center {
+    margin-bottom: 50px; /* Add margin to avoid clipping at the bottom */
+}
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .scrollable-menu {
+        max-height: 300px; /* Set a max height for the scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+    }
+    .pagination .page-link {
+    background-color: white;
+    color: #d50000;
+    border-color: #d50000;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.pagination .page-link:hover {
+    background-color: #a30000; /* Darker red on hover */
+    color: white;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #d50000;
+    color: white;
+    border-color: #d50000;
+}
+
+    
+        /* Sidebar and Table Side-by-Side */
+        #mainContent {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+        }
+    
+        .content-area {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-x: auto;
+        }
+    
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body class="sb-nav-fixed">
+    <!-- Navbar at the top -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="#">SDO <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }} REPORT</span></a>
+        <div class="ms-auto"></div>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+     <!-- Sidebar and Main Content Layout -->
+    <div id="layoutSidenav">
+        <!-- Sidebar -->
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('sdo_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            Report
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav scrollable-menu">
+                                <a class="nav-link" href="{{ url_for('sdo_electricity_report') }}">Electricity Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_fuel_emissions_report') }}">Fuel Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_water_report') }}">Water Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_treated_water_report') }}">Treated Water Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_waste_segregation_report') }}">Waste Segregation Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_waste_unseg_report') }}">Waste Unsegregation Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_food_consumption_report') }}">Food Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_lpg_consumption_report') }}">LPG Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_flight_emissions_report') }}">Flight Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('sdo_accommodation_emissions_report') }}">Accommodation Emissions Report</a>
+                            </nav>
+                        </div>
+                        <a class="nav-link" href="{{ url_for('manageacc_sdo') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <form method="GET" action="{{ url_for('sdo_electricity_report') }}" class="mb-4" id="filterForm">
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="campus">Campus:</label>
+                        <select id="campus" name="campus" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Campuses</option>
+                            <option value="Alangilan" {% if campus == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                            <option value="ARASOF-Nasugbu" {% if campus == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                            <option value="Balayan" {% if campus == 'Balayan' %}selected{% endif %}>Balayan</option>
+                            <option value="Central" {% if campus == 'Central' %}selected{% endif %}>Central</option>
+                            <option value="JPLPC-Malvar" {% if campus == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                            <option value="Lemery" {% if campus == 'Lemery' %}selected{% endif %}>Lemery</option>
+                            <option value="Lipa" {% if campus == 'Lipa' %}selected{% endif %}>Lipa</option>
+                            <option value="Lobo" {% if campus == 'Lobo' %}selected{% endif %}>Lobo</option>
+                            <option value="Mabini" {% if campus == 'Mabini' %}selected{% endif %}>Mabini</option>
+                            <option value="Pablo Borbon" {% if campus == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                            <option value="Rosario" {% if campus == 'Rosario' %}selected{% endif %}>Rosario</option>
+                            <option value="San Juan" {% if campus == 'San Juan' %}selected{% endif %}>San Juan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="category">Category:</label>
+                        <select id="category" name="category" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Categories</option>
+                            <option value="Solar" {% if category == 'Solar' %}selected{% endif %}>Solar</option>
+                            <option value="Mains" {% if category == 'Mains' %}selected{% endif %}>Mains</option>
+                            <option value="Others" {% if category == 'Others' %}selected{% endif %}>Others</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="month">Month:</label>
+                        <select id="month" name="month" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Months</option>
+                            {% for m in ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] %}
+                            <option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="quarter">Quarter:</label>
+                        <select id="quarter" name="quarter" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Quarters</option>
+                            <option value="Q1" {% if quarter == 'Q1' %}selected{% endif %}>Q1</option>
+                            <option value="Q2" {% if quarter == 'Q2' %}selected{% endif %}>Q2</option>
+                            <option value="Q3" {% if quarter == 'Q3' %}selected{% endif %}>Q3</option>
+                            <option value="Q4" {% if quarter == 'Q4' %}selected{% endif %}>Q4</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="year">Year:</label>
+                        <select id="year" name="year" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Years</option>
+                            {% for y in range(2021, 2025) %}
+                            <option value="{{ y }}" {% if year == y|string %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+            <div class="content-area">
+                <h3>Electricity Consumption</h3>
+                <table class="table table-bordered mt-4" id="electricityTable">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Category</th>
+                            <th>Month</th>
+                            <th>Quarter</th>
+                            <th>Year</th>
+                            <th>Prev Reading</th>
+                            <th>Current Reading</th>
+                            <th>Multiplier</th>
+                            <th>Total Amount</th>
+                            <th>Consumption</th>
+                            <th>Price Per KWH</th>
+                            <th>KG CO₂ per KWH</th>
+                            <th>T CO₂ per KWH</th>
+                        </tr>
+                    </thead>
+                    <tbody id="electricityData">
+                        {% if electricity_data %}
+                            {% for row in electricity_data %}
+                            <tr>
+                                <td>{{ row.campus }}</td>
+                                <td>{{ row.category }}</td>
+                                <td>{{ row.month }}</td>
+                                <td>{{ row.quarter }}</td>
+                                <td>{{ row.year }}</td>
+                                <td>{{ row.prev_reading }}</td>
+                                <td>{{ row.current_reading }}</td>
+                                <td>{{ row.multiplier }}</td>
+                                <td>{{ row.total_amount }}</td>
+                                <td>{{ row.consumption }}</td>
+                                <td>{{ row.price_per_kwh }}</td>
+                                <td>{{ row.kg_co2_per_kwh }}</td>
+                                <td>{{ row.t_co2_per_kwh }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="13" class="text-center">No data available</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+        
+                <!-- Pagination -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if current_page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('sdo_electricity_report', page=current_page-1) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page in range(1, total_pages + 1) %}
+                        <li class="page-item {% if page == current_page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('sdo_electricity_report', page=page) }}">{{ page }}</a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if current_page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('sdo_electricity_report', page=current_page+1) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+
+<!-- Download Report Button -->
+<div class="mb-4">
+    <a href="{{ url_for('export_electricity_report_pdf', campus=campus, category=category, month=month, quarter=quarter, year=year) }}" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000; color: white;">
+        Download Full Report (PDF)
+    </a>
+    <a href="{{ url_for('export_electricity_report_excel', campus=campus, category=category, month=month, quarter=quarter, year=year) }}" class="btn btn-success" style="background-color: #d50000; border-color: #d50000; color: white;">
+        Download Full Report (Excel)
+    </a>
+</div>
+
+
+            </div>
+        </div>
+        

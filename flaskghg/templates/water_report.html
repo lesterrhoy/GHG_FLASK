@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Water Consumption Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        .sb-topnav .navbar-nav .nav-item .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: white;
+        }
+        .sb-topnav .navbar-nav .nav-item .nav-link i {
+            margin-right: 5px;
+        }
+        .sb-sidenav-menu {
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        #layoutSidenav_nav .sb-sidenav-menu {
+            max-height: 90vh; /* Adjust this value to set your desired height */
+            overflow-y: auto;
+        }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+    /* Print-Specific Styling */
+    @media print {
+        @page {
+            size: landscape;
+            margin: 10mm;
+        }
+
+        /* Hide non-printable elements like filter form, pagination, and buttons */
+        #filterForm, #printReportBtn, .pagination-container, .sb-topnav, #layoutSidenav_nav {
+            display: none;
+        }
+
+        /* Ensure table fits within the printable area */
+        table {
+            width: 100%;
+            max-width: 100%;
+            font-size: 10px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 4px;
+            border: 1px solid #000;
+        }
+
+        /* Remove extra margins and padding around the main content */
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+        }
+    }
+    </style>
+</head>
+
+<body class="sb-nav-fixed">
+    <!-- Navbar at the top -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar brand -->
+        <a class="navbar-brand ps-3" href="{{ url_for('csd_dashboard') }}">CSD Dashboard</a>
+        
+        <!-- Spacer to push "Sign-out" to the right -->
+        <div class="ms-auto"></div>
+        
+        <!-- Sign-out Icon and Link -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar and Main Content Layout -->
+    <div id="layoutSidenav">
+        <!-- Sidebar -->
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            Report
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('electricity_report') }}">Electricity Report</a>
+                                <a class="nav-link" href="{{ url_for('fuel_emissions_report') }}">Fuel Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('water_report') }}">Water Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('treated_water_report') }}">Treated Water Report</a>
+                                <a class="nav-link" href="{{ url_for('waste_segregation_report') }}">Waste Segregation Report</a>
+                                <a class="nav-link" href="{{ url_for('waste_unseg_report') }}">Waste Unsegregation Report</a>
+                                <a class="nav-link" href="{{ url_for('food_consumption_report') }}">Food Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('lpg_consumption_report') }}">LPG Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('flight_emissions_report') }}">Flight Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h2 class="mt-4">Water Consumption Report</h2>
+
+                     <!-- Filter Form -->
+                     <form method="GET" action="{{ url_for('water_report') }}" class="mb-4" id="filterForm">
+                        <div class="row">
+                            <!-- Campus Filter -->
+                            <div class="col-md-3">
+                                <label for="campus">Campus:</label>
+                                <select id="campus" name="campus" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Campuses</option>
+                                    <option value="Alangilan" {% if request.args.get('campus') == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                                    <option value="ARASOF-Nasugbu" {% if request.args.get('campus') == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                                    <option value="Balayan" {% if request.args.get('campus') == 'Balayan' %}selected{% endif %}>Balayan</option>
+                                    <option value="Central" {% if request.args.get('campus') == 'Central' %}selected{% endif %}>Central</option>
+                                    <option value="JPLPC-Malvar" {% if request.args.get('campus') == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                                    <option value="Lemery" {% if request.args.get('campus') == 'Lemery' %}selected{% endif %}>Lemery</option>
+                                    <option value="Lipa" {% if request.args.get('campus') == 'Lipa' %}selected{% endif %}>Lipa</option>
+                                    <option value="Lobo" {% if request.args.get('campus') == 'Lobo' %}selected{% endif %}>Lobo</option>
+                                    <option value="Mabini" {% if request.args.get('campus') == 'Mabini' %}selected{% endif %}>Mabini</option>
+                                    <option value="Pablo Borbon" {% if request.args.get('campus') == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                                    <option value="Rosario" {% if request.args.get('campus') == 'Rosario' %}selected{% endif %}>Rosario</option>
+                                    <option value="San Juan" {% if request.args.get('campus') == 'San Juan' %}selected{% endif %}>San Juan</option>
+                                </select>
+                            </div>
+
+                            <!-- Year Filter -->
+                            <div class="col-md-3">
+                                <label for="year">Year:</label>
+                                <select id="year" name="year" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Years</option>
+                                    <option value="2020" {% if request.args.get('year') == '2020' %}selected{% endif %}>2020</option>
+                                    <option value="2021" {% if request.args.get('year') == '2021' %}selected{% endif %}>2021</option>
+                                    <option value="2022" {% if request.args.get('year') == '2022' %}selected{% endif %}>2022</option>
+                                    <option value="2023" {% if request.args.get('year') == '2023' %}selected{% endif %}>2023</option>
+                                    <option value="2024" {% if request.args.get('year') == '2024' %}selected{% endif %}>2024</option>
+                                </select>
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div class="col-md-3">
+                                <label for="category">Category:</label>
+                                <select id="category" name="category" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Categories</option>
+                                    <option value="Mains" {% if request.args.get('category') == 'Mains' %}selected{% endif %}>Mains</option>
+                                    <option value="Drinking Water" {% if request.args.get('category') == 'Drinking Water' %}selected{% endif %}>Drinking Water</option>
+                                    <option value="Deep Well" {% if request.args.get('category') == 'Deep Well' %}selected{% endif %}>Deep Well</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                    {% if data %}
+                        <table class="table table-bordered mt-4" id="water">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                    <th>Previous Reading (m³)</th>
+                                    <th>Current Reading (m³)</th>
+                                    <th>Consumption (m³)</th>
+                                    <th>Total Amount (₱)</th>
+                                    <th>Price per m³ (₱)</th>
+                                    <th>Factor (kg CO₂/m³)</th>
+                                    <th>Factor (t CO₂/m³)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in data %}
+                                <tr>
+                                    <td>{{ report.Campus }}</td>
+                                    <td>{{ report.Category }}</td>
+                                    <td>{{ report.Date }}</td>
+                                    <td>{{ report.PreviousReading }}</td>
+                                    <td>{{ report.CurrentReading }}</td>
+                                    <td>{{ report.Consumption }}</td>
+                                    <td>{{ report.TotalAmount }}</td>
+                                    <td>{{ report.PricePerLiter }}</td>
+                                    <td>{{ report.FactorKGCO2e }}</td>
+                                    <td>{{ report.FactorTCO2e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="pagination-container mt-3">
+                            <nav aria-label="Page navigation example">
+                                <ul class="pagination justify-content-start">
+                                    {% if total_pages > 1 %}
+                                        <!-- Previous button -->
+                                        <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                                            <a class="page-link" 
+                                               href="{{ url_for('water_report', page=current_page - 1, campus=request.args.get('campus'), year=request.args.get('year'), category=request.args.get('category')) }}" 
+                                               tabindex="-1">Previous</a>
+                                        </li>
+                                        
+                                        <!-- Page numbers display -->
+                                        <li class="page-item disabled">
+                                            <span class="page-link">Page {{ current_page }} of {{ total_pages }}</span>
+                                        </li>
+                                        
+                                        <!-- Next button -->
+                                        <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                                            <a class="page-link" 
+                                               href="{{ url_for('water_report', page=current_page + 1, campus=request.args.get('campus'), year=request.args.get('year'), category=request.args.get('category')) }}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    {% else %}
+                        <p>No data available for this report.</p>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <button onclick="downloadPDF()" class="btn btn-danger">Download PDF</button>
+                    <button onclick="downloadExcel()" class="btn btn-success">Download Excel</button>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+      function downloadPDF() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const category = document.getElementById("category").value;
+
+    // Construct the URL with query parameters for filtering
+    const url = `/download_water_pdf?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&category=${encodeURIComponent(category)}`;
+
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
+}
+
+function downloadExcel() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const category = document.getElementById("category").value;
+
+    // Construct the URL with query parameters
+    const url = `/download_water_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&category=${encodeURIComponent(category)}`;
+
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
+}
+
+
+    </script>
+</body>
+</html>

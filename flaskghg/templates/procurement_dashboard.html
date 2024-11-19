@@ -23,17 +23,20 @@
         }
     </style>
 </head>
-<body class="sb-nav-fixed">
+<body>
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="#">PROCUREMENT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-        <ul class="navbar-nav ms-auto me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+        <a class="navbar-brand ps-3" href="{{ url_for('procurement_dashboard') }}">PROCUREMENT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -49,22 +52,18 @@
                         <div class="sb-sidenav-menu-heading">PROCUREMENT</div>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseProcurement" aria-expanded="false" aria-controls="collapseProcurement">
                             <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
-                            Procurement
+                            Consumption
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapseProcurement" aria-labelledby="headingProcurement" data-bs-parent="#sidenavAccordion">
                             <nav class="sb-sidenav-menu-nested nav">
                                 <a class="nav-link" href="{{ url_for('food_consumption') }}">Food</a>
-                                {% if session['campus'] == 'Lipa' or session['campus'] == 'JPLPC-Malvar' %}
-                                    <a class="nav-link disabled-link">LPG (Disabled)</a>
-                                {% else %}
-                                    <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
-                                {% endif %}
+                                <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
                             </nav>
                         </div>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
@@ -84,6 +83,66 @@
                     <ol class="breadcrumb mb-4">
                         <li class="breadcrumb-item active">Consumption Trends</li>
                     </ol>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <p style="margin-bottom: 0; line-height: 1.5; text-align: justify;">
+                                The Procurement Dashboard illustrates an overview of forecasted trends and historical data related to resource metrics. The visualized data shows significant variations across different months, highlighting initial increases followed by a decline and eventual stabilization. This insight helps in anticipating future changes and supports strategic planning for better resource management and sustainability.                            </p>
+                        </div>
+                    </div>
+                    <!-- Total Emission Card -->
+<div class="row mb-4">
+    <div class="col-xl-12">
+        <div class="card bg-dark text-white h-100">
+            <div class="card-body">
+                <div class="card-title">Total Emission</div>
+                <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Consumption Cards -->
+<div class="row">
+    <!-- Food Consumption Card -->
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="card-title">Food Consumption</div>
+                <div><strong>Current Emission:</strong> {{ current_emission_data.food }} CO₂e</div>
+                <div><strong>Quantity:</strong> {{ food_waste_data[-1]['QuantityOfServing'] if food_waste_data else 0 }} servings</div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="food_consumption">View Details</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LPG Consumption Card -->
+    <div class="col-xl-6 col-md-6 mb-4">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="card-title">LPG Consumption</div>
+                <div><strong>Current Emission:</strong> {{ current_emission_data.lpg }} CO₂e</div>
+                <div><strong>Volume:</strong> {{ lpg_data[-1]['TotalTankVolume'] if lpg_data else 0 }} liters</div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="lpg_consumption">View Details</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="yearFilterForm" action="{{ url_for('procurement_dashboard') }}" method="get" style="margin-bottom: 20px;">
+    <label for="yearSelect">Select Year:</label>
+    <select name="year" id="yearSelect" onchange="document.getElementById('yearFilterForm').submit();">
+        {% for year in range(2020, current_year + 1) %}
+            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+    </select>
+</form>
 
                     <!-- Charts for Each Consumption -->
                     <div class="row">
@@ -114,41 +173,6 @@
                         </div>
                     </div>
 
-                    <!-- Data Table for Procurement Data -->
-                    <div class="row">
-                        <div class="col-xl-12">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-table me-1"></i>
-                                    Procurement Data for {{ session['campus'] }}
-                                </div>
-                                <div class="card-body">
-                                    <table id="datatablesSimple" class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Campus</th>
-                                                <th>Procurement Field 1</th>
-                                                <th>Procurement Field 2</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for record in procurement_data %}
-                                            <tr>
-                                                <td>{{ record['id'] }}</td>
-                                                <td>{{ record['campus'] }}</td>
-                                                <td>{{ record['procurement_field_1'] }}</td>
-                                                <td>{{ record['procurement_field_2'] }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
 
             <footer class="py-4 bg-light mt-auto">
                 <div class="container-fluid px-4">
@@ -169,97 +193,121 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/simple-datatables.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Helper function to get month names
-        function getMonthNames(startMonthIndex, totalMonths) {
-            const monthNames = [
-                "January", "February", "March", "April", "May", "June", 
-                "July", "August", "September", "October", "November", "December"
-            ];
-            let labels = [];
-            for (let i = 0; i < totalMonths; i++) {
-                let month = monthNames[(startMonthIndex + i) % 12];
-                if (i >= 12) {  // Mark future trend months
-                    month += " (Future)";
-                }
-                labels.push(month);
-            }
-            return labels;
-        }
-    
-        // Get the current month index
-        const currentMonthIndex = new Date().getMonth();
-        
-        // Generate labels for 12 months plus 2 future months
-        const labels = getMonthNames(currentMonthIndex, 14);
-    
-        // Data for Food Waste Chart
-        const foodWasteForecast = {{ forecast_data.food_waste_forecast | tojson }};
-        const foodWasteChartCtx = document.getElementById('foodWasteChart').getContext('2d');
-    
-        // Define custom colors for the line
-        const foodWasteLineColors = foodWasteForecast.map((_, index) => index >= 12 ? 'red' : 'blue');
-    
-        new Chart(foodWasteChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Food Waste Data',
-                    data: foodWasteForecast,
-                    borderWidth: 2,
-                    fill: false,
-                    segment: {
-                        borderColor: (ctx) => {
-                            return ctx.p0DataIndex >= 12 ? 'red' : 'blue';
-                        }
-                    },
-                    pointBackgroundColor: foodWasteLineColors
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'Consumption (kg)' } }
-                }
-            }
-        });
-    
-        // Data for LPG Chart
-        const lpgForecast = {{ forecast_data.lpg_forecast | tojson }};
-        const lpgChartCtx = document.getElementById('lpgChart').getContext('2d');
-    
-        // Define custom colors for the line
-        const lpgLineColors = lpgForecast.map((_, index) => index >= 12 ? 'red' : 'blue');
-    
-        new Chart(lpgChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'LPG Data',
-                    data: lpgForecast,
-                    borderWidth: 2,
-                    fill: false,
-                    segment: {
-                        borderColor: (ctx) => {
-                            return ctx.p0DataIndex >= 12 ? 'red' : 'blue';
-                        }
-                    },
-                    pointBackgroundColor: lpgLineColors
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'Consumption (liters)' } }
-                }
-            }
-        });
-    </script>
+    <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script>
+    const selectedYear = {{ selected_year }}; // Year selected in Flask
+    const isCurrentYear = selectedYear === new Date().getFullYear();
+    const labels = {{ labels | tojson }}; // Labels for the months (e.g., "Jan/23", "Feb/23", ...)
+
+    const foodWasteForecastData = {{ forecast_data.food_waste_forecast.prophet.forecast | tojson }};
+    const foodWasteHistoricalData = {{ food_waste_data | tojson }};
+
+    // Add LPG data
+    const lpgForecastData = {{ forecast_data.lpg_forecast.prophet.forecast | tojson }}; // Forecasted LPG data
+    const lpgHistoricalData = {{ lpg_data | tojson }}; // Historical LPG data
+
+    /**
+     * Function to create a line chart displaying historical and forecast data.
+     * @param {string} chartId - The HTML ID of the canvas element.
+     * @param {string} label - Chart label, such as "Electricity Consumption".
+     * @param {Array} historicalData - Array of historical data values.
+     * @param {Array} forecastData - Array of forecasted data values.
+     * @param {Array} chartLabels - Labels for the x-axis.
+     * @param {string} historicalColor - Color for the historical data line.
+     * @param {string} forecastColor - Color for the forecast data line.
+     * @param {string} yAxisLabel - Label for the Y-axis (e.g., "kg CO2/kWh").
+     */
+    function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+
+        // Create the chart
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: `${label} (Actual)`,
+                        data: historicalData,
+                        borderColor: historicalColor,
+                        backgroundColor: historicalColor,
+                        fill: false,
+                        borderWidth: 2,
+                        pointBackgroundColor: historicalColor,
+                        showLine: true
+                    },
+                    {
+                        label: `${label} (Forecast)`,
+                        data: forecastData,
+                        borderColor: forecastColor,
+                        backgroundColor: forecastColor,
+                        fill: false,
+                        borderDash: [5, 5], // Dashed line for forecast
+                        borderWidth: 2,
+                        pointBackgroundColor: forecastColor,
+                        showLine: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: `${label} Forecast for ${selectedYear}`
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Month' }, // Use month labels (or year if applicable)
+                        ticks: { maxRotation: 0, minRotation: 0 } // Keeps labels horizontal
+                    },
+                    y: {
+                        title: { display: true, text: yAxisLabel },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+    }
+    createForecastChart(
+        'foodWasteChart',
+        'Food Waste',
+        foodWasteHistoricalData,
+        foodWasteForecastData,
+        labels,
+        'orange',
+        'brown',
+        'GHG Emission (kg CO2)'
+    );
+
+    createForecastChart(
+        'lpgChart',
+        'LPG Consumption',
+        lpgHistoricalData,
+        lpgForecastData,
+        labels,
+        'darkblue',
+        'gold',
+        'GHG Emission (kg CO2)'
+    );
+
+</script>
+    
+    
+    
+    
     
 </body>
 </html>

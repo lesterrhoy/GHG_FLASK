@@ -7,6 +7,7 @@
     <title>Water Consumption</title>
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         table {
@@ -16,10 +17,11 @@
      }
      
      th, td {
-         padding: 4px; /* Smaller cell padding */
-         text-align: center; /* Center align text */
-         border: 1px solid #ddd; /* Add border */
-     }
+    padding: 4px; /* Smaller cell padding */
+    text-align: center; /* Center align text */
+    border: 1px solid #000000 !important; /* Force black border with !important */
+}
+
      
      th {
          background-color:  #d50000 !important; /* Background color */
@@ -97,81 +99,82 @@
                  padding: 10px;
                  border: 1px solid #000;
              }
-                 .modal {
-         display: none; /* Flexbox to center content */
-         justify-content: center; /* Center horizontally */
-         align-items: flex-start; /* Align content at the top */
-         position: fixed; /* Stay in place */
-         z-index: 2; /* Sit above everything */
-         left: 0;
-         top: 0;
-         width: 100%; /* Full width */
-         height: 100%; /* Full height */
-         background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
-         padding-top: 50px; /* Adjust padding to move content lower */
-     }
-     
-     .modal-content {
-         background-color: #fefefe;
-         margin: 2% auto; /* Center it vertically and horizontally */
-         padding: 20px;
-         border: 1px solid #888;
-         width: 50%; /* Could be adjusted based on design */
-         border-radius: 10px;
-         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-     }
-     
-     .close {
-         color: #aaa;
-         float: right;
-         font-size: 28px;
-         font-weight: bold;
-     }
-     
-     .close:hover,
-     .close:focus {
-         color: #000;
-         text-decoration: none;
-         cursor: pointer;
-     }
-     
-     .modal .container {
-         background-color: #d50000;
-         padding: 15px; /* Slightly reduced padding */
-         width: 100%; /* Full width within modal */
-         height: auto; /* Adjust based on content */
-         border-radius: 10px;
-         color: #fff;
-         display: flex;
-         justify-content: space-between; /* Align form and result container side by side */
-         box-sizing: border-box;
-     }
-     
-     .form-container {
-         width: 100%; /* Adjust the width to allow more space for form fields */
-     }
-     
-     .form-container form {
-         display: flex;
-         flex-direction: column;
-         gap: 10px; /* Reduced gap between form elements */
-     }
-     
-     .form-container form label {
-         font-size: 14px; /* Smaller font size for labels */
-         margin-bottom: 5px; /* Minimal space between label and input */
-     }
-     
-     .form-container form select,
-     .form-container form input {
-         width: 100%; /* This makes the input/select fill the entire available width */
-         padding: 8px;
-         border: 1px solid #ccc;
-         border-radius: 5px;
-         background-color: #f9f9f9;
-         color: #333;
-         font-size: 14px;
-     }
+             .modal {
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 50px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%; /* Adjust the width to make it smaller */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.container {
+    background-color: #d50000;
+    padding: 15px;
+    width: 100%;
+    border-radius: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.form-container {
+    width: 100%; /* Adjust the width to allow more space for form fields */
+}
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-container form label {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.form-container form select,
+.form-container form input {
+    width: 100%; /* This makes the input/select fill the entire available width */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 14px;
+}
+
+
      
      .form-container form button {
          padding: 10px; /* Smaller button padding */
@@ -296,18 +299,17 @@
 <body>
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -342,16 +344,35 @@
                     </ol>
 
                     <!-- Description of Water Consumption -->
-                    <div class="mb-4">
+                    <div class=" card mb-4">
+                        <div class="card-body">
                         <p>Water consumption data is essential to track for monitoring its usage and environmental impact. This report tracks water usage across various campuses and categories. The data includes readings, consumption, total amounts, and the CO2 footprint related to water processing and treatment.</p>
+                    </div>
                     </div>
 
                     <!-- Button to open the modal -->
                     <div id="WaterSection">
-                        <div class="mb-4">
-                            <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Water Consumption</button>
+                        <div>
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="openCalculatorModal()">Calculate Water Consumption</button>
+                            <button style="background-color: #d50000; color: white; border: none;"onclick="printReport()">Print Report</button>
+                            <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
                         </div>
                     </div>
+
+                        <!-- Year Filter -->
+                        <label for="yearFilter">Filter by Year:</label>
+                        <select id="yearFilter" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                        </select>
+                
+                        <!-- Category Filter -->
+                        <label for="categoryFilter">Filter by Category:</label>
+                        <select id="categoryFilter" onchange="applyFilters()">
+                            <option value="">All Categories</option>
+                            <option value="Mains">Mains</option>
+                            <option value="Deep Well">Deep Well</option>
+                            <option value="Drinking Water">Drinking Water</option>
+                        </select>
 
                     <!-- Modal for Calculation -->
                     <div class="modal" id="myModal" style="display: none;">
@@ -400,45 +421,20 @@
                                         <label for="totalAmount">Total Amount (₱):</label>
                                         <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
 
+                                        <label for="factorKgCO2">Factor (kg CO₂/m³):</label>
+                                        <input type="number" id="factorKgCO2" name="factorKgCO2" readonly>
+
+                                        <label for="factorTCO2">Factor (t CO₂/m³):</label>
+                                        <input type="number" id="factorTCO2" name="factorTCO2" readonly>
+                                                                            <!-- Calculate Button remains as type="submit" -->
                                         <button type="submit">Calculate</button>
+                                        <!-- Generate Report Button -->
+                                        <button type="button" class="btn btn-success" onclick="generateReport()">Generate Report</button>
+
                                     </form>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="container">
-                        <div class="filter-container">
-                            <!-- Year Filter -->
-                            <label for="yearFilter">Filter by Year:</label>
-                            <select id="yearFilter" onchange="applyFilters()">
-                                <option value="">All Years</option>
-                            </select>
-                    
-                            <!-- Category Filter -->
-                            <label for="categoryFilter">Filter by Category:</label>
-                            <select id="categoryFilter" onchange="applyFilters()">
-                                <option value="">All Categories</option>
-                                <option value="Mains">Mains</option>
-                                <option value="Deep Well">Deep Well</option>
-                                <option value="Drinking Water">Drinking Water</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    
-                    
-
-                    <div class="buttons-container mt-3">
-                        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-                    </div>
-
-                      <!-- Header for Water Consumption Report -->
-                      <div class="header text-center mt-4">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                        <h2>Water Consumption Report</h2>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
                     </div>
                     <!-- Data table -->
                     <h2 class="mt-4"></h2>
@@ -481,26 +477,27 @@
                         
                     </table>
 
-                   <!-- Pagination controls -->
-                <div class="pagination-container">
-                    <nav aria-label="Page navigation example">
-                        <ul class="pagination justify-content-center">
-                            {% if total_pages > 1 %}
-                                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page - 1, year=selected_year, category=selected_category) }}" tabindex="-1">Previous</a>
-                                </li>
-                                {% for i in range(1, total_pages + 1) %}
-                                    <li class="page-item {% if i == current_page %}active{% endif %}">
-                                        <a class="page-link" href="{{ url_for('water_consumption', page=i, year=selected_year, category=selected_category) }}">{{ i }}</a>
-                                    </li>
-                                {% endfor %}
-                                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page + 1, year=selected_year, category=selected_category) }}">Next</a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
+<!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page numbers -->
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('water_consumption', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 
                 </div>
             </main>
@@ -520,8 +517,39 @@
     </div>
 
     <script>
+        // Intercept form submission to handle "Calculate" button
+document.getElementById('waterForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent form from submitting
+
+    // Perform the calculations for CO₂ factors
+    const consumption = parseFloat(document.getElementById('consumption').value);
+
+    if (isNaN(consumption) || consumption <= 0) {
+        alert("Please enter a valid consumption value in m³.");
+        return;
+    }
+
+    // Calculate CO₂ factors
+    const kgCO2PerM3 = consumption * 0.0149;
+    const tCO2PerM3 = kgCO2PerM3 / 1000;
+
+    // Display the calculated factors in the modal
+    document.getElementById('factorKgCO2').value = kgCO2PerM3.toFixed(4);
+    document.getElementById('factorTCO2').value = tCO2PerM3.toFixed(6);
+});
+
+function generateReport() {
+    // Close the modal after calculation
+    const modal = document.getElementById('myModal');
+    modal.style.display = 'none';
+
+    // Proceed with form submission if needed
+    // You can trigger form submission or further action here
+}        
+        
+
         let currentPage = 1;
-        const rowsPerPage = 15;
+        const rowsPerPage = 20;
 
         function renderTable() {
             const rows = document.querySelectorAll('.record');
@@ -621,81 +649,122 @@ function applyFilters() {
 }
 
 
-    // Function to print the water consumption report
 function printReport() {
-    const originalContents = document.body.innerHTML; // Save the original content
+    const year = document.getElementById('yearFilter')?.value || '';
+    const category = document.getElementById('categoryFilter')?.value || '';
 
-    // Create the print layout with the specific water consumption report headers
-    const tableHeader = `
-        <thead>
-            <tr>
-                <th style="border: 1px solid black;">Campus</th>
-                <th style="border: 1px solid black;">Category</th>
-                <th style="border: 1px solid black;">Date</th>
-                <th style="border: 1px solid black;">Previous Reading (m³)</th>
-                <th style="border: 1px solid black;">Current Reading (m³)</th>
-                <th style="border: 1px solid black;">Consumption (m³)</th>
-                <th style="border: 1px solid black;">Total Amount (₱)</th>
-                <th style="border: 1px solid black;">Price per m³ (₱)</th>
-                <th style="border: 1px solid black;">Factor (kg CO₂/m³)</th>
-                <th style="border: 1px solid black;">Factor (t CO₂/m³)</th>
-            </tr>
-        </thead>
-    `;
+    let queryString = '';
+    if (year) queryString += `year=${year}&`;
+    if (category) queryString += `category=${category}`;
 
-    // Get the table body from the existing table
-    const tableBody = Array.from(document.querySelectorAll('#reportData tr'))
-        .map(row => {
-            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude last "Actions" cell if present
-            return `<tr>${cells.map(cell => `<td style="border: 1px solid black;">${cell.innerHTML}</td>`).join('')}</tr>`;
-        })
-        .join('');
+    const fetchUrl = queryString ? `/water_consumption/all?${queryString}` : `/water_consumption/all`;
 
-    // Create the print layout including headers and data
-    const printContents = `
-        <div class="header">
-       <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-        <h2>Water Consumption Report</h2>
-        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
-          </div>
-        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
-            ${tableHeader}
-            <tbody>
-                ${tableBody}
-            </tbody>
-        </table>
-    `;
-
-    document.body.innerHTML = printContents; // Replace body content with table
-    window.print(); // Print the current window
-    document.body.innerHTML = originalContents; // Restore original content
-}
-
-
-        // Function to download the data as an Excel file
-        function downloadExcel() {
-            const table = document.querySelector('table');
-            let csv = [];
-            const rows = table.querySelectorAll('tr');
-
-            for (let row of rows) {
-                const cols = row.querySelectorAll('td, th');
-                const csvRow = [];
-                for (let col of cols) {
-                    csvRow.push(col.innerText);
-                }
-                csv.push(csvRow.join(','));
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.length) {
+                alert("No data available to print for the selected filters.");
+                return;
             }
 
-            const csvString = csv.join('\n');
-            const blob = new Blob([csvString], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'water_consumption_report.csv');
-            a.click();
-            URL.revokeObjectURL(url); // Clean up
-        }
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Previous Reading (m³)</th>
+                        <th>Current Reading (m³)</th>
+                        <th>Consumption (m³)</th>
+                        <th>Total Amount (₱)</th>
+                        <th>Price per m³ (₱)</th>
+                        <th>Factor (kg CO₂/m³)</th>
+                        <th>Factor (t CO₂/m³)</th>
+                    </tr>
+                </thead>`;
+
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.Category}</td>
+                    <td>${report.Date}</td>
+                    <td>${report.PreviousReading}</td>
+                    <td>${report.CurrentReading}</td>
+                    <td>${report.Consumption}</td>
+                    <td>${report.TotalAmount}</td>
+                    <td>${report.PricePerLiter}</td>
+                    <td>${report.FactorKGCO2e}</td>
+                    <td>${report.FactorTCO2e}</td>
+                </tr>
+            `).join('');
+
+            const printContents = `
+                <div style="text-align: center;">
+                    <h2>Water Consumption Report</h2>
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+function downloadExcel() {
+    const year = document.getElementById('yearFilter').value;
+    const category = document.getElementById('categoryFilter').value;
+
+    let queryString = '';
+    if (year) queryString += `year=${encodeURIComponent(year)}&`;
+    if (category) queryString += `category=${encodeURIComponent(category)}`;
+
+    const fetchUrl = queryString ? `/water_consumption/all?${queryString}` : `/water_consumption/all`;
+
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data); // Debugging: Inspect the fetched data
+
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            // Convert dates to strings if needed
+            data.forEach(record => {
+                if (record.Date && !(typeof record.Date === 'string')) {
+                    record.Date = new Date(record.Date).toISOString().split('T')[0];
+                }
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Water Consumption");
+
+            XLSX.utils.sheet_add_aoa(worksheet, [[
+                "Campus", "Category", "Date", "Previous Reading (m³)", "Current Reading (m³)", 
+                "Consumption (m³)", "Total Amount (₱)", "Price per m³ (₱)", 
+                "Factor (kg CO₂/m³)", "Factor (t CO₂/m³)"
+            ]], { origin: "A1" });
+
+            XLSX.writeFile(workbook, "WaterConsumptionReport.xlsx");
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error.message);
+            alert('An error occurred while exporting the data. Error details: ' + error.message);
+        });
+}
+
 
         // Function to delete a row using AJAX
 function deleteRow(id) {
