@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Accommodation Data" />
+    <meta name="author" content="Your Name" />
+    <title>Accommodation Data</title>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+
+    <style>
+        table {
+         width: 100%; /* Full width for table */
+         border-collapse: collapse; /* Collapse borders */
+         font-size: 10px; /* Smaller table font */
+     }
+
+     th, td {
+         padding: 4px; /* Smaller cell padding */
+         text-align: center; /* Center align text */
+         border: 1px solid #ddd; /* Add border */
+     }
+
+     th {
+         background-color: #d50000 !important; /* Red background for table headers */
+         color: white !important; /* White text for better contrast */
+         font-size: 11px; /* Reduce font size for headers to prevent overflow */
+     }
+
+     body {
+         font-family: 'Roboto', sans-serif;
+         height: 100vh;
+         display: flex;
+         flex-direction: column;
+     }
+
+     .header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         background-color: #e0e0e0;
+         padding-top: 10px;
+         padding-bottom: 10px;
+         border-bottom: 2px solid #ccc;
+         z-index: 1;
+         position: relative;
+     }
+
+     .header .logo {
+         width: 50px;
+         height: auto;
+         margin-left: 100px;
+         transition: margin-left 0.5s ease;
+     }
+
+     .header .logo.csd {
+         margin-left: 20px;
+     }
+
+     .header .title {
+         font-size: 28px;
+         font-weight: bold;
+         color: #333;
+         text-align: center;
+         flex-grow: 1;
+     }
+
+     .content {
+         flex-grow: 1;
+         background-color: #d50000;
+         padding: 40px;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         transition: margin-left 0.5s ease;
+     }
+
+     .filter-container {
+         margin-bottom: 20px;
+     }
+
+     .filter-container select {
+         padding: 10px;
+         font-size: 16px;
+     }
+
+     #reportTable {
+         width: 100%;
+         border-collapse: collapse;
+     }
+
+     #reportTable th, #reportTable td {
+         padding: 10px;
+         border: 1px solid #000;
+     }
+         .modal {
+ display: none; /* Flexbox to center content */
+ justify-content: center; /* Center horizontally */
+ align-items: flex-start; /* Align content at the top */
+ position: fixed; /* Stay in place */
+ z-index: 2; /* Sit above everything */
+ left: 0;
+ top: 0;
+ width: 100%; /* Full width */
+ height: 100%; /* Full height */
+ background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+ padding-top: 50px; /* Adjust padding to move content lower */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 10px; /* Reduced padding */
+    width: 40%; /* Set a smaller width */
+    max-width: 500px; /* Maximum width for larger screens */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.close {
+ color: #aaa;
+ float: right;
+ font-size: 28px;
+ font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+ color: #000;
+ text-decoration: none;
+ cursor: pointer;
+}
+
+.modal .container {
+    background-color: #d50000;
+    padding: 20px 10px; /* Reduced padding for a tighter fit */
+    border-radius: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.form-container {
+    width: 100%; /* Full width to remove extra space */
+    margin: 0;
+}
+
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.form-container form label {
+ font-size: 14px; /* Smaller font size for labels */
+ margin-bottom: 5px; /* Minimal space between label and input */
+}
+
+.form-container form input,
+.form-container form select {
+ padding: 8px; /* Reduced padding inside input fields */
+ border: 1px solid #ccc;
+ border-radius: 5px;
+ background-color: #f9f9f9;
+ color: #333;
+ font-size: 14px; /* Smaller font size for inputs */
+}
+
+.form-container form button {
+ padding: 10px; /* Smaller button padding */
+ background-color: #666;
+ color: #fff;
+ border: none;
+ border-radius: 5px;
+ cursor: pointer;
+ font-size: 14px; /* Smaller font size for buttons */
+}
+
+.form-container form button:hover {
+ background-color: #555;
+}
+
+.result-container {
+ background-color: #e0e0e0;
+ padding: 15px; /* Smaller padding for result container */
+ border-radius: 10px;
+}
+
+#result {
+ background-color: #fff;
+ color: #333;
+ padding: 15px; /* Reduced padding */
+ border-radius: 10px;
+ margin-top: 15px;
+}
+
+canvas {
+ margin-top: 20px;
+ display: block;
+ width: 100%;
+}
+
+.buttons-container {
+ display: flex;
+ justify-content: center;
+ gap: 10px; /* Reduced gap between buttons */
+ margin-top: 20px;
+}
+
+button {
+ padding: 10px 15px; /* Reduced button padding */
+ font-size: 14px; /* Smaller button font size */
+ border: none;
+ border-radius: 5px;
+ cursor: pointer;
+ transition: background-color 0.3s ease;
+ margin-left: 10px; /* Adds space to move the button to the right */
+}
+
+button:first-child {
+ background-color: #666;
+ color: white;
+}
+
+button:first-child:hover {
+ background-color: #555;
+}
+
+button:last-child {
+ background-color: #d50000;
+ color: white;
+}
+
+button:last-child:hover {
+ background-color: #b71c1c;
+}
+
+.pagination-container {
+ margin-top: 20px; /* Add some margin above the pagination */
+ text-align: center;
+}
+
+.pagination .page-item .page-link {
+ color: black; /* Set font color to black */
+}
+
+.pagination .page-item.active .page-link {
+ background-color: #d50000; /* Active page with the same red color */
+ border-color: #d50000;
+ color: white; /* White text for the active page */
+}
+
+.pagination .page-link:hover {
+ background-color: #b71c1c; /* Darker red on hover */
+ color: white; /* White text on hover */
+}
+
+
+
+     .delete-icon {
+         cursor: pointer;
+         color: #fd0808;
+     }
+
+     @media screen and (max-width: 768px) {
+ table {
+     font-size: 10px; /* Adjusted font size for smaller screens */
+ }
+
+ th, td {
+     padding: 6px; /* Adjusted padding for smaller screens */
+ }
+
+ .modal-content {
+     width: 90%; /* Modal width adjusts to smaller screens */
+ }
+
+ .form-container,
+ .result-container {
+     width: 100%; /* Stack form and result container on smaller screens */
+ }
+
+ .container {
+     padding: 10px; /* Adjust padding for smaller screens */
+ }
+}
+.sb-topnav .navbar-nav .nav-item .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0 10px; /* Adjust as needed */
+    color: white;
+}
+
+.sb-topnav .navbar-nav .nav-item .nav-link i {
+    margin-right: 5px; /* Space between icon and text */
+}
+ </style>
+</head>
+<body class="sb-nav-fixed">
+     <!-- Top Navigation Bar -->
+     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">ACCOMMODATION <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <!-- Spacer to push "Sign-out" to the right -->
+        <div class="ms-auto"></div>
+    
+        <!-- Sign-out Icon and Link -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+<!-- Sidebar & Layout -->
+<div id="layoutSidenav" style="display: flex; height: 100vh;">
+    <div id="layoutSidenav_nav" style="flex: 0 0 250px; overflow-y: auto;">
+        <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+            <div class="sb-sidenav-menu">
+                <div class="nav">
+                    <div class="sb-sidenav-menu-heading">Core</div>
+                    <a class="nav-link" href="{{ url_for('external_dashboard') }}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                        Dashboard
+                    </a>
+                    <div class="sb-sidenav-menu-heading">Consumption</div>
+                    <a class="nav-link" href="{{ url_for('flight') }}">Flight</a>
+                    <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <div id="AccommodationHeader">
+                        <h1 class="mt-4">Accommodation Data</h1>
+                        <ol class="breadcrumb mb-4">
+                            <li class="breadcrumb-item"><a href="{{ url_for('procurement_dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Accommodation Data</li>
+                        </ol>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Accommodation emissions contribute significantly to the carbon footprint through energy use, waste generation, and water consumption.
+                        </div>
+                    </div>
+
+                    <div id="AccommoSection">
+                    <div>
+                        <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                        <button class="btn" style="background-color: #d50000; color: white;" onclick="downloadExcel()">Download Excel</button>
+                    </div>
+                    </div>
+    
+                    <div class="mb-4">
+                        <label for="yearFilter">Filter by Year:</label>
+                        <select id="yearFilter" onchange="filterData()">
+                            <option value="">All Years</option>
+                            <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
+                        </select>
+
+                        <label for="officeFilter">Filter by Office:</label>
+                        <select id="officeFilter" onchange="filterData()">
+                            <option value="">All Offices</option>
+                            <option value="RGO" {% if selected_office == "RGO" %}selected{% endif %}>RGO</option>
+                            <option value="OVCDEA" {% if selected_office == "OVCDEA" %}selected{% endif %}>OVCDEA</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Data Table -->
+                    <table id="reportTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Campus</th>
+                                <th>Office</th>
+                                <th>Year</th>
+                                <th>Traveller</th>
+                                <th>Event Name</th>
+                                <th>Travel Date From</th>
+                                <th>Travel Date To</th>
+                                <th>Country</th>
+                                <th>Local/International</th>
+                                <th>Occupied Rooms</th>
+                                <th>Nights per Room</th>
+                                <th>kg CO2e</th>
+                                <th>t CO2e</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportData">
+                            {% for accommodation in accommodation_data %}
+                            <tr>
+                                <td>{{ accommodation['Campus'] }}</td>
+                                <td>{{ accommodation['Office'] }}</td>
+                                <td>{{ accommodation['YearTransact'] }}</td>
+                                <td>{{ accommodation['TravellerName'] }}</td>
+                                <td>{{ accommodation['TravelPurpose'] }}</td>
+                                <td>{{ accommodation['TravelDateFrom'] }}</td>
+                                <td>{{ accommodation['TravelDateTo'] }}</td>
+                                <td>{{ accommodation['Country'] }}</td>
+                                <td>{{ accommodation['TravelType'] }}</td>
+                                <td>{{ accommodation['NumOccupiedRoom'] }}</td>
+                                <td>{{ accommodation['NumNightPerRoom'] }}</td>
+                                <td>{{ accommodation['GHGEmissionKGC02e'] }}</td>
+                                <td>{{ accommodation['GHGEmissionTC02e'] }}</td>
+                                <td>
+                            
+                                    <button class="btn btn-danger btn-sm" onclick="deleteAccommodation({{accommodation['id']}})">Delete</button>
+
+                                </td>
+                                
+                            </tr>
+                            {% endfor %}
+                        </tbody>                        
+                    </table>
+
+                   <!-- Pagination controls -->
+                   <!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('accommodation', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page numbers -->
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('accommodation', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+            </div>
+        </main>
+    </div>
+</div>
+    <!-- Modal for Accommodation Data Entry -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="container">
+                <div class="form-container">
+                    <form method="POST" action="{{ url_for('accommodation') }}" id="accommodationForm">
+                        <label for="campus">Campus:</label>
+                        <select id="campus" name="campus" required>
+                            <option value=""></option>
+                            <option value="Alangilan">Alangilan</option>
+                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                            <option value="Balayan">Balayan</option>
+                            <option value="Central">Central</option>
+                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                            <option value="Lemery">Lemery</option>
+                            <option value="Lipa">Lipa</option>
+                            <option value="Lobo">Lobo</option>
+                            <option value="Mabini">Mabini</option>
+                            <option value="Pablo Borbon">Pablo Borbon</option>
+                            <option value="Rosario">Rosario</option>
+                            <option value="San Juan">San Juan</option>
+                        </select>
+
+                        <label for="office">Office/Department:</label>
+                        <select id="office" name="officeDepartment" required>
+                            <option value=""></option>
+                            <option value="OVCDEA">OVCDEA</option>
+                            <option value="RGO">RGO</option>
+                        </select>
+
+                        <label for="year">Year:</label>
+                        <select id="year" name="year" required>
+                            <option value=""> </option>
+                            <option value="2020">2020</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                        </select>
+                        
+
+                        <label for="travellerName">Name of Traveller:</label>
+                <input type="text" id="travellerName" name="travellerName" required>
+                <label for="eventName">Event Name/Purpose of Travel:</label>
+                <input type="text" id="eventName" name="eventName" required>
+                <label for="travelDateFrom">Travel Date From:</label>
+                <input type="date" id="travelDateFrom" name="travelDateFrom" required>
+                <label for="travelDateTo">Travel Date To:</label>
+                <input type="date" id="travelDateTo" name="travelDateTo" required>
+                <label for="country">Country:</label>
+                <select id="country" name="country">
+                    <option value=""></option>
+                    <option value="Philippines">Philippines</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Argentina">Argentina</option>
+                    <option value="Armenia">Armenia</option>
+                    <option value="Aruba">Aruba</option>
+                    <option value="Bahamas">Bahamas</option>
+                    <option value="Austria">Austria</option>
+                    <option value="Bahrain">Bahrain</option>
+                    <option value="Bangladesh">Bangladesh</option>
+                    <option value="Belarus">Belarus</option>
+                    <option value="Barbados">Barbados</option>
+                    <option value="Belgium">Belgium</option>
+                    <option value="Belize">Belize</option>
+                    <option value="Benin">Benin</option>
+                    <option value="Bermuda">Bermuda</option>
+                    <option value="Bhutan">Bhutan</option>
+                    <option value="Bolivia">Bolivia</option>
+                    <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+                    <option value="Botswana">Botswana</option>
+                    <option value="Brazil">Brazil</option>
+                    <option value="British Indian Ocean Territory">British Indian Ocean Territory</option>
+                    <option value="British Virgin Islands">British Virgin Islands</option>
+                    <option value="Brunei">Brunei</option>
+                    <option value="Bulgaria">Bulgaria</option>
+                    <option value="Burkina Faso">Burkina Faso</option>
+                    <option value="Burundi">Burundi</option>
+                    <option value="Cambodia">Cambodia</option>
+                    <option value="Cameroon">Cameroon</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Cape Verde">Cape Verde</option>
+                    <option value="Cayman Islands">Cayman Islands</option>
+                    <option value="Central African Republic">Central African Republic</option>
+                    <option value="Chad">Chad</option>
+                    <option value="Chile">Chile</option>
+                    <option value="China">China</option>
+                    <option value="Christmas Island">Christmas Island</option>
+                    <option value="Cocos Islands">Cocos Islands</option>
+                    <option value="Colombia">Colombia</option>
+                    <option value="Comoros">Comoros</option>
+                    <option value="Cook Islands">Cook Islands</option>
+                    <option value="Costa Rica">Costa Rica</option>
+                    <option value="Croatia">Croatia</option>
+                    <option value="Cuba">Cuba</option>
+                    <option value="Curacao">Curacao</option>
+                    <option value="Cyprus">Cyprus</option>
+                    <option value="Czech Republic">Czech Republic</option>
+                    <option value="Democratic Republic of the Congo">Democratic Republic of the Congo</option>
+                    <option value="Denmark">Denmark</option>
+                    <option value="Djibouti">Djibouti</option>
+                    <option value="Dominica">Dominica</option>
+                    <option value="East Timor">East Timor</option>
+                    <option value="Ecuador">Ecuador</option>
+                    <option value="Egypt">Egypt</option>
+                    <option value="El Salvador">El Salvador</option>
+                    <option value="Equatorial Guinea">Equatorial Guinea</option>
+                    <option value="Eritrea">Eritrea</option>
+                    <option value="Estonia">Estonia</option>
+                    <option value="Ethiopia">Ethiopia</option>
+                    <option value="Falkland Islands">Falkland Islands</option>
+                    <option value="Faroe Islands">Faroe Islands</option>
+                    <option value="Fiji">Fiji</option>
+                    <option value="Finland">Finland</option>
+                    <option value="France">France</option>
+                    <option value="French Polynesia">French Polynesia</option>
+                    <option value="Gabon">Gabon</option>
+                    <option value="Gambia">Gambia</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Ghana">Ghana</option>
+                    <option value="Gibraltar">Gibraltar</option>
+                    <option value="Greece">Greece</option>
+                    <option value="Greenland">Greenland</option>
+                    <option value="Grenada">Grenada</option>
+                    <option value="Guam">Guam</option>
+                    <option value="Guernsey">Guernsey</option>
+                    <option value="Guinea">Guinea</option>
+                    <option value="Guyana">Guyana</option>
+                    <option value="Guinea-Bissau">Guinea-Bissau</option>
+                    <option value="Haiti">Haiti</option>
+                    <option value="Honduras">Honduras</option>
+                    <option value="Hong Kong">Hong Kong</option>
+                    <option value="Hungary">Hungary</option>
+                    <option value="Iceland">Iceland</option>
+                    <option value="India">India</option>
+                    <option value="Indonesia">Indonesia</option>
+                    <option value="Iran">Iran</option>
+                    <option value="Iraq">Iraq</option>
+                    <option value="Ireland">Ireland</option>
+                    <option value="Isle of Man">Isle of Man</option>
+                    <option value="Israel">Israel</option>
+                    <option value="Italy">Italy</option>
+                    <option value="Ivory Coast">Ivory Coast</option>
+                    <option value="Jamaica">Jamaica</option>
+                    <option value="Japan">Japan</option>
+                    <option value="Jersey">Jersey</option>
+                    <option value="Jordan">Jordan</option>
+                    <option value="Kazakhstan">Kazakhstan</option>
+                    <option value="Kenya">Kenya</option> 
+                    <option value="Kiribati">Kiribati</option>
+                    <option value="Kosovo">Kosovo</option>
+                    <option value="Kuwait">Kuwait</option>
+                    <option value="Kyrgyzstan">Kyrgyzstan</option>
+                    <option value="Laos">Laos</option>
+                    <option value="Latvia">Latvia</option>
+                    <option value="Lebanon">Lebanon</option>
+                    <option value="Lesotho">Lesotho</option>
+                    <option value="Liberia">Liberia</option>
+                    <option value="Libya">Libya</option>
+                    <option value="Liechtenstein">Liechtenstein</option>
+                    <option value="Lithuania">Lithuania</option>
+                    <option value="Luxembourg">Luxembourg</option>
+                    <option value="Macau">Macau</option>
+                    <option value="Macedonia">Macedonia</option>
+                    <option value="Madagascar">Madagascar</option>
+                    <option value="Malaysia">Malaysia</option>
+                    <option value="Maldives">Maldives</option>
+                    <option value="Mali">Mali</option>
+                    <option value="Malta">Malta</option>
+                    <option value="Marshall Island">Marshall Island</option>
+                    <option value="Mauritania">Mauritania</option>
+                    <option value="Mauritius">Mauritius</option>
+                    <option value="Mayotte">Mayotte</option>
+                    <option value="Mexico">Mexico</option>
+                    <option value="Micronesia">Micronesia</option>
+                    <option value="Moldova">Moldova</option>
+                    <option value="Monaco">Monaco</option>
+                    <option value="Montenegro">Montenegro</option>
+                    <option value="Mongolia">Mongolia</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Morocco">Morocco</option>
+                    <option value="Mozambique">Mozambique</option>
+                    <option value="Myanmar">Myanmar</option>
+                    <option value="Namibia">Namibia</option>
+                    <option value="Nauru">Nauru</option>
+                    <option value="Nepal">Nepal</option>
+                    <option value="Netherlands">Netherlands</option>
+                    <option value="New Caledonia">New Caledonia</option>
+                    <option value="Netherlands Antilles">Netherlands Antilles</option>
+                    <option value="New Zealand">New Zealand</option>
+                    <option value="Nicaragua">Nicaragua</option>
+                    <option value="Niger">Niger</option>
+                    <option value="Niue">Niue</option>
+                    <option value="Nigeria">Nigeria</option>
+                    <option value="North Korea">North Korea</option>
+                    <option value="Northern Mariana Islands">Northern Mariana Islands</option>
+                    <option value="Norway">Norway</option>
+                    <option value="Oman">Oman</option>
+                    <option value="Pakistan">Pakistan</option>
+                    <option value="Palau">Palau</option>
+                    <option value="Palestine">Palestine</option>
+                    <option value="Panama">Panama</option>
+                    <option value="Papua New Guinea">Papua New Guinea</option>
+                    <option value="Paraguay">Paraguay</option>
+                    <option value="Peru">Peru</option>
+                    <option value="Pitcairn">Pitcairn</option>
+                    <option value="Poland">Poland</option>
+                    <option value="Portugal">Portugal</option>
+                    <option value="Qatar">Qatar</option>
+                    <option value="Republic of the Congo">Republic of the Congo</option>
+                    <option value="Reunion">Reunion</option>
+                    <option value="Romania">Romania</option>
+                    <option value="Russia">Russia</option>
+                    <option value="Rwanda">Rwanda</option>
+                    <option value="Saint Barthelemy">Saint Barthelemy</option>
+                    <option value="Saint Helena">Saint Helena</option>
+                    <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+                    <option value="Saint Lucia">Saint Lucia</option>
+                    <option value="Saint Martin">Saint Martin</option>
+                    <option value="Saint Pierre and Miquelon">Saint Pierre and Miquelon</option>
+                    <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+                    <option value="Samoa">Samoa</option>
+                    <option value="San Marino">San Marino</option>
+                    <option value="Sao Tome and Principe">Sao Tome and Principe</option>
+                    <option value="Saudi Arabia">Saudi Arabia</option>
+                    <option value="Senegal">Senegal</option>
+                    <option value="Serbia">Serbia</option>
+                    <option value="Seychelles">Seychelles</option>
+                    <option value="Sierra Leone">Sierra Leone</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="Sint Maarten">Sint Maarten</option>
+                    <option value="Slovakia">Slovakia</option>
+                    <option value="Slovenia">Slovenia</option>
+                    <option value="Solomon Islands">Solomon Islands</option>
+                    <option value="Somalia">Somalia</option>
+                    <option value="South Africa">South Africa</option>
+                    <option value="South Korea">South Korea</option>
+                    <option value="South Sudan">South Sudan</option>
+                    <option value="Spain">Spain</option>
+                    <option value="Sri Lanka">Sri Lanka</option>
+                    <option value="Sudan">Sudan</option>
+                    <option value="Suriname">Suriname</option>
+                    <option value="Svalbard and Jan Mayen">Svalbard and Jan Mayen</option>
+                    <option value="Swaziland">Swaziland</option>
+                    <option value="Sweden">Sweden</option>
+                    <option value="Switzerland">Switzerland</option>
+                    <option value="Syria">Syria</option>
+                    <option value="Taiwan">Taiwan</option>
+                    <option value="Tajikistan">Tajikistan</option>
+                    <option value="Tanzania">Tanzania</option>
+                    <option value="Thailand">Thailand</option>
+                    <option value="Togo">Togo</option>
+                    <option value="Tokelau">Tokelau</option>
+                    <option value="Tonga">Tonga</option>
+                    <option value="Trinidad and Tobago">Trinidad and Tobago</option>
+                    <option value="Tunisia">Tunisia</option>
+                    <option value="Turkey">Turkey</option>
+                    <option value="Turkmenistan">Turkmenistan</option>
+                    <option value="Turks and Caicos Islands">Turks and Caicos Islands</option>
+                    <option value="Tuvalu">Tuvalu</option>
+                    <option value="U.S. Virgin Islands">U.S. Virgin Islands</option>
+                    <option value="Uganda">Uganda</option>
+                    <option value="Ukraine">Ukraine</option>
+                    <option value="United Arab Emirates">United Arab Emirates</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="United States">United States</option>
+                    <option value="Uruguay">Uruguay</option>
+                    <option value="Uzbekistan">Uzbekistan</option>
+                    <option value="Vanuatu">Vanuatu</option>
+                    <option value="Vatican">Vatican</option>
+                    <option value="Venezuela">Venezuela</option>
+                    <option value="Vietnam">Vietnam</option>
+                    <option value="Wallis and Futuna">Wallis and Futuna</option>
+                    <option value="Western Sahara">Western Sahara</option>
+                    <option value="Yemen">Yemen</option>
+                    <option value="Zambia">Zambia</option>
+                    <option value="Zimbabwe">Zimbabwe</option>
+                </select>
+                <label for="localOrInternational">Local/International:</label>
+                <select id="localOrInternational" name="localOrInternational" required>
+                    <option value=""></option>
+                    <option value="Local">Domestic</option>
+                    <option value="International">International</option>
+                </select>
+                <label for="occupiedRooms">No. of Occupied Rooms:</label>
+                <input type="number" id="occupiedRooms" name="occupiedRooms" step="0.01" required>
+                <label for="nightsPerRoom">No. of Nights per room:</label>
+                <input type="number" id="nightsPerRoom" name="nightsPerRoom" step="0.01" required>
+                <label for="kgCO2e">kg CO₂e:</label>
+                <input type="text" id="kgCO2e" name="kgCO2e" readonly>
+
+                <label for="tCO2e">t CO₂e:</label>
+                <input type="text" id="tCO2e" name="tCO2e" readonly>
+
+                <button type="button" onclick="calculateEmissions()">Calculate CO₂ Emission</button>
+                <button type="button" onclick="generateReport()">Generate Report</button>
+                            </form>
+                        </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            function filterData() {
+        const year = document.getElementById('yearFilter').value;
+        const office = document.getElementById('officeFilter').value;
+
+        let queryString = '';
+        if (year) queryString += `?year=${year}`;
+        if (office) queryString += (queryString ? '&' : '?') + `office=${office}`;
+
+        window.location.href = `/accommodation${queryString}`;
+    }
+
+        function openCalculatorModal() {
+            document.getElementById('myModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('myModal').style.display = 'none';
+        }
+
+        const reportData = {{ accommodation_data | safe }};
+
+    
+        function printReport() {
+    const yearFilter = document.getElementById('yearFilter').value;
+    const officeFilter = document.getElementById('officeFilter').value;
+
+    // Construct URL with query parameters for filtering
+    let url = '/accommodation/print';
+    const params = new URLSearchParams();
+    if (yearFilter) params.append('year', yearFilter);
+    if (officeFilter) params.append('office', officeFilter);
+    if (params.toString()) url += '?' + params.toString();
+
+    // Fetch all data for printing
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // Build table content from the fetched data
+            const tableRows = data.map(row => `
+                <tr>
+                    <td>${row.Campus}</td>
+                    <td>${row.Office}</td>
+                    <td>${row.YearTransact}</td>
+                    <td>${row.TravellerName}</td>
+                    <td>${row.TravelPurpose}</td>
+                    <td>${row.TravelDateFrom}</td>
+                    <td>${row.TravelDateTo}</td>
+                    <td>${row.Country}</td>
+                    <td>${row.TravelType}</td>
+                    <td>${row.NumOccupiedRoom}</td>
+                    <td>${row.NumNightPerRoom}</td>
+                    <td>${row.GHGEmissionKGC02e}</td>
+                    <td>${row.GHGEmissionTC02e}</td>
+                </tr>
+            `).join('');
+
+            // Define the print layout with fetched data
+            const printContents = `
+                <div style="text-align: center; margin-top: 20px;">
+                    <img src="/static/images/bsu.png" alt="Logo 1" style="width: 50px; vertical-align: middle;">
+                    <h2 style="display: inline; margin: 0 20px;">Accommodation Consumption Report</h2>
+                    <img src="/static/images/csd.png" alt="Logo 2" style="width: 50px; vertical-align: middle;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Campus</th>
+                            <th>Office</th>
+                            <th>Year</th>
+                            <th>Traveller</th>
+                            <th>Event Name</th>
+                            <th>Travel Date From</th>
+                            <th>Travel Date To</th>
+                            <th>Country</th>
+                            <th>Local/International</th>
+                            <th>Occupied Rooms</th>
+                            <th>Nights per Room</th>
+                            <th>kg CO₂e</th>
+                            <th>t CO₂e</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            `;
+
+            // Print the content
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => {
+            console.error("Error fetching data for printing:", error);
+            alert("An error occurred while fetching data for printing.");
+        });
+}
+
+
+
+function downloadExcel() {
+    const yearFilter = document.getElementById('yearFilter').value;
+    const officeFilter = document.getElementById('officeFilter').value;
+
+    // Construct URL with query parameters for filtering
+    let url = '/accommodation/download';
+    const params = new URLSearchParams();
+    if (yearFilter) params.append('year', yearFilter);
+    if (officeFilter) params.append('office', officeFilter);
+    if (params.toString()) url += '?' + params.toString();
+
+    // Fetch all data for downloading
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error fetching data: " + data.error);
+                return;
+            }
+
+            // Create a new table for Excel generation
+            const tempTable = document.createElement('table');
+            const headerRow = `
+                <tr>
+                    <th>Campus</th>
+                    <th>Office</th>
+                    <th>Year</th>
+                    <th>Traveller</th>
+                    <th>Event Name</th>
+                    <th>Travel Date From</th>
+                    <th>Travel Date To</th>
+                    <th>Country</th>
+                    <th>Local/International</th>
+                    <th>Occupied Rooms</th>
+                    <th>Nights per Room</th>
+                    <th>kg CO₂e</th>
+                    <th>t CO₂e</th>
+                </tr>
+            `;
+            tempTable.innerHTML = `<thead>${headerRow}</thead><tbody></tbody>`;
+
+            // Populate table rows with data
+            data.forEach(row => {
+                const tableRow = `
+                    <tr>
+                        <td>${row.Campus}</td>
+                        <td>${row.Office}</td>
+                        <td>${row.YearTransact}</td>
+                        <td>${row.TravellerName}</td>
+                        <td>${row.TravelPurpose}</td>
+                        <td>${row.TravelDateFrom}</td>
+                        <td>${row.TravelDateTo}</td>
+                        <td>${row.Country}</td>
+                        <td>${row.TravelType}</td>
+                        <td>${row.NumOccupiedRoom}</td>
+                        <td>${row.NumNightPerRoom}</td>
+                        <td>${row.GHGEmissionKGC02e}</td>
+                        <td>${row.GHGEmissionTC02e}</td>
+                    </tr>
+                `;
+                tempTable.querySelector('tbody').innerHTML += tableRow;
+            });
+
+            // Convert the temporary table to a workbook and download as Excel
+            const wb = XLSX.utils.table_to_book(tempTable, { sheet: "Accommodation Report" });
+            XLSX.writeFile(wb, "AccommodationReport.xlsx");
+        })
+        .catch(error => {
+            console.error("Error fetching data for download:", error);
+            alert("An error occurred while fetching data for download.");
+        });
+}
+
+
+function deleteAccommodation(id) {
+    if (confirm("Are you sure you want to delete this accommodation record?")) {
+        fetch(`/accommodation/delete/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Record deleted successfully.");
+                location.reload(); // Reload the page to update the list
+            } else {
+                alert("Failed to delete record: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while deleting the record.");
+        });
+    }
+}
+
+function calculateEmissions() {
+    const occupiedRooms = parseFloat(document.getElementById('occupiedRooms').value) || 0;
+    const nightsPerRoom = parseFloat(document.getElementById('nightsPerRoom').value) || 0;
+    const country = document.getElementById('country').value;
+
+    // Define country factors
+    const countryFactors = {
+       "Philippines": 66.54, "Australia": 51.47,
+    "Argentina": 77.08, "Armenia": 77.08, "Aruba": 77.08,
+    "Bahamas": 18.73, "Austria": 18.73, "Bahrain": 18.73, "Bangladesh": 18.73,
+    "Belarus": 18.73, "Barbados": 18.73, "Belgium": 16.04, "Belize": 16.04,
+    "Benin": 16.04, "Bermuda": 16.04, "Bhutan": 16.04, "Bolivia": 16.04,
+    "Bosnia and Herzegovina": 16.04, "Botswana": 16.04, "Brazil": 16.77,
+    "British Indian Ocean Territory": 16.77, "British Virgin Islands": 16.77,
+    "Brunei": 16.77, "Bulgaria": 16.77, "Burkina Faso": 16.77, "Burundi": 16.77,
+    "Cambodia": 16.77, "Cameroon": 16.77, "Canada": 23.00, "Cape Verde": 23.00,
+    "Cayman Islands": 23.00, "Central African Republic": 23.00, "Chad": 23.00,
+    "Chile": 38.50, "China": 76.74, "Christmas Island": 76.74, "Cocos Islands": 76.74,
+    "Colombia": 18.69, "Comoros": 18.69, "Cook Islands": 18.69, "Costa Rica": 11.10,
+    "Croatia": 11.10, "Cuba": 11.10, "Curacao": 11.10, "Cyprus": 11.10,
+    "Czech Republic": 53.04, "Democratic Republic of the Congo": 53.04, "Denmark": 53.04,
+    "Djibouti": 53.04, "Dominica": 53.04, "East Timor": 53.04, "Ecuador": 53.04,
+    "Egypt": 65.38, "El Salvador": 65.38, "Equatorial Guinea": 65.38, "Eritrea": 65.38,
+    "Estonia": 65.38, "Ethiopia": 65.38, "Falkland Islands": 65.38, "Faroe Islands": 65.38,
+    "Fiji": 48.99, "Finland": 48.99, "France": 8.01, "French Polynesia": 8.01,
+    "Gabon": 8.01, "Gambia": 8.01, "Georgia": 8.01, "Germany": 22.57, "Ghana": 22.57,
+    "Gibraltar": 22.57, "Greece": 56.63, "Greenland": 56.63, "Grenada": 56.63,
+    "Guam": 56.63, "Guernsey": 56.63, "Guinea": 56.63, "Guyana": 56.63,
+    "Guinea-Bissau": 56.63, "Haiti": 56.63, "Honduras": 56.63, "Hong Kong": 56.63,
+    "Hungary": 84.43, "Iceland": 84.43, "India": 93.20, "Indonesia": 110.37,
+    "Iran": 110.37, "Iraq": 110.37, "Ireland": 31.78, "Isle of Man": 31.78,
+    "Israel": 72.60, "Italy": 26.20, "Ivory Coast": 26.20, "Jamaica": 26.20,
+    "Japan": 81.86, "Jersey": 81.86, "Jordan": 80.48, "Kazakhstan": 80.48,
+    "Kenya": 80.48, "Kiribati": 80.48, "Kosovo": 85.19, "Kuwait": 85.19,
+    "Kyrgyzstan": 85.19, "Laos": 85.19, "Latvia": 85.19, "Lebanon": 85.19,
+    "Lesotho": 85.19, "Liberia": 85.19, "Libya": 85.19, "Liechtenstein": 85.19,
+    "Lithuania": 85.19, "Luxembourg": 85.19, "Macau": 85.19, "Macedonia": 109.01,
+    "Madagascar": 109.01, "Malaysia": 95.94, "Maldives": 218.68, "Mali": 218.68,
+    "Malta": 218.68, "Marshall Island": 218.68, "Mauritania": 218.68, "Mauritius": 218.68,
+    "Mayotte": 218.68, "Mexico": 30.52, "Micronesia": 30.52, "Moldova": 30.52,
+    "Monaco": 30.52, "Montenegro": 30.52, "Mongolia": 30.52, "Montserrat": 30.52,
+    "Morocco": 30.52, "Mozambique": 30.52, "Myanmar": 30.52, "Namibia": 30.52,
+    "Nauru": 30.52, "Nepal": 30.52, "Netherlands": 23.78, "New Caledonia": 23.78,
+    "Netherlands Antilles": 23.78, "New Zealand": 11.57, "Nicaragua": 11.57,
+    "Niger": 11.57, "Niue": 11.57, "Nigeria": 11.57, "North Korea": 11.57,
+    "Northern Mariana Islands": 11.57, "Norway": 11.57, "Oman": 11.57, "Pakistan": 11.57,
+    "Palau": 11.57, "Palestine": 11.57, "Panama": 31.72, "Papua New Guinea": 31.72,
+    "Paraguay": 31.72, "Peru": 31.72, "Pitcairn": 66.54, "Poland": 39.12,
+    "Portugal": 36.47, "Qatar": 165.18, "Republic of the Congo": 165.18, "Reunion": 165.18,
+    "Romania": 34.16, "Russia": 34.16, "Rwanda": 37.98, "Saint Barthelemy": 37.98,
+    "Saint Helena": 37.98, "Saint Kitts and Nevis": 37.98, "Saint Lucia": 37.98,
+    "Saint Martin": 37.98, "Saint Pierre and Miquelon": 37.98, "Saint Vincent and the Grenadines": 37.98,
+    "Samoa": 37.98, "San Marino": 37.98, "Sao Tome and Principe": 37.98, "Saudi Arabia": 156.64,
+    "Senegal": 156.64, "Serbia": 156.64, "Seychelles": 156.64, "Sierra Leone": 156.64,
+    "Singapore": 51.33, "Sint Maarten": 51.33, "Slovakia": 21.34, "Slovenia": 21.34,
+    "Solomon Islands": 21.34, "Somalia": 21.34, "South Africa": 82.36, "South Korea": 82.36,
+    "South Sudan": 82.36, "Spain": 20.07, "Sri Lanka": 20.07, "Sudan": 20.07,
+    "Suriname": 20.07, "Svalbard and Jan Mayen": 20.07, "Swaziland": 20.07,
+    "Sweden": 20.07, "Switzerland": 10.75, "Syria": 10.75, "Taiwan": 10.75,
+    "Tajikistan": 117.82, "Tanzania": 117.82, "Thailand": 59.05, "Togo": 59.05,
+    "Tokelau": 59.05, "Tonga": 59.05, "Trinidad and Tobago": 59.05, "Tunisia": 59.05,
+    "Turkey": 41.77, "Turkmenistan": 41.77, "Turks and Caicos Islands": 41.77,
+    "Tuvalu": 41.77, "U.S. Virgin Islands": 41.77, "Uganda": 41.77, "Ukraine": 41.77,
+    "United Arab Emirates": 145.46, "United Kingdom": 18.41, "United States": 23.04,
+    "Uruguay": 23.04, "Uzbekistan": 23.04, "Vanuatu": 23.04, "Vatican": 23.04,
+    "Venezuela": 23.04, "Vietnam": 60.12, "Wallis and Futuna": 60.12, "Western Sahara": 60.12,
+    "Yemen": 60.12, "Zambia": 60.12, "Zimbabwe": 60.12
+    };
+
+    // Retrieve the factor for the selected country
+    const factor = parseFloat(countryFactors[country]) || 0;
+
+    // Calculate emissions
+    const kgCO2 = occupiedRooms * nightsPerRoom * factor;
+    const tCO2 = kgCO2 / 1000;
+
+    // Display the results
+    document.getElementById('kgCO2e').value = isNaN(kgCO2) ? "0.00" : kgCO2.toFixed(2);
+    document.getElementById('tCO2e').value = isNaN(tCO2) ? "0.00" : tCO2.toFixed(2);
+}
+function generateReport() {
+    calculateEmissions(); // Ensure emissions are calculated
+
+    // Auto-close the modal and submit form after calculating
+    document.getElementById('accommodationForm').submit();
+    closeModal();
+}
+        
+    </script>
+</body>
+</html>

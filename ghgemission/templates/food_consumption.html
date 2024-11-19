@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Food Consumption" />
+    <meta name="author" content="Your Name" />
+    <title>Food Consumption</title>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        table {
+         width: 100%; /* Full width for table */
+         border-collapse: collapse; /* Collapse borders */
+         font-size: 10px; /* Smaller table font */
+     }
+     
+     th, td {
+    padding: 4px; /* Smaller cell padding */
+    text-align: center; /* Center align text */
+    border: 1px solid #000000 !important; /* Force black border with !important */
+}
+
+     
+     th {
+         background-color:  #d50000 !important; /* Background color */
+         color: #fff; /* Red text color with !important */
+         font-size: 11px; /* Reduce font size for headers to prevent overflow */
+     }
+     
+             #yearFilter, #quarterFilter, #monthFilter {
+             margin: 10px 0; /* Adds top and bottom margin */
+              }
+     
+             body {
+                 font-family: 'Roboto', sans-serif;
+                 height: 100vh;
+                 display: flex;
+                 flex-direction: column;
+             }
+     
+             .header {
+                 display: flex;
+                 justify-content: space-between;
+                 align-items: center;
+                 background-color: #e0e0e0;
+                 padding-top: 10px;
+                 padding-bottom: 10px;
+                 border-bottom: 2px solid #ccc;
+                 z-index: 1;
+                 position: relative;
+             }
+     
+             .header .logo {
+                 width: 50px;
+                 height: auto;
+                 margin-left: 100px;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .header .logo.csd {
+                 margin-left: 20px;
+             }
+     
+             .header .title {
+                 font-size: 28px;
+                 font-weight: bold;
+                 color: #333;
+                 text-align: center;
+                 flex-grow: 1;
+             }
+     
+             .content {
+                 flex-grow: 1;
+                 background-color: #d50000;
+                 padding: 40px;
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 transition: margin-left 0.5s ease;
+             }
+     
+             .filter-container {
+                 margin-bottom: 20px;
+             }
+     
+             .filter-container select {
+                 padding: 10px;
+                 font-size: 16px;
+             }
+     
+             #reportTable {
+                 width: 100%;
+                 border-collapse: collapse;
+             }
+     
+             #reportTable th, #reportTable td {
+                 padding: 10px;
+                 border: 1px solid #000;
+             }
+             .modal {
+    display: none;
+    justify-content: center;
+    align-items: flex-start;
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 50px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%; /* Adjust the width to make it smaller */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.container {
+    background-color: #d50000;
+    padding: 15px;
+    width: 100%;
+    border-radius: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.form-container {
+    width: 100%; /* Adjust the width to allow more space for form fields */
+}
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-container form label {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.form-container form select,
+.form-container form input {
+    width: 100%; /* This makes the input/select fill the entire available width */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 14px;
+}
+
+
+     
+     .form-container form button {
+         padding: 10px; /* Smaller button padding */
+         background-color: #666;
+         color: #fff;
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         font-size: 14px; /* Smaller font size for buttons */
+     }
+     
+     .form-container form button:hover {
+         background-color: #555;
+     }
+     
+     .result-container {
+         background-color: #e0e0e0;
+         padding: 15px; /* Smaller padding for result container */
+         border-radius: 10px;
+     }
+     
+     #result {
+         background-color: #fff;
+         color: #333;
+         padding: 15px; /* Reduced padding */
+         border-radius: 10px;
+         margin-top: 15px;
+     }
+     
+     canvas {
+         margin-top: 20px;
+         display: block;
+         width: 100%;
+     }
+     
+     .buttons-container {
+         display: flex;
+         justify-content: center;
+         gap: 10px; /* Reduced gap between buttons */
+         margin-top: 20px;
+     }
+     
+     button {
+         padding: 10px 15px; /* Reduced button padding */
+         font-size: 14px; /* Smaller button font size */
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         transition: background-color 0.3s ease;
+         margin-left: 10px; /* Adds space to move the button to the right */
+     }
+     
+     button:first-child {
+         background-color: #666;
+         color: white;
+     }
+     
+     button:first-child:hover {
+         background-color: #555;
+     }
+     
+     button:last-child {
+         background-color: #d50000;
+         color: white;
+     }
+     
+     button:last-child:hover {
+         background-color: #b71c1c;
+     }
+     
+     .pagination-container {
+         margin-top: 20px; /* Add some margin above the pagination */
+         text-align: center;
+     }
+     
+     .pagination .page-item .page-link {
+         color: black; /* Set font color to black */
+     }
+     
+     .pagination .page-item.active .page-link {
+         background-color: #d50000; /* Active page with the same red color */
+         border-color: #d50000;
+         color: white; /* White text for the active page */
+     }
+     
+     .pagination .page-link:hover {
+         background-color: #b71c1c; /* Darker red on hover */
+         color: white; /* White text on hover */
+     }
+     
+     
+     
+             .delete-icon {
+                 cursor: pointer;
+                 color: #fd0808;
+             }
+     
+             @media screen and (max-width: 768px) {
+         table {
+             font-size: 10px; /* Adjusted font size for smaller screens */
+         }
+     
+         th, td {
+             padding: 6px; /* Adjusted padding for smaller screens */
+         }
+     
+         .modal-content {
+             width: 90%; /* Modal width adjusts to smaller screens */
+         }
+     
+         .form-container,
+         .result-container {
+             width: 100%; /* Stack form and result container on smaller screens */
+         }
+     
+         .container {
+             padding: 10px; /* Adjust padding for smaller screens */
+         }
+     }
+         </style>
+</head>
+<body>
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('procurement_dashboard') }}">PROCUREMENT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark">
+                <div class="nav">
+                    <div class="sb-sidenav-menu-heading">Core</div>
+                    <a class="nav-link" href="{{ url_for('procurement_dashboard') }}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                        Dashboard
+                    </a>
+                    <div class="sb-sidenav-menu-heading">Consumption</div>
+                    <a class="nav-link" href="{{ url_for('food_consumption') }}">Food</a>
+                    <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
+                </div>
+            </nav>
+        </div>
+
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Food Consumption</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="{{ url_for('procurement_dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Food</li>
+                    </ol>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Food consumption encompasses emissions associated with the production, processing, transportation, 
+                            and disposal of food items consumed on campus. The GHG emissions from food are primarily generated from 
+                            agricultural practices, food processing, and the energy used in cooking and serving meals.
+                        </div>
+                    </div>
+
+
+                    <div id="FoodSection" class="d-flex justify-content-start gap-2 mt-3">
+                        <button id="openModalBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        <button onclick="printFoodReport()" class="btn btn-secondary" style="background-color:#d50000;">Print Report</button>
+                        <button onclick="downloadExcel()" class="btn btn-danger" style="background-color:#d50000;">Download Excel</button>
+                    </div>
+                    
+
+                    <div class="mb-4">
+                        <label for="yearFilter">Filter by Year:</label>
+                        <select id="yearFilter" onchange="filterFoodReport()">
+                            <option value="">All Years</option>
+                            <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+                        </select>
+                    
+                        <label for="monthFilter">Filter by Month:</label>
+                        <select id="monthFilter" onchange="filterFoodReport()">
+                            <option value="">All Months</option>
+                            <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
+                            <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
+                            <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
+                            <option value="April" {% if selected_month == 'April' %}selected{% endif %}>April</option>
+                            <option value="May" {% if selected_month == 'May' %}selected{% endif %}>May</option>
+                            <option value="June" {% if selected_month == 'June' %}selected{% endif %}>June</option>
+                            <option value="July" {% if selected_month == 'July' %}selected{% endif %}>July</option>
+                            <option value="August" {% if selected_month == 'August' %}selected{% endif %}>August</option>
+                            <option value="September" {% if selected_month == 'September' %}selected{% endif %}>September</option>
+                            <option value="October" {% if selected_month == 'October' %}selected{% endif %}>October</option>
+                            <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
+                            <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
+                        </select>
+                    
+                        <label for="officeFilter">Filter by Office:</label>
+                        <select id="officeFilter" onchange="filterFoodReport()">
+                            <option value="">All Offices</option>
+                            <option value="Procurement" {% if selected_office == 'Procurement' %}selected{% endif %}>Procurement</option>
+                            <option value="Auxiliary Services" {% if selected_office == 'Auxiliary Services' %}selected{% endif %}>Auxiliary Services</option>
+                            <option value="RGO" {% if selected_office == 'RGO' %}selected{% endif %}>RGO</option>
+                        </select>
+                    </div>
+                    
+
+
+                    <table id="reportTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Campus</th>
+                                <th>Year</th>
+                                <th>Month</th>
+                                <th>Office</th>
+                                <th>Food Type</th>
+                                <th>Servings</th>
+                                <th>GHG Emission (KG CO2e)</th>
+                                <th>GHG Emission (T CO2e)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportData">
+                            {% for record in food_data %}
+                            <tr id="row-{{ record['id'] }}">
+                                <td>{{ record['Campus'] }}</td>
+                                <td>{{ record['YearTransaction'] }}</td>
+                                <td>{{ record['Month'] }}</td>
+                                <td>{{ record['Office'] }}</td>
+                                <td>{{ record['TypeOfFoodServed'] }}</td>
+                                <td>{{ record['QuantityOfServing'] }}</td>
+                                <td>{{ record['GHGEmissionKGCO2e'] }}</td>
+                                <td>{{ record['GHGEmissionTCO2e'] }}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteRecord({{ record['id'] }})">
+                                        <i class=></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                     <!-- Pagination controls -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('food_consumption', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page numbers -->
+                <span>Page {{ current_page }} of {{ total_pages }}</span>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('food_consumption', page=current_page + 1) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+        <!-- Modal -->
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <div class="container">
+                    <div class="form-container">
+                        <form method="POST" action="{{ url_for('food_consumption') }}" id="co2Form">
+                            <label for="campus">Campus:</label>
+                            <select id="campus" name="campus" required>
+                                <option value=""></option>
+                                <option value="Alangilan">Alangilan</option>
+                                <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
+                                <option value="Balayan">Balayan</option>
+                                <option value="Central">Central</option>
+                                <option value="JPLPC-Malvar">JPLPC-Malvar</option>
+                                <option value="Lemery">Lemery</option>
+                                <option value="Lipa">Lipa</option>
+                                <option value="Lobo">Lobo</option>
+                                <option value="Mabini">Mabini</option>
+                                <option value="Pablo Borbon">Pablo Borbon</option>
+                                <option value="Rosario">Rosario</option>
+                                <option value="San Juan">San Juan</option>
+                            </select>
+                                            
+                            <label for="year">Year:</label>
+                            <select id="year" name="year" required>
+                                <option value=""></option>
+                                <option value="2020">2020</option>
+                                <option value="2021">2021</option>
+                                <option value="2022">2022</option>
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                            </select>
+
+                            <label for="month">Month:</label>
+                            <select id="month" name="month" required>
+                                <option value=""></option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+
+                            <label for="office">Office:</label>
+                            <select id="office" name="office" required>
+                                <option value=""></option>
+                                <option value="Auxiliary Services">Auxiliary Services</option>
+                                <option value="RGO">RGO</option>
+                            </select>
+
+                            <label for="foodType">Type of Food Served:</label>
+                            <select id="foodType" name="foodType" required>
+                                <option value=""></option>
+                                <option value="1 Standard Breakfast">1 Standard Breakfast</option>
+                                <option value="1 Gourmet Breakfast">1 Gourmet Breakfast</option>
+                                <option value="1 Hot Snack (burger and fries)">1 Hot Snack (burger and fries)</option>
+                                <option value="1 Cold or Hot Snack">1 Cold or Hot Snack</option>
+                                <option value="1 Sandwich">1 Sandwich</option>
+                                <option value="1 Average Meal">1 Average Meal</option>
+                                <option value="Meal,Vegan">Meal,Vegan</option>
+                                <option value="Meal,Vegetarian">Meal,Vegetarian</option>
+                                <option value="Meal with Beef">Meal with Beef</option>
+                                <option value="Meal with Chicken">Meal with Chicken</option>
+                            </select>
+
+                            <label for="servings">No. of Servings:</label>
+                            <input type="number" id="servings" name="servings" step="0.01" required>
+
+                            <!-- GHG Emission fields that will be calculated -->
+                            <label for="ghgEmissionKg">GHG Emission (KG CO2e):</label>
+                            <input type="number" id="ghgEmissionKg" name="ghgEmissionKg" step="0.01" readonly>
+
+                            <label for="ghgEmissionTons">GHG Emission (T CO2e):</label>
+                            <input type="number" id="ghgEmissionTons" name="ghgEmissionTons" step="0.01" readonly>
+
+                            <!-- Buttons to calculate and generate report -->
+                            <button type="button" onclick="calculateCO2Emission()">Calculate CO2 Emission</button>
+                            <button type="button" onclick="generateReport()">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <script>
+          // Emission factors based on food type
+        const foodFactors = {
+            "1 Standard Breakfast": 0.84,
+            "1 Gourmet Breakfast": 2.33,
+            "1 Hot Snack (burger and fries)": 2.77,
+            "1 Cold or Hot Snack": 2.02,
+            "1 Sandwich": 1.27,
+            "1 Average Meal": 4.70,
+            "Meal,Vegan": 1.69,
+            "Meal,Vegetarian": 2.85,
+            "Meal with Beef": 6.93,
+            "Meal with Chicken": 3.39
+        };
+
+    // Function to calculate CO2 emissions
+    function calculateCO2Emission() {
+        const foodType = document.getElementById('foodType').value;
+        const servings = parseFloat(document.getElementById('servings').value) || 0;
+
+        const factor = foodFactors[foodType] || 0;
+        const ghgEmissionKgCO2e = servings * factor;
+        const ghgEmissionTCO2e = ghgEmissionKgCO2e / 1000;
+
+        document.getElementById('ghgEmissionKg').value = ghgEmissionKgCO2e.toFixed(2);
+        document.getElementById('ghgEmissionTons').value = ghgEmissionTCO2e.toFixed(2);
+    }
+
+    // Function to submit the form and close the modal
+    function generateReport() {
+        document.getElementById("co2Form").submit();
+        closeModal();
+    }
+
+    // Functions to open and close the modal
+    function openCalculatorModal() {
+        document.getElementById('myModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
+    // Function to filter food consumption data based on selected filters
+    function filterFoodReport() {
+    // Get filter values from the dropdowns
+    const monthElement = document.getElementById('monthFilter');
+    const officeElement = document.getElementById('officeFilter');
+    const yearElement = document.getElementById('yearFilter');
+
+    const month = monthElement ? monthElement.value : null;
+    const office = officeElement ? officeElement.value : null;
+    const year = yearElement ? yearElement.value : null;
+
+    // Build the query string based on selected filters
+    let queryString = [];
+    if (month) queryString.push(`month=${encodeURIComponent(month)}`);
+    if (office) queryString.push(`office=${encodeURIComponent(office)}`);
+    if (year) queryString.push(`year=${encodeURIComponent(year)}`);
+    queryString = queryString.length > 0 ? '?' + queryString.join('&') : '';
+
+    // Fetch filtered data from the server
+    fetch(`/food_consumption/all${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            // Clear the existing table body
+            const tableBody = document.getElementById('reportData');
+            tableBody.innerHTML = '';
+
+            // Populate the table with the filtered data
+            if (data.length > 0) {
+                data.forEach(report => {
+                    const row = `
+                        <tr>
+                            <td>${report.Campus}</td>
+                            <td>${report.YearTransaction}</td>
+                            <td>${report.Month}</td>
+                            <td>${report.Office}</td>
+                            <td>${report.TypeOfFoodServed}</td>
+                            <td>${report.QuantityOfServing}</td>
+                            <td>${report.GHGEmissionKGCO2e}</td>
+                            <td>${report.GHGEmissionTCO2e}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${report.id})">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            } else {
+                // If no data is returned, show a message
+                const noDataRow = `
+                    <tr>
+                        <td colspan="9" style="text-align: center;">No data available for the selected filters.</td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', noDataRow);
+            }
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+// Attach the filter function to the change event of the filter dropdowns
+document.getElementById('yearFilter').addEventListener('change', filterFoodReport);
+document.getElementById('monthFilter').addEventListener('change', filterFoodReport);
+document.getElementById('officeFilter').addEventListener('change', filterFoodReport);
+
+
+   // Function to print the report with filtered data if filters are applied, otherwise all data
+function printFoodReport() {
+    // Check if the elements exist before accessing their values
+    const monthElement = document.getElementById('monthFilter');
+    const officeElement = document.getElementById('officeFilter');
+    const yearElement = document.getElementById('yearFilter');
+
+    const month = monthElement ? monthElement.value : null;
+    const office = officeElement ? officeElement.value : null;
+    const year = yearElement ? yearElement.value : null;
+
+    // Build the query string based on selected filters
+    let queryString = '';
+    if (month) queryString += `month=${month}&`;
+    if (office) queryString += `office=${office}&`;
+    if (year) queryString += `year=${year}`;
+
+    // Fetch data from the server, either filtered or all
+    fetch(`/food_consumption/all?${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            // Generate the table header
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Office</th>
+                        <th>Food Type</th>
+                        <th>Servings</th>
+                        <th>GHG Emission (KG CO2e)</th>
+                        <th>GHG Emission (T CO2e)</th>
+                    </tr>
+                </thead>`;
+
+            // Generate table rows with the fetched data
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.YearTransaction}</td>
+                    <td>${report.Month}</td>
+                    <td>${report.Office}</td>
+                    <td>${report.TypeOfFoodServed}</td>
+                    <td>${report.QuantityOfServing}</td>
+                    <td>${report.GHGEmissionKGCO2e}</td>
+                    <td>${report.GHGEmissionTCO2e}</td>
+                </tr>
+            `).join('');
+
+            // Create the print layout
+            const printContents = `
+                 <div class="header">
+                    <img src="${window.location.origin}/static/images/bsu.png" alt="BSU Logo" style="width: 50px; height: auto;">
+                    <h2>Food Consumption Report</h2>
+                    <img src="${window.location.origin}/static/images/csd.png" alt="CSD Logo" style="width: 50px; height: auto;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                    ${tableHeader}
+                    <tbody>
+                        ${tableBody}
+                    </tbody>
+                </table>
+            `;
+
+            // Save original document content
+            const originalContents = document.body.innerHTML;
+
+            // Replace document body with print content
+            document.body.innerHTML = printContents;
+
+            // Print the new content
+            window.print();
+
+            // Restore original document content
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+
+
+
+// Function to export the food consumption table to Excel
+function downloadExcel() {
+    // Get filter values from the dropdowns if present
+    const month = document.getElementById('monthFilter')?.value || '';
+    const office = document.getElementById('officeFilter')?.value || '';
+    const year = document.getElementById('yearFilter')?.value || '';
+
+    // Build the query string based on the filter values
+    let queryString = `?month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}&year=${encodeURIComponent(year)}`;
+
+    // Fetch the data from the server
+    fetch(`/food_consumption/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            // Create a new worksheet from the data
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Food Consumption");
+
+            // Add column headers to the worksheet
+            XLSX.utils.sheet_add_aoa(worksheet, [[
+                "Campus", "Year", "Month", "Office", "Food Type",
+                "Servings", "GHG Emission (KG CO2e)", "GHG Emission (T CO2e)"
+            ]], { origin: "A1" });
+
+            // Write the Excel file
+            XLSX.writeFile(workbook, "FoodConsumptionReport.xlsx");
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
+
+function deleteRecord(recordId) {
+    if (confirm("Are you sure you want to delete this record?")) {
+        fetch(`/delete_food_record/${recordId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table if the deletion was successful
+                const row = document.getElementById(`row-${recordId}`);
+                if (row) row.remove();
+                alert("Record deleted successfully.");
+            } else {
+                alert("Error deleting record: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            alert("An error occurred while deleting the record.");
+        });
+    }
+}
+
+       
+    </script>
+</body>
+</html>

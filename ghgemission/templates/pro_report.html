@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <style>
+        /* Layout and Sidenav Styling */
+        #layoutSidenav {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+    
+        #layoutSidenav_nav {
+            width: 250px;
+            background-color: #495057;
+        }
+    
+        #layoutSidenav_nav .nav-link {
+            color: #fff;
+            font-weight: 500;
+        }
+    
+        #layoutSidenav_nav .nav-link:hover {
+            color: #fff;
+            background-color: #495057;
+        }
+    
+        #layoutSidenav_content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+    
+        /* Header Styling */
+        .header {
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: #fff;
+        }
+    
+        .header img {
+            height: 80px;
+        }
+
+        /* Filter container styling */
+        .filter-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Compact dropdown styling */
+        .filter-container label {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .filter-container select {
+            padding: 5px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 4px; /* Reduced padding */
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: #000;
+        }
+    
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    
+        @media print {
+            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
+                display: none !important;
+            }
+            body, .container, .header, .card, .card-header, .card-body, table {
+                background-color: white !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+        }
+    
+        /* Button styling */
+        .btn {
+            width: 100px;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+    
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+    
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('procurement_dashboard') }}">PROCUREMENT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <div class="ms-auto"></div>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar and Main Content Layout -->
+    <div id="layoutSidenav">
+        <!-- Sidebar Navigation -->
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading"></div>
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('procurement_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <div class="header d-flex justify-content-between align-items-center my-4">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                        <h1 class="text-center">Procurement Consumption Report</h1>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                    </div>
+
+                   
+
+                    <!-- Filters for Month and Year -->
+                    <div class="filter-container mb-3">
+                        <label for="monthFilter">Month: </label>
+                        <select id="monthFilter" onchange="filterTables()">
+                            <option value="">--Select--</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+
+                        <label for="yearFilter">Year: </label>
+                        <select id="yearFilter" onchange="filterTables()">
+                            <option value="">--Select--</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+
+                    <!-- Food Waste Table -->
+                                <h2 class="h5">Food Waste</h2>
+                                <table class="table table-bordered" id="foodWasteData">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Campus</th>
+                                            <th>Year</th>
+                                            <th>Month</th>
+                                            <th>Office</th>
+                                            <th>Type Of Food Served</th>
+                                            <th>Quantity Of Serving</th>
+                                            <th>GHG Emission KG CO2e</th>
+                                            <th>GHG Emission T CO2e</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in result_food_waste %}
+                                        <tr>
+                                            <td>{{ row['Campus'] }}</td>
+                                            <td>{{ row['YearTransaction'] }}</td>
+                                            <td>{{ row['Month'] }}</td>
+                                            <td>{{ row['Office'] }}</td>
+                                            <td>{{ row['TypeOfFoodServed'] }}</td>
+                                            <td>{{ row['QuantityOfServing'] }}</td>
+                                            <td>{{ row['GHGEmissionKGCO2e'] }}</td>
+                                            <td>{{ row['GHGEmissionTCO2e'] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+              
+                    <!-- Pagination for Food Waste -->
+                    <nav aria-label="Food Waste pagination">
+                        <ul class="pagination justify-content-left">
+                            {% if current_page_food_waste > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('pro_report', foodWaste_page=current_page_food_waste - 1) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Page {{ current_page_food_waste }} of {{ total_pages_food_waste }}</span>
+                            </li>
+                            {% if current_page_food_waste < total_pages_food_waste %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('pro_report', foodWaste_page=current_page_food_waste + 1) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+<br>
+                    <!-- LPG Consumption Table -->
+                                <h2 class="h5">LPG Consumption</h2>
+                                <table class="table table-bordered" id="lpgData">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Campus</th>
+                                            <th>Year</th>
+                                            <th>Month</th>
+                                            <th>Office</th>
+                                            <th>Concessionaries Type</th>
+                                            <th>Tank Quantity</th>
+                                            <th>Tank Weight</th>
+                                            <th>Tank Volume</th>
+                                            <th>Total Tank Volume</th>
+                                            <th>KG CO2e</th>
+                                            <th>T CO2e</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in result_lpg %}
+                                        <tr>
+                                            <td>{{ row['Campus'] }}</td>
+                                            <td>{{ row['YearTransact'] }}</td>
+                                            <td>{{ row['Month'] }}</td>
+                                            <td>{{ row['Office'] }}</td>
+                                            <td>{{ row['ConcessionariesType'] }}</td>
+                                            <td>{{ row['TankQuantity'] }}</td>
+                                            <td>{{ row['TankWeight'] }}</td>
+                                            <td>{{ row['TankVolume'] }}</td>
+                                            <td>{{ row['TotalTankVolume'] }}</td>
+                                            <td>{{ row['GHGEmissionKGCO2e'] }}</td>
+                                            <td>{{ row['GHGEmissionTCO2e'] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+
+
+                    <!-- Pagination for LPG -->
+                    <nav aria-label="LPG pagination">
+                        <ul class="pagination justify-content-left">
+                            {% if current_page_lpg > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('pro_report', lpg_page=current_page_lpg - 1) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Page {{ current_page_lpg }} of {{ total_pages_lpg }}</span>
+                            </li>
+                            {% if current_page_lpg < total_pages_lpg %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('pro_report', lpg_page=current_page_lpg + 1) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+
+                   <!-- Save As Button and Modal for Export Options -->
+<button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
+<div class="modal fade" id="exportOptionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Consumption Report</h5>
+                <button type="button" class="close" data-dismiss="modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="consumptionSelect">Select Consumption:</label>
+                        <select id="consumptionSelect" class="form-control">
+                            <option value="foodWasteData">Food Waste</option>
+                            <option value="lpgData">LPG Consumption</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                <button type="button" class="btn btn-success" onclick="generateExcel()">Download Excel</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- JavaScript for filtering and exporting -->
+    <script>
+        function filterTables() {
+            const selectedMonth = document.getElementById('monthFilter').value;
+            const selectedYear = document.getElementById('yearFilter').value;
+
+            // Filtering logic
+            const tables = {
+                foodWasteData: { yearIndex: 1, monthIndex: 2 },
+                lpgData: { yearIndex: 1, monthIndex: 2 }
+            };
+
+            for (const [tableId, columns] of Object.entries(tables)) {
+                const table = document.getElementById(tableId);
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const yearCell = row.children[columns.yearIndex].textContent;
+                    const monthCell = row.children[columns.monthIndex].textContent;
+
+                    const yearMatch = selectedYear === '' || yearCell === selectedYear;
+                    const monthMatch = selectedMonth === '' || monthCell === selectedMonth;
+
+                    if (yearMatch && monthMatch) {
+                        row.style.display = ''; // Show the row
+                    } else {
+                        row.style.display = 'none'; // Hide the row
+                    }
+                });
+            }
+        }
+
+        function printReport() {
+    const consumptionType = document.getElementById('consumptionSelect').value;
+    console.log('Selected table for printing:', consumptionType); // Debugging line
+    const tableElement = document.getElementById(consumptionType);
+
+    if (!tableElement) {
+        alert('Please select a valid table.');
+        return;
+    }
+
+    // Ask the user if they want to print filtered data or all data
+    const printFiltered = confirm("Do you want to print only the filtered data? Click 'Cancel' for all data.");
+
+    if (printFiltered) {
+        // Print only the visible rows in the current table (filtered data)
+        const tempTable = tableElement.cloneNode(true);
+        tempTable.querySelectorAll('tbody tr').forEach(row => {
+            if (row.style.display === 'none') {
+                row.remove(); // Remove hidden rows
+            }
+        });
+
+        openPrintWindow(tempTable);
+    } else {
+        // Fetch all data from the server for the selected table
+        fetch(`/fetch_consumption_data?table=${consumptionType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Create a temporary table element for printing
+                const tempTable = document.createElement('table');
+                tempTable.classList.add('table', 'table-bordered');
+
+                // Create table header dynamically based on the data keys
+                if (data.length > 0) {
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+
+                    // Append table headers, excluding any 'id' column
+                    Object.keys(data[0]).forEach(key => {
+                        if (key.toLowerCase() !== 'id') {
+                            const th = document.createElement('th');
+                            th.textContent = key.replace(/_/g, ' ').toUpperCase();
+                            headerRow.appendChild(th);
+                        }
+                    });
+
+                    thead.appendChild(headerRow);
+                    tempTable.appendChild(thead);
+                }
+
+                // Create table body with all data from the server, excluding 'id' column
+                const tbody = document.createElement('tbody');
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    Object.entries(row).forEach(([key, cellValue]) => {
+                        if (key.toLowerCase() !== 'id') {
+                            const td = document.createElement('td');
+                            td.textContent = cellValue;
+                            tr.appendChild(td);
+                        }
+                    });
+                    tbody.appendChild(tr);
+                });
+                tempTable.appendChild(tbody);
+
+                openPrintWindow(tempTable);
+            })
+            .catch(error => {
+                console.error('Error fetching all data:', error);
+                alert('An error occurred while fetching data.');
+            });
+    }
+}
+
+function openPrintWindow(tempTable) {
+    // Open a new window for printing
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>Print Report</title>');
+    printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">');
+    printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { padding: 4px; text-align: center; border: 1px solid #ddd; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<div style="text-align: center; margin-bottom: 20px;"><h2>Consumption Report</h2></div>');
+    printWindow.document.write(tempTable.outerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+
+function generateExcel() {
+    const consumptionType = document.getElementById('consumptionSelect').value;
+    const tableElement = document.getElementById(consumptionType);
+
+    if (!tableElement) {
+        alert('Please select a valid table.');
+        return;
+    }
+
+    // Ask the user if they want to download filtered data or all data
+    const downloadFiltered = confirm("Do you want to download only the filtered data? Click 'Cancel' for all data.");
+
+    if (downloadFiltered) {
+        // Generate CSV for only the visible (filtered) rows
+        let csvContent = "data:text/csv;charset=utf-8,";
+        const visibleRows = tableElement.querySelectorAll("tbody tr");
+        visibleRows.forEach(row => {
+            if (row.style.display !== 'none') {
+                const cols = row.querySelectorAll("td, th");
+                const csvRow = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
+                csvContent += csvRow + "\r\n";
+            }
+        });
+
+        downloadCSV(csvContent, consumptionType);
+    } else {
+        // Fetch all data from the server for the selected table
+        fetch(`/fetch_consumption_data?table=${consumptionType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Create CSV content for all data, excluding 'id' column
+                let csvContent = "data:text/csv;charset=utf-8,";
+                if (data.length > 0) {
+                    // Add table headers
+                    const headers = Object.keys(data[0]).filter(key => key.toLowerCase() !== 'id');
+                    csvContent += headers.map(header => `"${header.replace(/_/g, ' ').toUpperCase()}"`).join(",") + "\r\n";
+
+                    // Add table rows
+                    data.forEach(row => {
+                        const csvRow = headers.map(key => `"${row[key]}"`).join(",");
+                        csvContent += csvRow + "\r\n";
+                    });
+                }
+
+                downloadCSV(csvContent, consumptionType);
+            })
+            .catch(error => {
+                console.error('Error fetching all data:', error);
+                alert('An error occurred while fetching data.');
+            });
+    }
+}
+
+function downloadCSV(csvContent, consumptionType) {
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${consumptionType}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+</body>
+</html>

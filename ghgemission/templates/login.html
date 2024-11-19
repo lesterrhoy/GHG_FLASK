@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    /* General Reset and Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom right, #1e3a8a, #065f46); /* Background gradient */
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* Logo Styles with Animation */
+.logo {
+    width: 280px;
+    margin-right: 50px; /* Adjust spacing between logo and form */
+    animation: moveLogo 5s ease-in-out infinite alternate; /* Keep the animation */
+}
+
+/* Keyframes for logo movement */
+@keyframes moveLogo {
+    0% {
+        transform: translateX(0); /* Start at the initial position */
+    }
+    50% {
+        transform: translateX(50px); /* Move to the right */
+    }
+    100% {
+        transform: translateX(0); /* Return to the initial position */
+    }
+}
+
+/* Container Adjustments */
+.login-container {
+    display: flex;
+    justify-content: space-between; /* Space between logo and form */
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    margin: 20px;
+}
+
+/* Login form styling */
+.login-form {
+    flex: 1;
+    max-width: 450px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start; /* Align text to the left */
+    text-align: left; /* Align form content to the left */
+}
+
+
+    
+    
+
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+p {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+    .form-group {
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    
+    label {
+      display: block;
+      font-size: 1rem;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      transition: border-color 0.3s ease;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #1e3a8a;
+    }
+    
+    /* Button Styling */
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #1e3a8a;
+      color: white;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    
+    button:hover {
+      background-color: #1e40af;
+    }
+    
+    /* Forgot Password and Divider */
+    .forgot-password {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+    
+    .forgot-password a {
+      color: #1e3a8a;
+      text-decoration: none;
+    }
+    
+    .forgot-password a:hover {
+      text-decoration: underline;
+    }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #ccc;
+    }
+    
+    .divider span {
+      padding: 0 15px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .register {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .register a {
+      color: #1e3a8a;
+      font-size: 1rem;
+      text-decoration: none;
+    }
+    
+    .register a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .login-container {
+        flex-direction: column;
+        padding: 20px;
+        align-items: center;
+      }
+    
+      .logo {
+        margin-bottom: 20px;
+      }
+    
+      .login-form {
+        max-width: 100%;
+        margin-left: 0;
+      }
+    }
+    
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <!-- Logo positioned at the top, moving -->
+    <img src="/static/images/sdg.png" alt="Logo" class="logo">
+    <!-- Login Form Section -->
+    <div class="login-form">
+      <h1>Welcome Back</h1>
+      <p>Sign in to the Center for Sustainable Development Portal</p>
+  
+      <!-- Display error message if login fails -->
+      {% if message %}
+        <p style="color:red; text-align: center;">{{ message }}</p>
+      {% endif %}
+  
+      <form method="POST" action="/login">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            name="username"
+            placeholder="Enter your username"
+            required
+            type="text"
+          />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            required
+            type="password"
+            placeholder="Enter your password"
+          />
+        </div>
+  
+        <button type="submit">Sign In</button>
+      </form>
+  
+      <div class="forgot-password">
+        <a href="/change_password">Forgot your password?</a>
+      </div>
+  
+
+</body>
+</html>

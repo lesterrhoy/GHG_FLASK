@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Center for Sustainable Development Report</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+
+    <style>
+        /* Layout and Sidenav Styling */
+        #layoutSidenav {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+    
+        #layoutSidenav_nav {
+            width: 250px;
+            background-color: #495057;
+        }
+    
+        #layoutSidenav_nav .nav-link {
+            color: #fff;
+            font-weight: 500;
+        }
+    
+        #layoutSidenav_nav .nav-link:hover {
+            color: #fff;
+            background-color: #495057;
+        }
+    
+        #layoutSidenav_content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+    
+        /* Header Styling */
+        .header {
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: #fff;
+        }
+    
+        .header img {
+            height: 80px;
+        }
+
+        /* Filter container styling */
+        .filter-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        /* Compact dropdown styling */
+        .filter-container select {
+            width: 150px; /* Smaller width for compact design */
+            padding: 5px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        /* Table Styling */
+        .container {
+            margin-top: 20px;
+        }
+    
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+    
+        th {
+            background-color: #f2f2f2;
+            color: #000;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+    
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+    
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    
+        @media print {
+            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
+                display: none !important;
+            }
+            body, .container, .header, .card, .card-header, .card-body, table {
+                background-color: white !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+        }
+    
+        /* Button styling */
+        .btn {
+            width: 100px;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+    
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+    
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+    </style>
+
+</head>
+
+    <!-- Header Section with Logos -->
+    <div class="header">
+        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo 1" class="logo">
+        <h1>Center for Sustainable Development Report</h1>
+        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo 2" class="logo">
+    </div>    
+    <!-- Sidebar and Main Content Layout -->
+    <!-- Sidebar and Main Content Layout -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
+    </nav>
+    <div id="layoutSidenav">
+        <!-- Sidebar Navigation -->
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading"></div>
+                        <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+                            Manage Account
+                        </a>
+                        <a class="nav-link" href="{{ url_for('csd_report') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-file-alt"></i></div>
+                            Report
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+
+
+        <!-- Main Content Area -->
+        <div class="container my-4">
+             <!-- Office Filter Dropdown -->
+        <!-- Filter Form positioned above the table -->
+<div class="mb-4">
+    <form method="GET" action="{{ url_for('csd_report') }}">
+        <!-- Campus Filter Dropdown -->
+        <div class="form-group">
+            <label for="campus">Campus:</label>
+            <select id="campus" name="campus" class="form-control" required onchange="this.form.submit()">
+                <option value="All Campuses" {% if selected_campus == 'All Campuses' %}selected{% endif %}></option>
+                <option value="Alangilan" {% if selected_campus == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                <option value="ARASOF-Nasugbu" {% if selected_campus == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                <option value="Balayan" {% if selected_campus == 'Balayan' %}selected{% endif %}>Balayan</option>
+                <option value="Central" {% if selected_campus == 'Central' %}selected{% endif %}>Central</option>
+                <option value="JPLPC-Malvar" {% if selected_campus == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                <option value="Lemery" {% if selected_campus == 'Lemery' %}selected{% endif %}>Lemery</option>
+                <option value="Lipa" {% if selected_campus == 'Lipa' %}selected{% endif %}>Lipa</option>
+                <option value="Lobo" {% if selected_campus == 'Lobo' %}selected{% endif %}>Lobo</option>
+                <option value="Mabini" {% if selected_campus == 'Mabini' %}selected{% endif %}>Mabini</option>
+                <option value="Pablo Borbon" {% if selected_campus == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                <option value="Rosario" {% if selected_campus == 'Rosario' %}selected{% endif %}>Rosario</option>
+                <option value="San Juan" {% if selected_campus == 'San Juan' %}selected{% endif %}>San Juan</option>
+            </select>
+        </div>
+
+        <!-- Office Filter Dropdown -->
+        <div class="mb-4">
+            <label for="officeFilter">Select Office:</label>
+            <select id="officeFilter" name="office" class="form-control" onchange="this.form.submit()">
+                <option value="all_offices" {% if selected_office == 'all_offices' %}selected{% endif %}>All Offices</option>
+                <option value="environmental_management_unit" {% if selected_office == 'environmental_management_unit' %}selected{% endif %}>Environmental Management Unit</option>
+                <option value="procurement_office" {% if selected_office == 'procurement_office' %}selected{% endif %}>Procurement Office</option>
+                <option value="external_affair" {% if selected_office == 'external_affair' %}selected{% endif %}>External Affair</option>
+            </select>
+        </div>
+    </form>
+</div>
+            
+ <!-- Electricity Consumption Table Without Pagination Controls -->
+{% if reports.get('electricity') %}
+        <h2>Electricity Consumption</h2>
+        <table class="table table-bordered" id="electricityTable">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Category</th>
+                    <th>Month</th>
+                    <th>Quarter</th>
+                    <th>Year</th>
+                    <th>Prev Reading</th>
+                    <th>Current Reading</th>
+                    <th>Multiplier</th>
+                    <th>Total Amount</th>
+                    <th>Consumption</th>
+                    <th>Price Per KWH</th>
+                    <th>KG CO2 per KWH</th>
+                    <th>T CO2 per KWH</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in reports['electricity'] %}
+                <tr>
+                    <td>{{ row['campus'] }}</td>
+                    <td>{{ row['category'] }}</td>
+                    <td>{{ row['month'] }}</td>
+                    <td>{{ row['quarter'] }}</td>
+                    <td>{{ row['year'] }}</td>
+                    <td>{{ row['prev_reading'] }}</td>
+                    <td>{{ row['current_reading'] }}</td>
+                    <td>{{ row['multiplier'] }}</td>
+                    <td>{{ row['total_amount'] }}</td>
+                    <td>{{ row['consumption'] }}</td>
+                    <td>{{ row['price_per_kwh'] }}</td>
+                    <td>{{ row['kg_co2_per_kwh'] }}</td>
+                    <td>{{ row['t_co2_per_kwh'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+{% endif %}
+
+            <!-- Fuel Emissions Report Table -->
+            {% if reports.get('fuel_emissions') %}
+            <h2>Fuel Emissions Report</h2>
+            <table class="table table-bordered" id="fuel_emissions">
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Date</th>
+                        <th>Driver</th>
+                        <th>Type</th>
+                        <th>Vehicle Type</th>
+                        <th>Plate Number</th>
+                        <th>Category</th>
+                        <th>Fuel Type</th>
+                        <th>Quantity (Liters)</th>
+                        <th>Total Amount</th>
+                        <th>CO₂ Emission (kg)</th>
+                        <th>NH₄ Emission (kg CO₂-e)</th>
+                        <th>N₂O Emission (kg CO₂-e)</th>
+                        <th>Total Emission (kg CO₂-e)</th>
+                        <th>Total Emission (t CO₂-e)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports['fuel_emissions'] %}
+                    <tr data-id="{{ report.id }}">
+                        <td>{{ report['campus'] }}</td>
+                        <td>{{ report['date'] }}</td>
+                        <td>{{ report['driver'] }}</td>
+                        <td>{{ report['type'] }}</td>
+                        <td>{{ report['vehicle_equipment'] }}</td>
+                        <td>{{ report['plate_no'] }}</td>
+                        <td>{{ report['category'] }}</td>
+                        <td>{{ report['fuel_type'] }}</td>
+                        <td>{{ report['quantity_liters'] }}</td>
+                        <td>{{ report['total_amount'] }}</td>
+                        <td>{{ report['co2_emission'] }}</td>
+                        <td>{{ report['nh4_emission'] }}</td>
+                        <td>{{ report['n2o_emission'] }}</td>
+                        <td>{{ report['total_emission'] }}</td>
+                        <td>{{ report['total_emission_t'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+{% endif %}
+
+{% if reports.get('treated_water') %}
+
+        <h2>Treated Water Report</h2>
+        <table class="table table-bordered" id="treated_water">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Month</th>
+                    <th>Treated Water Volume (m³)</th>
+                    <th>Reused Treated Water Volume (m³)</th>
+                    <th>Effluent Volume (m³)</th>
+                    <th>Price per Liter</th>
+                    <th>Factor (kg CO₂-e/m³)</th>
+                    <th>Factor (t CO₂-e/m³)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports['treated_water'] %}
+                <tr>
+                    <td>{{ report.Campus }}</td>
+                    <td>{{ report.Month }}</td>
+                    <td>{{ report.TreatedWaterVolume }}</td>
+                    <td>{{ report.ReusedTreatedWaterVolume }}</td>
+                    <td>{{ report.EffluentVolume }}</td>
+                    <td>{{ report.PricePerLiter }}</td>
+                    <td>{{ report.FactorKGCO2e }}</td>
+                    <td>{{ report.FactorTCO2e }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+{% endif %}
+
+
+            <!-- Water Consumption Report Table -->
+            {% if reports.get('water') %}
+                    <h2>Water Consumption Report</h2>
+                    <table class="table table-bordered" id="water">
+                        <thead>
+                            <tr>
+                                <th>Campus</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Previous Reading (m³)</th>
+                                <th>Current Reading (m³)</th>
+                                <th>Consumption (m³)</th>
+                                <th>Total Amount (₱)</th>
+                                <th>Price per m³ (₱)</th>
+                                <th>Factor (kg CO2/m³)</th>
+                                <th>Factor (t CO2/m³)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports['water'] %}
+                            <tr>
+                                <td>{{ report.Campus }}</td>
+                                <td>{{ report.Category }}</td>
+                                <td>{{ report.Date }}</td>
+                                <td>{{ report.PreviousReading }}</td>
+                                <td>{{ report.CurrentReading }}</td>
+                                <td>{{ report.Consumption }}</td>
+                                <td>{{ report.TotalAmount }}</td>
+                                <td>{{ report.PricePerLiter }}</td>
+                                <td>{{ report.FactorKGCO2e }}</td>
+                                <td>{{ report.FactorTCO2e }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+{% endif %}
+            
+            <!-- Waste Segregation Report Table -->
+            {% if reports.get('waste_segregation') %}
+                    <h2>Waste Segregation Report</h2>
+                    <table class="table table-bordered" id="waste_segregation">
+                        <thead>
+                            <tr>
+                                <th>Campus</th>
+                                <th>Year</th>
+                                <th>Quarter</th>
+                                <th>Month</th>
+                                <th>Main Category</th>
+                                <th>Subcategory</th>
+                                <th>Quantity (kg)</th>
+                                <th>GHG Emission (kg CO₂-e)</th>
+                                <th>GHG Emission (t CO₂-e)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports['waste_segregation'] %}
+                            <tr>
+                                <td>{{ report.Campus }}</td>
+                                <td>{{ report.Year }}</td>
+                                <td>{{ report.Quarter }}</td>
+                                <td>{{ report.Month }}</td>
+                                <td>{{ report.MainCategory }}</td>
+                                <td>{{ report.SubCategory }}</td>
+                                <td>{{ report.QuantityInKG }}</td>
+                                <td>{{ report.GHGEmissionKGCO2e }}</td>
+                                <td>{{ report.GHGEmissionTCO2e }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+{% endif %}
+            
+            <!-- Waste Unsegregation Report Table -->
+            {% if reports.get('waste_unsegregation') %}
+        <h2>Waste Unsegregation Report</h2>
+        <table class="table table-bordered" id="waste_unsegregation">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Waste Type</th>
+                    <th>Quantity (KG)</th>
+                    <th>Sent to Landfill (KG)</th>
+                    <th>Sent to Landfill (TONS)</th>
+                    <th>GHG Emission (KG CO₂e)</th>
+                    <th>GHG Emission (T CO₂e)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports['waste_unsegregation'] %}
+                <tr>
+                    <td>{{ report.Campus }}</td>
+                    <td>{{ report.Year }}</td>
+                    <td>{{ report.Month }}</td>
+                    <td>{{ report.WasteType }}</td>
+                    <td>{{ report.QuantityInKG }}</td>
+                    <td>{{ report.SentToLandfillKG }}</td>
+                    <td>{{ report.SentToLandfillTONS }}</td>
+                    <td>{{ report.GHGEmissionKGCO2e }}</td>
+                    <td>{{ report.GHGEmissionTCO2e }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+{% endif %}
+
+{% if reports.get('food_data') %}
+        <h2>Food Consumption</h2>
+        <table class="table table-bordered" id="food_data">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Office</th>
+                    <th>Food Type</th>
+                    <th>Servings</th>
+                    <th>GHG Emission (KG CO2e)</th>
+                    <th>GHG Emission (T CO2e)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in reports['food_data'] %}
+                <tr>
+                    <td>{{ record['Campus'] }}</td>
+                    <td>{{ record['YearTransaction'] }}</td>
+                    <td>{{ record['Month'] }}</td>
+                    <td>{{ record['Office'] }}</td>
+                    <td>{{ record['TypeOfFoodServed'] }}</td>
+                    <td>{{ record['QuantityOfServing'] }}</td>
+                    <td>{{ record['GHGEmissionKGCO2e'] }}</td>
+                    <td>{{ record['GHGEmissionTCO2e'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+
+{% if reports.get('lpg_data') %}
+        <h2 class="h5">LPG Consumption</h2>
+        <table class="table table-bordered" id="lpg_data">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Office</th>
+                    <th>Concessionaire Type</th>
+                    <th>Qty (no. of tanks)</th>
+                    <th>Tank Weight</th>
+                    <th>Tank Volume</th>
+                    <th>Total Tank Volume</th>
+                    <th>GHG Emission (KG CO2e)</th>
+                    <th>GHG Emission (T CO2e)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in reports['lpg_data'] %}
+                <tr>
+                    <td>{{ record['Campus'] }}</td>
+                    <td>{{ record['YearTransact'] }}</td>
+                    <td>{{ record['Month'] }}</td>
+                    <td>{{ record['Office'] }}</td>
+                    <td>{{ record['ConcessionariesType'] }}</td>
+                    <td>{{ record['TankQuantity'] }}</td>
+                    <td>{{ record['TankWeight'] }}</td>
+                    <td>{{ record['TankVolume'] }}</td>
+                    <td>{{ record['TotalTankVolume'] }}</td>
+                    <td>{{ record['GHGEmissionKGCO2e'] }}</td>
+                    <td>{{ record['GHGEmissionTCO2e'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+{% endif %}
+
+
+
+{% if reports.get('flight_data') %}
+        <h2 class="h5">Flight Emissions Report</h2>
+    <div class="card-body" id="flight_data">
+        <table id="reportTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Office</th>
+                    <th>Year</th>
+                    <th>Traveller</th>
+                    <th>Purpose</th>
+                    <th>Travel Date</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Class</th>
+                    <th>One Way/Round Trip</th>
+                    <th>kg CO2e</th>
+                    <th>t CO2e</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flight in reports['flight_data'] %}
+                <tr>
+                    <td>{{ flight['Campus'] }}</td>
+                    <td>{{ flight['Office'] }}</td>
+                    <td>{{ flight['Year'] }}</td>
+                    <td>{{ flight['TravellerName'] }}</td>
+                    <td>{{ flight['TravelPurpose'] }}</td>
+                    <td>{{ flight['TravelDate'] }}</td>
+                    <td>{{ flight['Origin'] }}</td>
+                    <td>{{ flight['Destination'] }}</td>
+                    <td>{{ flight['Class'] }}</td>
+                    <td>{{ flight['OnewayRoundTrip'] }}</td>
+                    <td>{{ flight['GHGEmissionKGC02e'] }}</td>
+                    <td>{{ flight['GHGEmissionTC02e'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endif %}
+
+{% if reports.get('accommodation_data') %}
+        <h2>Accommodation Emissions Report</h2>
+    <div class="card-body" id="accommodation_data">
+        <table id="reportTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Office</th>
+                    <th>Year</th>
+                    <th>Traveller</th>
+                    <th>Event Name</th>
+                    <th>Travel Date From</th>
+                    <th>Travel Date To</th>
+                    <th>Country</th>
+                    <th>Local/International</th>
+                    <th>Occupied Rooms</th>
+                    <th>Nights per Room</th>
+                    <th>kg CO2e</th>
+                    <th>t CO2e</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for accommodation in reports['accommodation_data'] %}
+                <tr>
+                    <td>{{ accommodation['Campus'] }}</td>
+                    <td>{{ accommodation['Office'] }}</td>
+                    <td>{{ accommodation['YearTransact'] }}</td>
+                    <td>{{ accommodation['TravellerName'] }}</td>
+                    <td>{{ accommodation['TravelPurpose'] }}</td>
+                    <td>{{ accommodation['TravelDateFrom'] }}</td>
+                    <td>{{ accommodation['TravelDateTo'] }}</td>
+                    <td>{{ accommodation['Country'] }}</td>
+                    <td>{{ accommodation['TravelType'] }}</td>
+                    <td>{{ accommodation['NumOccupiedRoom'] }}</td>
+                    <td>{{ accommodation['NumNightPerRoom'] }}</td>
+                    <td>{{ accommodation['GHGEmissionKGC02e'] }}</td>
+                    <td>{{ accommodation['GHGEmissionTC02e'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+{% endif %}
+
+<div class="container mt-3">
+    <form id="exportForm" method="POST" action="{{ url_for('export_data') }}">
+        <button type="button" class="btn btn-secondary" onclick="showExportOptions()">Save As</button>
+
+        <!-- Export Options Modal -->
+        <div id="exportOptionsModal" class="modal" tabindex="-1" style="display: none;">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Export Options</h5>
+                        <button type="button" class="close" onclick="closeExportOptions()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="consumptionType">Select Consumption Type:</label>
+                            <select id="consumptionType" name="consumption_type" class="form-control" required>
+                                <option value="electricity">Electricity</option>
+                                <option value="water">Water</option>
+                                <option value="waste_segregation">Waste Segregation</option>
+                                <option value="waste_unsegregation">Waste Unsegregation</option>
+                                <option value="fuel_emissions">Fuel Emissions</option>
+                                <option value="food_data">Food Consumption</option>
+                                <option value="lpg_data">LPG Consumption</option>
+                                <option value="flight_data">Flight Emissions</option>
+                                <option value="accommodation_data">Accommodation Emissions</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="printReport()">Print Report</button>
+                        <button type="button" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeExportOptions()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+    <script>
+     function showExportOptions() {
+        document.getElementById('exportOptionsModal').style.display = 'block';
+    }
+
+    function closeExportOptions() {
+        document.getElementById('exportOptionsModal').style.display = 'none';
+    }
+
+    function printReport() {
+    // Get the selected report type from the dropdown
+    const selectedType = document.getElementById('consumptionType').value;
+
+    // Find the report section by its ID
+    const reportSection = document.getElementById(selectedType);
+    if (reportSection) {
+        // Clone the section to avoid modifying the original content
+        const printContent = reportSection.cloneNode(true);
+
+        // Open a new window or print frame
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write('<html><head><title>Print Report</title>');
+        printWindow.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(printContent.outerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+        printWindow.close();
+    } else {
+        alert('Selected report type not found.');
+    }
+}
+
+
+
+function downloadExcel() {
+    // Get the selected report type from the dropdown
+    const selectedType = document.getElementById('consumptionType').value;
+
+    if (selectedType === 'all') {
+        // Handle exporting all report tables
+        const allSections = document.querySelectorAll('.card-body table');
+        if (allSections.length > 0) {
+            const wb = XLSX.utils.book_new(); // Create a new workbook
+
+            allSections.forEach((table, index) => {
+                // Clone each table and create a sheet for it
+                const tempTable = table.cloneNode(true);
+                const sheetName = `Report_${index + 1}`; // Use a unique name for each sheet
+                const ws = XLSX.utils.table_to_sheet(tempTable);
+
+                // Append the sheet to the workbook
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+
+            // Write the workbook to a file
+            XLSX.writeFile(wb, `All_Reports.xlsx`);
+        } else {
+            alert('No report data found to download.');
+        }
+    } else {
+        // Handle exporting a single report table based on the selection
+        const reportTable = document.querySelector(`#${selectedType} table`);
+
+        if (reportTable) {
+            const tempTable = reportTable.cloneNode(true);
+            Array.from(tempTable.querySelectorAll("tr")).forEach(row => {
+                // Optionally remove certain columns or make adjustments before download
+            });
+
+            const wb = XLSX.utils.table_to_book(tempTable, { sheet: "Report" });
+            XLSX.writeFile(wb, `${selectedType}_Report.xlsx`);
+        } else {
+            alert('Selected report type not found.');
+        }
+    }
+}
+
+</script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</html>

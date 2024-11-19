@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Food Consumption Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        .sb-topnav .navbar-nav .nav-item .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: white;
+        }
+        .sb-topnav .navbar-nav .nav-item .nav-link i {
+            margin-right: 5px;
+        }
+        .sb-sidenav-menu {
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        #layoutSidenav_nav .sb-sidenav-menu {
+            max-height: 90vh; /* Adjust this value to set your desired height */
+            overflow-y: auto;
+        }
+         /* General Styling */
+         body {
+            font-family: Arial, sans-serif;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        @media print {
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+
+    /* Hide non-printable elements like filter form, pagination, and buttons */
+    #filterForm, #printReportBtn, .pagination-container, .sb-topnav, #layoutSidenav_nav {
+        display: none;
+    }
+
+    /* Ensure table fits within the printable area */
+    table {
+        width: 100%;
+        max-width: 100%;
+        font-size: 10px; /* Adjust font size for better readability in print */
+        border-collapse: collapse; /* Ensures borders between cells are not doubled */
+    }
+
+    th, td {
+        padding: 4px;
+        border: 1px solid #000; /* Make sure borders are visible */
+    }
+
+    th {
+        background-color: #f2f2f2; /* Background for headers for contrast */
+        font-weight: bold; /* Ensure header text is bold */
+    }
+
+    /* Remove extra margins and padding around the main content */
+    .container-fluid {
+        padding: 0;
+        margin: 0;
+    }
+
+    body {
+        visibility: hidden;
+    }
+
+    #layoutSidenav_content, #layoutSidenav_content * {
+        visibility: visible;
+    }
+
+    #layoutSidenav_content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+}
+    </style>
+</head>
+
+<body class="sb-nav-fixed">
+    <!-- Navbar at the top -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('csd_dashboard') }}">CSD Dashboard</a>
+        <div class="ms-auto"></div>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar and Main Content Layout -->
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                            Report
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapsePages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('electricity_report') }}">Electricity Report</a>
+                                <a class="nav-link" href="{{ url_for('fuel_emissions_report') }}">Fuel Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('water_report') }}">Water Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('treated_water_report') }}">Treated Water Report</a>
+                                <a class="nav-link" href="{{ url_for('waste_segregation_report') }}">Waste Segregation Report</a>
+                                <a class="nav-link" href="{{ url_for('waste_unseg_report') }}">Waste Unsegregation Report</a>
+                                <a class="nav-link" href="{{ url_for('food_consumption_report') }}">Food Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('lpg_consumption_report') }}">LPG Consumption Report</a>
+                                <a class="nav-link" href="{{ url_for('flight_emissions_report') }}">Flight Emissions Report</a>
+                                <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h2 class="mt-4">Food Consumption Report</h2>
+                    
+                    <form method="GET" action="{{ url_for('food_consumption_report') }}" class="mb-4" id="filterForm">
+                        <div class="row">
+                            <!-- Campus Filter -->
+                            <div class="col-md-3">
+                                <label for="campus">Campus:</label>
+                                <select id="campus" name="campus" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Campuses</option>
+                                    <option value="Alangilan" {% if campus == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                                    <option value="ARASOF-Nasugbu" {% if campus == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                                    <option value="Balayan" {% if campus == 'Balayan' %}selected{% endif %}>Balayan</option>
+                                    <option value="Central" {% if campus == 'Central' %}selected{% endif %}>Central</option>
+                                    <option value="JPLPC-Malvar" {% if campus == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                                    <option value="Lemery" {% if campus == 'Lemery' %}selected{% endif %}>Lemery</option>
+                                    <option value="Lipa" {% if campus == 'Lipa' %}selected{% endif %}>Lipa</option>
+                                    <option value="Lobo" {% if campus == 'Lobo' %}selected{% endif %}>Lobo</option>
+                                    <option value="Mabini" {% if campus == 'Mabini' %}selected{% endif %}>Mabini</option>
+                                    <option value="Pablo Borbon" {% if campus == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                                    <option value="Rosario" {% if campus == 'Rosario' %}selected{% endif %}>Rosario</option>
+                                    <option value="San Juan" {% if campus == 'San Juan' %}selected{% endif %}>San Juan</option>
+                                </select>
+                            </div>
+                    
+                            <!-- Month Filter -->
+                            <div class="col-md-2">
+                                <label for="month">Month:</label>
+                                <select id="month" name="month" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Months</option>
+                                    {% for m in ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] %}
+                                        <option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                    
+                            <!-- Year Filter -->
+                            <div class="col-md-2">
+                                <label for="year">Year:</label>
+                                <select id="year" name="year" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Years</option>
+                                    {% for y in range(2020, 2025) %}
+                                        <option value="{{ y }}" {% if year == y|string %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                    
+                            <!-- Office Filter -->
+                            <div class="col-md-3">
+                                <label for="office">Office:</label>
+                                <select id="office" name="office" class="form-control" onchange="document.getElementById('filterForm').submit()">
+                                    <option value="">All Offices</option>
+                                    <option value="Procurement" {% if office == 'Procurement' %}selected{% endif %}>Procurement</option>
+                                    <option value="Auxiliary Services" {% if office == 'Auxiliary Services' %}selected{% endif %}>Auxiliary Services</option>
+                                    <option value="RGO" {% if office == 'RGO' %}selected{% endif %}>RGO</option>
+                                    <!-- Add other offices as needed -->
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    {% if data %}
+                        <table class="table table-bordered mt-4" id="food_data">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Year</th>
+                                    <th>Month</th>
+                                    <th>Office</th>
+                                    <th>Food Type</th>
+                                    <th>Servings</th>
+                                    <th>GHG Emission (KG CO₂e)</th>
+                                    <th>GHG Emission (T CO₂e)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in data %}
+                                <tr>
+                                    <td>{{ record.Campus }}</td>
+                                    <td>{{ record.YearTransaction }}</td>
+                                    <td>{{ record.Month }}</td>
+                                    <td>{{ record.Office }}</td>
+                                    <td>{{ record.TypeOfFoodServed }}</td>
+                                    <td>{{ record.QuantityOfServing }}</td>
+                                    <td>{{ record.GHGEmissionKGCO2e }}</td>
+                                    <td>{{ record.GHGEmissionTCO2e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <!-- Pagination Controls -->
+        <!-- Pagination Controls -->
+<div class="pagination-container mt-3">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-start">
+            {% if total_pages > 1 %}
+                <!-- Previous button -->
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('food_consumption_report', page=current_page - 1, campus=campus, month=month, year=year, office=office) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                <!-- Page number display -->
+                <li class="page-item disabled">
+                    <span class="page-link">Page {{ current_page }} of {{ total_pages }}</span>
+                </li>
+                
+                <!-- Next button -->
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('food_consumption_report', page=current_page + 1, campus=campus, month=month, year=year, office=office) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+                    {% else %}
+                        <p>No data available for this report.</p>
+                    {% endif %}
+                </div>
+            </main>
+            <div class="mb-3">
+                <button id="downloadPdfBtn" class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>
+                <button id="downloadExcelBtn" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+            </div>
+    </div>
+
+
+<script>
+    function downloadPDF() {
+        // Get filter values
+        const campus = document.getElementById("campus").value;
+        const month = document.getElementById("month").value;
+        const year = document.getElementById("year").value;
+        const office = document.getElementById("office").value;
+
+        // Construct the URL with query parameters
+        const url = `/download_food_consumption_pdf?campus=${encodeURIComponent(campus)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&office=${encodeURIComponent(office)}`;
+
+        // Open the URL to trigger PDF download
+        window.open(url, '_blank');
+    }
+
+    function downloadExcel() {
+    const campus = document.getElementById("campus") ? document.getElementById("campus").value : '';
+    const month = document.getElementById("month") ? document.getElementById("month").value : '';
+    const year = document.getElementById("year") ? document.getElementById("year").value : '';
+    const office = document.getElementById("office") ? document.getElementById("office").value : '';
+
+    // Construct the URL with query parameters
+    const url = `/download_food_consumption_excel?campus=${encodeURIComponent(campus)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&office=${encodeURIComponent(office)}`;
+
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
+}
+
+</script>
+
+</body>
+</html>

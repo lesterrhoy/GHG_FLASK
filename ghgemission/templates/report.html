@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>EMU Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <style>
+       
+        /* Layout and Sidenav Styling */
+        #layoutSidenav {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+    
+        #layoutSidenav_nav {
+            width: 250px;
+            background-color: #495057;
+        }
+    
+        #layoutSidenav_nav .nav-link {
+            color: #fff;
+            font-weight: 500;
+        }
+    
+        #layoutSidenav_nav .nav-link:hover {
+            color: #fff;
+            background-color: #495057;
+        }
+    
+        #layoutSidenav_content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+    
+        /* Header Styling */
+        .header {
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: #fff;
+        }
+    
+        .header img {
+            height: 80px;
+        }
+
+        /* Filter container styling */
+        .filter-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Compact dropdown styling */
+        .filter-container label {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .filter-container select {
+            padding: 5px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th, td {
+            padding: 4px; /* Reduced padding */
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: #000;
+        }
+    
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    
+        @media print {
+            .section-header, .btn, .pagination-container, .modal-footer, form.mb-3 {
+                display: none !important;
+            }
+            body, .container, .header, .card, .card-header, .card-body, table {
+                background-color: white !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+        }
+    
+        /* Button styling */
+        .btn {
+            width: 100px;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+    
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+    
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body class="sb-nav-fixed">
+    <!-- Top Navigation Bar -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <div class="ms-auto"></div>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar and Main Content Layout -->
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('emu_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div id="layoutSidenav_content">
+            <main>
+                <body class="sb-nav-fixed">
+                    <!-- Header -->
+                    <div class="header">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" class="logo">
+                        <h1>EMU Consumption Report</h1>
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" class="logo">
+                    </div>
+                    <br>
+
+                    <div class="filter-container mb-3">
+                        <label for="monthFilter">Month:</label>
+                        <select id="monthFilter" name="month" onchange="applyFilters()">
+                            <option value="">All Months</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    
+                        <label for="yearFilter">Year:</label>
+                        <select id="yearFilter" name="year" onchange="applyFilters()">
+                            <option value="">All Years</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <!-- Add more years as needed -->
+                        </select>
+                    </div>
+
+<!-- Save As Button and Modal for Export Options -->
+<button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
+<div class="modal fade" id="exportOptionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Consumption Report</h5>
+                <button type="button" class="close" data-dismiss="modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="tableSelect">Select Table:</label>
+                        <select id="tableSelect" class="form-control">
+                            <option value="electricityTable">Electricity</option>
+                            <option value="waterTable">Water</option>
+                            <option value="segWasteTable">Segregated Solid Waste</option>
+                            <option value="unsegWasteTable">Unsegregated Solid Waste</option>
+                            <option value="treatedWaterTable">Treated Water</option>
+                            <option value="fuelEmissionsTable">Fuel Emissions</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                <button class="btn btn-success" onclick="generateExcel()">Download Excel</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+      </div>
+  </div>
+                        <!-- Electricity Consumption Table -->
+                        <h3>Electricity Consumption</h3>
+                        <table class="table table-bordered" id="electricityTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Category</th>
+                                    <th>Month</th>
+                                    <th>Year</th>
+                                    <th>Previous Reading (kWh)</th>
+                                    <th>Current Reading (kWh)</th>
+                                    <th>Multiplier</th>
+                                    <th>Total Amount</th>
+                                    <th>Total Consumption (kWh)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results['electricity'] %}
+                                <tr>
+                                    <td>{{ row.campus }}</td>
+                                    <td>{{ row.category }}</td>
+                                    <td>{{ row.month }}</td>
+                                    <td>{{ row.year }}</td>
+                                    <td>{{ row.prev_reading }}</td>
+                                    <td>{{ row.current_reading }}</td>
+                                    <td>{{ row.multiplier }}</td>
+                                    <td>{{ row.total_amount }}</td>
+                                    <td>{{ row.consumption }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                
+                        <!-- Pagination for Electricity Consumption -->
+                        <nav aria-label="Electricity Consumption pagination">
+                            <ul class="pagination justify-content-left">
+                                {% if pagination_info.electricity.current_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', electricity_page=pagination_info.electricity.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Previous
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Page {{ pagination_info.electricity.current_page }} of {{ pagination_info.electricity.total_pages }}</span>
+                                </li>
+                                {% if pagination_info.electricity.current_page < pagination_info.electricity.total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', electricity_page=pagination_info.electricity.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Next
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                        <!-- Water Consumption Table -->
+                        <h3>Water Consumption</h3>
+                        <table class="table table-bordered" id="waterTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                    <th>Previous Reading (m³)</th>
+                                    <th>Current Reading (m³)</th>
+                                    <th>Consumption (m³)</th>
+                                    <th>Total Amount (₱)</th>
+                                    <th>Price per m³ (₱)</th>
+                                    <th>Factor (kg CO₂/m³)</th>
+                                    <th>Factor (t CO₂/m³)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results['water'] %}
+                                <tr>
+                                    <td>{{ row.Campus }}</td>
+                                    <td>{{ row.Category }}</td>
+                                    <td>{{ row.Date }}</td>
+                                    <td>{{ row.PreviousReading }}</td>
+                                    <td>{{ row.CurrentReading }}</td>
+                                    <td>{{ row.Consumption }}</td>
+                                    <td>{{ row.TotalAmount }}</td>
+                                    <td>{{ row.PricePerLiter }}</td>
+                                    <td>{{ row.FactorKGCO2e }}</td>
+                                    <td>{{ row.FactorTCO2e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination for Water Consumption -->
+                        <nav aria-label="Water Consumption pagination">
+                            <ul class="pagination justify-content-left">
+                                {% if pagination_info.water.current_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', water_page=pagination_info.water.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Previous
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Page {{ pagination_info.water.current_page }} of {{ pagination_info.water.total_pages }}</span>
+                                </li>
+                                {% if pagination_info.water.current_page < pagination_info.water.total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', water_page=pagination_info.water.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Next
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+
+                        <!-- Fuel Emissions Table -->
+                        <h3>Fuel Emissions</h3>
+                        <table class="table table-bordered" id="fuelEmissionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Date</th>
+                                    <th>Driver</th>
+                                    <th>Type</th>
+                                    <th>Vehicle Type</th>
+                                    <th>Plate Number</th>
+                                    <th>Category</th>
+                                    <th>Fuel Type</th>
+                                    <th>Quantity (Liters)</th>
+                                    <th>Total Amount</th>
+                                    <th>CO₂ Emission (kg)</th>
+                                    <th>NH₄ Emission (kg CO₂-e)</th>
+                                    <th>N₂O Emission (kg CO₂-e)</th>
+                                    <th>Total Emission (kg CO₂-e)</th>
+                                    <th>Total Emission (t CO₂-e)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results['fuelEmissions'] %}
+                                <tr>
+                                    <td>{{ row.campus }}</td>
+                                    <td>{{ row.date }}</td>
+                                    <td>{{ row.driver }}</td>
+                                    <td>{{ row.type }}</td>
+                                    <td>{{ row.vehicle_equipment }}</td>
+                                    <td>{{ row.plate_no }}</td>
+                                    <td>{{ row.category }}</td>
+                                    <td>{{ row.fuel_type }}</td>
+                                    <td>{{ row.quantity_liters }}</td>
+                                    <td>{{ row.total_amount }}</td>
+                                    <td>{{ row.co2_emission }}</td>
+                                    <td>{{ row.nh4_emission }}</td>
+                                    <td>{{ row.n2o_emission }}</td>
+                                    <td>{{ row.total_emission }}</td>
+                                    <td>{{ row.total_emission_t }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                       <!-- Pagination for Fuel Emissions -->
+                        <nav aria-label="Fuel Emissions pagination">
+                            <ul class="pagination justify-content-left">
+                                {% if pagination_info.fuelEmissions.current_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', fuelEmissions_page=pagination_info.fuelEmissions.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Previous
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Page {{ pagination_info.fuelEmissions.current_page }} of {{ pagination_info.fuelEmissions.total_pages }}</span>
+                                </li>
+                                {% if pagination_info.fuelEmissions.current_page < pagination_info.fuelEmissions.total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', fuelEmissions_page=pagination_info.fuelEmissions.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Next
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                        <!-- Treated Water Table -->
+                        <h3>Treated Water</h3>
+                        <table class="table table-bordered" id="treatedWaterTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Month</th>
+                                    <th>Treated Water Volume (m³)</th>
+                                    <th>Reused Treated Water Volume (m³)</th>
+                                    <th>Effluent Volume (m³)</th>
+                                    <th>Price per Liter</th>
+                                    <th>Factor (kg CO₂-e/m³)</th>
+                                    <th>Factor (t CO₂-e/m³)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results['treatedWater'] %}
+                                <tr>
+                                    <td>{{ row.Campus }}</td>
+                                    <td>{{ row.Month }}</td>
+                                    <td>{{ row.TreatedWaterVolume }}</td>
+                                    <td>{{ row.ReusedTreatedWaterVolume }}</td>
+                                    <td>{{ row.EffluentVolume }}</td>
+                                    <td>{{ row.PricePerLiter }}</td>
+                                    <td>{{ row.FactorKGCO2e }}</td>
+                                    <td>{{ row.FactorTCO2e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination for Treated Water -->
+                        <nav aria-label="Treated Water pagination">
+                            <ul class="pagination justify-content-left">
+                                {% if pagination_info.treatedWater.current_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', treatedWater_page=pagination_info.treatedWater.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Previous
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Page {{ pagination_info.treatedWater.current_page }} of {{ pagination_info.treatedWater.total_pages }}</span>
+                                </li>
+                                {% if pagination_info.treatedWater.current_page < pagination_info.treatedWater.total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', treatedWater_page=pagination_info.treatedWater.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Next
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+
+                        <!-- Segregated Solid Waste Table -->
+                        <h3>Segregated Solid Waste</h3>
+                        <table class="table table-bordered" id="segWasteTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Year</th>
+                                    <th>Quarter</th>
+                                    <th>Month</th>
+                                    <th>Main Category</th>
+                                    <th>Subcategory</th>
+                                    <th>Quantity (kg)</th>
+                                    <th>GHG Emission (kg CO₂-e)</th>
+                                    <th>GHG Emission (t CO₂-e)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results['segWaste'] %}
+                                <tr>
+                                    <td>{{ row.Campus }}</td>
+                                    <td>{{ row.Year }}</td>
+                                    <td>{{ row.Quarter }}</td>
+                                    <td>{{ row.Month }}</td>
+                                    <td>{{ row.MainCategory }}</td>
+                                    <td>{{ row.SubCategory }}</td>
+                                    <td>{{ row.QuantityInKG }}</td>
+                                    <td>{{ row.GHGEmissionKGCO2e }}</td>
+                                    <td>{{ row.GHGEmissionTCO2e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination for Segregated Solid Waste -->
+                        <nav aria-label="Segregated Solid Waste pagination">
+                            <ul class="pagination justify-content-left">
+                                {% if pagination_info.segWaste.current_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', segWaste_page=pagination_info.segWaste.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Previous
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Page {{ pagination_info.segWaste.current_page }} of {{ pagination_info.segWaste.total_pages }}</span>
+                                </li>
+                                {% if pagination_info.segWaste.current_page < pagination_info.segWaste.total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', segWaste_page=pagination_info.segWaste.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Next
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                        <!-- Unsegregated Solid Waste Table -->
+                        <h3>Unsegregated Solid Waste</h3>
+                        <table class="table table-bordered" id="unsegWasteTable">
+                            <thead>
+                                <tr>
+                                    <th>Campus</th>
+                                    <th>Year</th>
+                                    <th>Month</th>
+                                    <th>Waste Type</th>
+                                    <th>Quantity (kg)</th>
+                                    <th>Sent to Landfill (kg)</th>
+                                    <th>Sent to Landfill (tons)</th>
+                                    <th>GHG Emission (kg CO₂-e)</th>
+                                    <th>GHG Emission (t CO₂-e)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results['unsegWaste'] %}
+                                <tr>
+                                    <td>{{ row.Campus }}</td>
+                                    <td>{{ row.Year }}</td>
+                                    <td>{{ row.Month }}</td>
+                                    <td>{{ row.WasteType }}</td>
+                                    <td>{{ row.QuantityInKG }}</td>
+                                    <td>{{ row.SentToLandfillKG }}</td>
+                                    <td>{{ row.SentToLandfillTONS }}</td>
+                                    <td>{{ row.GHGEmissionKGCO2e }}</td>
+                                    <td>{{ row.GHGEmissionTCO2e }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination for Unsegregated Solid Waste -->
+                        <nav aria-label="Unsegregated Solid Waste pagination">
+                            <ul class="pagination justify-content-left">
+                                {% if pagination_info.unsegWaste.current_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', unsegWaste_page=pagination_info.unsegWaste.current_page - 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Previous
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Page {{ pagination_info.unsegWaste.current_page }} of {{ pagination_info.unsegWaste.total_pages }}</span>
+                                </li>
+                                {% if pagination_info.unsegWaste.current_page < pagination_info.unsegWaste.total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('report', unsegWaste_page=pagination_info.unsegWaste.current_page + 1, month=request.args.get('month'), year=request.args.get('year')) }}">
+                                        Next
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                                       <!-- Save As Button and Modal for Export Options -->
+                                       <button class="btn btn-primary" onclick="$('#exportOptionsModal').modal('show')">Save As</button>
+                                       <div class="modal fade" id="exportOptionsModal" tabindex="-1">
+                                           <div class="modal-dialog">
+                                               <div class="modal-content">
+                                                   <div class="modal-header">
+                                                       <h5 class="modal-title">Select Consumption Report</h5>
+                                                       <button type="button" class="close" data-dismiss="modal">×</button>
+                                                   </div>
+                                                   <div class="modal-body">
+                                                       <form>
+                                                           <div class="form-group">
+                                                               <label for="tableSelect">Select Table:</label>
+                                                               <select id="tableSelect" class="form-control">
+                                                                   <option value="electricityTable">Electricity</option>
+                                                                   <option value="waterTable">Water</option>
+                                                                   <option value="segWasteTable">Segregated Solid Waste</option>
+                                                                   <option value="unsegWasteTable">Unsegregated Solid Waste</option>
+                                                                   <option value="treatedWaterTable">Treated Water</option>
+                                                                   <option value="fuelEmissionsTable">Fuel Emissions</option>
+                                                               </select>
+                                                           </div>
+                                                       </form>
+                                                   </div>
+                                                   <div class="modal-footer">
+                                                       <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
+                                                       <button class="btn btn-success" onclick="generateExcel()">Download Excel</button>
+                                                       <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                   </div>
+                                               </div>
+                                             </div>
+                                         </div>
+
+   
+
+
+                        <script>
+                            function applyFilters() {
+    const month = document.getElementById('monthFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    const params = new URLSearchParams(window.location.search);
+
+    if (month) {
+        params.set('month', month);
+    } else {
+        params.delete('month'); // Remove month filter to display all months
+    }
+
+    if (year) {
+        params.set('year', year);
+    } else {
+        params.delete('year'); // Remove year filter to display all years
+    }
+
+    // Update the page URL with the new filters
+    window.location.search = params.toString();
+}
+
+// Set selected values from the URL parameters
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const selectedMonth = params.get('month');
+    const selectedYear = params.get('year');
+
+    if (selectedMonth) {
+        document.getElementById('monthFilter').value = selectedMonth;
+    }
+    if (selectedYear) {
+        document.getElementById('yearFilter').value = selectedYear;
+    }
+});
+
+
+                            
+function printReport() {
+    const tableId = document.getElementById('tableSelect').value;
+    const tableElement = document.getElementById(tableId);
+
+    if (!tableElement) {
+        alert('Please select a valid table.');
+        return;
+    }
+
+    // Ask the user if they want to print filtered data or all data
+    const printFiltered = confirm("Do you want to print only the filtered data? Click 'Cancel' for all data.");
+
+    if (printFiltered) {
+        // Print only the visible rows in the current table (filtered data)
+        const tempTable = tableElement.cloneNode(true);
+        tempTable.querySelectorAll('tbody tr').forEach(row => {
+            if (row.style.display === 'none') {
+                row.remove(); // Remove hidden rows
+            }
+        });
+
+        openPrintWindow(tempTable);
+    } else {
+        // Fetch all data from the server for the selected table
+        fetch(`/fetch_all_data?table=${tableId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Create a temporary table element to hold all data for printing
+                const tempTable = document.createElement('table');
+                tempTable.classList.add('table', 'table-bordered');
+
+                // Create table header dynamically based on the keys in the JSON data
+                if (data.length > 0) {
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+
+                    // Filter out the 'id' column
+                    Object.keys(data[0]).forEach(key => {
+                        if (key.toLowerCase() !== 'id') {
+                            const th = document.createElement('th');
+                            th.textContent = key.replace(/_/g, ' ').toUpperCase();
+                            headerRow.appendChild(th);
+                        }
+                    });
+
+                    thead.appendChild(headerRow);
+                    tempTable.appendChild(thead);
+                }
+
+                // Create table body with all data from the server, excluding 'id' column
+                const tbody = document.createElement('tbody');
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    Object.entries(row).forEach(([key, cellValue]) => {
+                        if (key.toLowerCase() !== 'id') {
+                            const td = document.createElement('td');
+                            td.textContent = cellValue;
+                            tr.appendChild(td);
+                        }
+                    });
+                    tbody.appendChild(tr);
+                });
+                tempTable.appendChild(tbody);
+
+                openPrintWindow(tempTable);
+            })
+            .catch(error => {
+                console.error('Error fetching all data:', error);
+                alert('An error occurred while fetching data.');
+            });
+    }
+}
+
+function openPrintWindow(tempTable) {
+    // Open a new window for printing
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>Print Report</title>');
+    printWindow.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">');
+    printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { padding: 4px; text-align: center; border: 1px solid #ddd; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write('<div style="text-align: center; margin-bottom: 20px;"><h2>Consumption Report</h2></div>');
+    printWindow.document.write(tempTable.outerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function generateExcel() {
+    const tableId = document.getElementById('tableSelect').value;
+    const tableElement = document.getElementById(tableId);
+
+    if (!tableElement) {
+        alert('Please select a valid table.');
+        return;
+    }
+
+    // Ask if the user wants to download filtered data or all data
+    const downloadFiltered = confirm("Do you want to download only the filtered data? Click 'Cancel' for all data.");
+
+    if (downloadFiltered) {
+        // Download filtered data visible in the table
+        let csvContent = "data:text/csv;charset=utf-8,";
+        const rows = Array.from(tableElement.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+        const headers = Array.from(tableElement.querySelectorAll('thead th')).map(th => `"${th.innerText}"`).join(",");
+        csvContent += headers + "\r\n";
+
+        rows.forEach(row => {
+            const cols = row.querySelectorAll("td");
+            const csvRow = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
+            csvContent += csvRow + "\r\n";
+        });
+
+        downloadCSV(csvContent, `${tableId}_filtered_data.csv`);
+    } else {
+        // Fetch all data from the server and download it as Excel
+        fetch(`/fetch_all_data?table=${tableId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Create CSV content from all data, excluding 'id' column
+                let csvContent = "data:text/csv;charset=utf-8,";
+                const keys = Object.keys(data[0]).filter(key => key.toLowerCase() !== 'id');
+                csvContent += keys.map(key => `"${key.replace(/_/g, ' ').toUpperCase()}"`).join(",") + "\r\n";
+
+                data.forEach(row => {
+                    const csvRow = keys.map(key => `"${row[key]}"`).join(",");
+                    csvContent += csvRow + "\r\n";
+                });
+
+                downloadCSV(csvContent, `${tableId}_all_data.csv`);
+            })
+            .catch(error => {
+                console.error('Error fetching all data:', error);
+                alert('An error occurred while fetching data.');
+            });
+    }
+}
+
+function downloadCSV(csvContent, filename) {
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
+                        </script>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Include Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+</body>
+</html>
