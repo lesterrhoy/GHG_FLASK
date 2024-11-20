@@ -10,22 +10,22 @@
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+    
 </head>
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+       <!-- Spacer to push "Sign-out" to the right -->
+       <div class="ms-auto"></div>
+    
+       <!-- Sign-out Icon and Link -->
+       <ul class="navbar-nav">
+           <li class="nav-item">
+               <a class="nav-link" href="{{ url_for('logout') }}">
+                   <i class="fas fa-power-off fa-fw"></i> Sign-out
+               </a>
+           </li>
+       </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -38,10 +38,10 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">OFFICE'S</div>
+                        <div class="sb-sidenav-menu-heading">OFFICE</div>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                             <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                            EMU
+                            Consumption
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
@@ -54,14 +54,17 @@
                                 <a class="nav-link" href="water_consumption">Water</a>
                             </nav>
                         </div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                        
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
+                            Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapsePages">
                             <nav class="sb-sidenav-menu-nested nav">
                                 <a class="nav-link" href="{{ url_for('report') }}">Consumption Report</a>
+                            </nav>
+                        </div>
                         
                     </div>
                 </div>
@@ -75,6 +78,121 @@
                     <ol class="breadcrumb mb-4">
                         <li class="breadcrumb-item active">Consumption's Trend</li>
                     </ol>
+
+                    <div class="container-fluid px-4">
+                      
+                        </ol>
+                    
+                        <!-- Total Emission Card -->
+                        <div class="row mb-4">
+                            <div class="col-xl-12">
+                                <div class="card bg-dark text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Total Emission</div>
+                                        <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- Individual Consumption Cards -->
+                        <div class="row">
+                            <!-- Electricity Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-primary text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Electricity</div>
+                                        <div><strong>Current Emission:</strong> {{ current_emission_data.electricity }} CO₂e</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="electricity_consumption">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Fuel Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-warning text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Fuel</div>
+                                        <div><strong>Current Emission:</strong> {{ current_emission_data.fuel }} CO₂e</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="emu_fuel">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Waste Segregated Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-success text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Waste Segregated</div>
+                                        <div><strong>Quantity:</strong> {{ waste_segregation_data[-1] if waste_segregation_data else 0 }} kg</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="waste_segregation">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Waste Unsegregated Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-danger text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Waste Unsegregated</div>
+                                        <div><strong>Quantity:</strong> {{ waste_unsegregation_data[-1] if waste_unsegregation_data else 0 }} kg</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="waste_unsegregation">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Treated Water Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-info text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Treated Water</div>
+                                        <div><strong>Volume:</strong> {{ treated_water_data[-1] if treated_water_data else 0 }} liters</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="treated_water">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                            <!-- Water Consumption Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <div class="card bg-secondary text-white h-100">
+                                    <div class="card-body">
+                                        <div class="card-title">Water Consumption</div>
+                                        <div><strong>Consumption:</strong> {{ water_data[-1] if water_data else 0 }} liters</div>
+                                    </div>
+                                    <div class="card-footer d-flex align-items-center justify-content-between">
+                                        <a class="small text-white stretched-link" href="water_consumption">View Details</a>
+                                        <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="get" action="{{ url_for('emu_dashboard') }}">
+                        <label for="year">Select Year:</label>
+                        <select name="year" id="year" onchange="this.form.submit()">
+                            {% for year in range(current_year + 2, current_year - 5, -1) %}  <!-- Adjust range as needed -->
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    
+                    
 
                     <!-- Charts for Each Consumption -->
                     <div class="row">
@@ -129,19 +247,32 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Treated Water Forecast Section -->
+<div class="col-xl-6">
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-water me-1"></i>
+                Treated Water Forecast
+            </div>
+            <div>
+                <form method="get" action="{{ url_for('emu_dashboard') }}">
+                    <label for="month" class="me-2">Select Month:</label>
+                    <select name="month" id="month" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
+                        <option value="" {% if not selected_month %}selected{% endif %}>All Months</option>
+                        {% for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+                            <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="treatedWaterChart"></canvas>
+        </div>
+    </div>
+</div>
 
-                        <!-- Treated Water Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-water me-1"></i>
-                                    Treated Water Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="treatedWaterChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Water Consumption Chart -->
                         <div class="col-xl-6">
@@ -173,88 +304,161 @@
             </footer>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    const selectedYear = {{ selected_year }}; // Year selected in Flask
+    const labels = {{ labels | tojson }}; // Initial labels for the months (e.g., "Jan/23", "Feb/23", ...)
+    const treatedWaterLabels = {{ month_labels | tojson }}; // Initial numeric month labels (1 to 12)
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-    <script src="js/scripts.js"></script>
+    // Extracting historical and forecast data for all categories from Flask context
+    const electricityForecastData = {{ forecast_data.electricity_forecast.prophet.forecast | tojson }};
+    const electricityHistoricalData = {{ electricity_data | tojson }};
 
-    <script>
-        // Helper function to get month names
-        function getMonthNames(startMonthIndex, totalMonths) {
-            const monthNames = [
-                "January", "February", "March", "April", "May", "June", 
-                "July", "August", "September", "October", "November", "December"
-            ];
-            let labels = [];
-            for (let i = 0; i < totalMonths; i++) {
-                let month = monthNames[(startMonthIndex + i) % 12];
-                if (i >= 12) {  // Mark future trend months
-                    month += " (Future)";
-                }
-                labels.push(month);
-            }
-            return labels;
-        }
-    
-        // Get the current month index
-        const currentMonthIndex = new Date().getMonth();
-    
-        // Generate labels for 12 months plus 2 future months
-        const labels = getMonthNames(currentMonthIndex, 14);
-    
-        // Function to create a chart with connected lines
-        function createChart(chartId, label, data, historicalColor, forecastColor) {
-            const ctx = document.getElementById(chartId).getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Historical Data & Forecast',
-                        data: data,
-                        borderColor: function (context) {
-                            const index = context.dataIndex;
-                            return index >= 12 ? forecastColor : historicalColor;
-                        },
+    const fuelForecastData = {{ forecast_data.fuel_forecast.prophet.forecast | tojson }};
+    const fuelHistoricalData = {{ fuel_data | tojson }};
+
+    const wasteSegregatedForecastData = {{ forecast_data.waste_segregated_forecast.prophet.forecast | tojson }};
+    const wasteSegregatedHistoricalData = {{ waste_segregated_data | tojson }};
+
+    const wasteUnsegregatedForecastData = {{ forecast_data.waste_unsegregated_forecast.prophet.forecast | tojson }};
+    const wasteUnsegregatedHistoricalData = {{ waste_unsegregated_data | tojson }};
+
+    const waterForecastData = {{ forecast_data.water_forecast.prophet.forecast | tojson }};
+    const waterHistoricalData = {{ water_data | tojson }};
+
+    const treatedWaterForecastData = {{ forecast_data.treated_water_forecast.prophet.forecast | tojson }};
+    const treatedWaterHistoricalData = {{ treated_water_data | tojson }};
+
+    // Function to create a line chart displaying historical and forecast data
+    function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+
+        // Create the chart
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: `${label} (Actual)`,
+                        data: historicalData,
+                        borderColor: historicalColor,
+                        backgroundColor: historicalColor,
                         fill: false,
                         borderWidth: 2,
-                        pointBackgroundColor: function (context) {
-                            const index = context.dataIndex;
-                            return index >= 12 ? forecastColor : historicalColor;
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    title: { display: true, text: label + ' Forecast' },
-                    scales: {
-                        x: { title: { display: true, text: 'Month' } },
-                        y: { title: { display: true, text: 'Value' }, beginAtZero: true }
+                        pointBackgroundColor: historicalColor,
+                        showLine: true
                     },
+                    {
+                        label: `${label} (Forecast)`,
+                        data: forecastData,
+                        borderColor: forecastColor,
+                        backgroundColor: forecastColor,
+                        fill: false,
+                        borderDash: [5, 5], // Dashed line for forecast
+                        borderWidth: 2,
+                        pointBackgroundColor: forecastColor,
+                        showLine: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: `${label} Forecast for ${selectedYear}`
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Month' },
+                        ticks: { maxRotation: 0, minRotation: 0 }
+                    },
+                    y: {
+                        title: { display: true, text: yAxisLabel },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
                     legend: {
                         display: true,
                         labels: {
-                            usePointStyle: true
+                            usePointStyle: true,
+                            padding: 20
                         }
                     }
                 }
-            });
+            }
+        });
+    }
+
+    // Initialize charts with initial data
+    const electricityChart = createForecastChart('electricityChart', 'Electricity Consumption', electricityHistoricalData, electricityForecastData, labels, 'blue', 'red', 'kg CO2/kWh');
+    const fuelChart = createForecastChart('fuelChart', 'Fuel Consumption', fuelHistoricalData, fuelForecastData, labels, 'green', 'orange', 'Total Emission (kg CO2)');
+    const wasteSegregatedChart = createForecastChart('wasteSegregatedChart', 'Waste Segregation', wasteSegregatedHistoricalData, wasteSegregatedForecastData, labels, 'purple', 'brown', 'GHG Emission (kg CO2)');
+    const wasteUnsegregatedChart = createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregation', wasteUnsegregatedHistoricalData, wasteUnsegregatedForecastData, labels, 'teal', 'gray', 'GHG Emission (kg CO2)');
+    const waterChart = createForecastChart('waterChart', 'Water Consumption', waterHistoricalData, waterForecastData, labels, 'blue', 'lightblue', 'kg CO2/Liter');
+    const treatedWaterChart = createForecastChart('treatedWaterChart', 'Treated Water Consumption', treatedWaterHistoricalData, treatedWaterForecastData, treatedWaterLabels, 'green', 'lime', 'kg CO2/m³');
+
+    // Connect to the Socket.IO server
+    const socket = io();
+
+    // Listen for real-time data updates and update charts
+    socket.on('update_emissions', (data) => {
+        console.log('Real-time emission update:', data);
+
+        // Check if new labels are present (e.g., future years)
+        if (data.labels && JSON.stringify(data.labels) !== JSON.stringify(electricityChart.data.labels)) {
+            electricityChart.data.labels = data.labels;
+            fuelChart.data.labels = data.labels;
+            wasteSegregatedChart.data.labels = data.labels;
+            wasteUnsegregatedChart.data.labels = data.labels;
+            waterChart.data.labels = data.labels;
+            treatedWaterChart.data.labels = data.labels;
         }
-    
-        // Extract forecast data from the template context
-        const forecastData = {{ forecast_data | tojson }};
-    
-        // Create charts for each forecast using the updated function
-        createChart('electricityChart', 'Electricity', forecastData.electricity_forecast, 'blue', 'orange');
-        createChart('fuelChart', 'Fuel', forecastData.fuel_forecast, 'blue', 'orange');
-        createChart('wasteSegregatedChart', 'Waste Segregated', forecastData.waste_segregation_forecast, 'blue', 'orange');
-        createChart('wasteUnsegregatedChart', 'Waste Unsegregated', forecastData.waste_unsegregation_forecast, 'blue', 'orange');
-        createChart('treatedWaterChart', 'Treated Water', forecastData.treated_water_forecast, 'blue', 'orange');
-        createChart('waterChart', 'Water Consumption', forecastData.water_forecast, 'blue', 'orange');
-    </script>
-    
-    
-    
-    
+
+        // Update the data for each chart
+        updateChartData(electricityChart, data.electricity);
+        updateChartData(fuelChart, data.fuel);
+        updateChartData(wasteSegregatedChart, data.waste_segregated);
+        updateChartData(wasteUnsegregatedChart, data.waste_unsegregated);
+        updateChartData(waterChart, data.water);
+        updateChartData(treatedWaterChart, data.treated_water);
+    });
+
+    socket.on('update_forecast', (forecastData) => {
+        console.log('Real-time forecast update:', forecastData);
+
+        // Update forecast data dynamically for each chart
+        updateChartData(electricityChart, forecastData.electricity_forecast, 1);
+        updateChartData(fuelChart, forecastData.fuel_forecast, 1);
+        updateChartData(wasteSegregatedChart, forecastData.waste_segregated_forecast, 1);
+        updateChartData(wasteUnsegregatedChart, forecastData.waste_unsegregated_forecast, 1);
+        updateChartData(waterChart, forecastData.water_forecast, 1);
+        updateChartData(treatedWaterChart, forecastData.treated_water_forecast, 1);
+    });
+
+    // Function to update chart data and refresh the chart
+    function updateChartData(chart, newData, datasetIndex = 0) {
+        chart.data.datasets[datasetIndex].data = newData;
+        chart.update();
+    }
+</script>
+
+<!-- Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
 </body>
+</html>
+
+
+
+
+

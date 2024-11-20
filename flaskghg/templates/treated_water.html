@@ -9,6 +9,8 @@
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
      table {
@@ -175,6 +177,7 @@
 }
 
 
+
 .buttons-container {
     display: flex;
     justify-content: center;
@@ -271,22 +274,25 @@ button:last-child:hover {
     background-color: #b71c1c;
 }
 
-        .pagination {
-            margin-top: 10px; /* Adjust spacing */
-            text-align: center;
-        }
-
-        .pagination button {
-            padding: 5px 8px; /* Smaller button size */
-            margin: 2px; /* Adjust margin */
-            font-size: 12px; /* Smaller font size */
-            cursor: pointer;
-        }
-
-        .pagination .page-info {
-            margin: 0 10px;
-            font-size: 14px;
-        }
+.pagination-container {
+         margin-top: 20px; /* Add some margin above the pagination */
+         text-align: center;
+     }
+     
+     .pagination .page-item .page-link {
+         color: black; /* Set font color to black */
+     }
+     
+     .pagination .page-item.active .page-link {
+         background-color: #d50000; /* Active page with the same red color */
+         border-color: #d50000;
+         color: white; /* White text for the active page */
+     }
+     
+     .pagination .page-link:hover {
+         background-color: #b71c1c; /* Darker red on hover */
+         color: white; /* White text on hover */
+     }
 
         .delete-icon {
             cursor: pointer;
@@ -320,18 +326,17 @@ button:last-child:hover {
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU</a>
-        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><a class="dropdown-item" href="#!">Settings</a></li>
-                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
-                    <li><hr class="dropdown-divider" /></li>
-                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-                </ul>
-            </li>
-        </ul>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
     </nav>
 
     <div id="layoutSidenav">
@@ -344,18 +349,13 @@ button:last-child:hover {
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">OFFICES</div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
-                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                            EMU
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                                <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
-                            </nav>
-                        </div>
+                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
                     </div>
                 </div>
             </nav>
@@ -376,14 +376,31 @@ button:last-child:hover {
                         </div>
                     </div>
 
-                    <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
-
-                    <div class="header text-center mt-4">
-                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="Logo" style="width: 50px; height: auto;">
-                        <h2>Treated Water Consumption Report</h2>
-                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Logo" style="width: 50px; height: auto;">
+                    <div id="TreatedSection">
+                        <div class="buttons-container mt-3 d-flex justify-content-start align-items-center gap-2">
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
+                            <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
+                        </div>
                     </div>
-        
+
+                    <label for="monthFilter">Month:</label>
+                        <select id="monthFilter" name="month" onchange="applyFilter()">
+                            <option value="">All Months</option>
+                            <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
+                            <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
+                            <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
+                            <option value="April" {% if selected_month == 'April' %}selected{% endif %}>April</option>
+                            <option value="May" {% if selected_month == 'May' %}selected{% endif %}>May</option>
+                            <option value="June" {% if selected_month == 'June' %}selected{% endif %}>June</option>
+                            <option value="July" {% if selected_month == 'July' %}selected{% endif %}>July</option>
+                            <option value="August" {% if selected_month == 'August' %}selected{% endif %}>August</option>
+                            <option value="September" {% if selected_month == 'September' %}selected{% endif %}>September</option>
+                            <option value="October" {% if selected_month == 'October' %}selected{% endif %}>October</option>
+                            <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
+                            <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
+                        </select>
+
                     <table id="reportTable">
                         <thead>
                             <tr>
@@ -416,30 +433,33 @@ button:last-child:hover {
                             {% endfor %}
                         </tbody>
                     </table>
+
+                    <!-- Pagination controls -->
+                    <div class="pagination-container">
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination">
+                                {% if total_pages > 1 %}
+                                    <!-- Previous button -->
+                                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ url_for('treated_water', page=current_page - 1) }}" tabindex="-1">Previous</a>
+                                    </li>
+                                    
+                                    <!-- Page numbers -->
+                                    <span>Page {{ current_page }} of {{ total_pages }}</span>
+                                    
+                                    <!-- Next button -->
+                                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ url_for('treated_water', page=current_page + 1) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    
+
                 </div>
             </main>
         </div>
-    </div>
-
-    <!-- Pagination controls -->
-    <div class="pagination-container">
-        <nav aria-label="Page navigation example">
-            <ul class="pagination justify-content-center">
-                {% if total_pages > 1 %}
-                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('treated_water', page=current_page - 1) }}" tabindex="-1">Previous</a>
-                    </li>
-                    {% for i in range(1, total_pages + 1) %}
-                        <li class="page-item {% if i == current_page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('treated_water', page=i) }}">{{ i }}</a>
-                        </li>
-                    {% endfor %}
-                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('treated_water', page=current_page + 1) }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
     </div>
 
     <div id="myModal" class="modal">
@@ -512,8 +532,140 @@ button:last-child:hover {
     </div>
     
    
-
     <script>
+        function applyFilter() {
+    const month = document.getElementById('monthFilter').value;
+    let url = `/treated_water?`;
+
+    if (month) {
+        url += `month=${encodeURIComponent(month)}`;
+    }
+
+    window.location.href = url; // Redirect to the URL with the month filter
+}
+
+
+        // Function to print the Treated Water report
+    function printReport() {
+    // Retrieve filter values
+    const month = document.getElementById('monthFilter').value;
+
+    // Build query string based on filters
+    let queryString = '';
+    if (month) queryString += `month=${month}`;
+
+    // Determine URL for fetching data based on the presence of filters
+    const fetchUrl = queryString ? `/treated_water/all?${queryString}` : `/treated_water/all`;
+
+    // Fetch data from the server
+    fetch(fetchUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Generate the table header
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Month</th>
+                        <th>Treated Water Volume (m³)</th>
+                        <th>Reused Treated Water Volume (m³)</th>
+                        <th>Effluent Volume (m³)</th>
+                        <th>Price per Liter</th>
+                        <th>Factor (kg CO₂-e/m³)</th>
+                        <th>Factor (t CO₂-e/m³)</th>
+                    </tr>
+                </thead>`;
+
+            // Generate table rows with fetched data
+            const tableBody = data.map(report => `
+                <tr>
+                    <td>${report.Campus}</td>
+                    <td>${report.Month}</td>
+                    <td>${report.TreatedWaterVolume}</td>
+                    <td>${report.ReusedTreatedWaterVolume}</td>
+                    <td>${report.EffluentVolume}</td>
+                    <td>${report.PricePerLiter}</td>
+                    <td>${report.FactorKGCO2e}</td>
+                    <td>${report.FactorTCO2e}</td>
+                </tr>
+            `).join('');
+
+            // Prepare print layout
+            const printContents = `
+                <div class="header">
+                    <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="BSU Logo" style="width: 50px; height: auto;">
+                    <h2>Treated Water Consumption Report</h2>
+                    <img src="{{ url_for('static', filename='images/csd.png') }}" alt="CSD Logo" style="width: 50px; height: auto;">
+                </div>
+                <table border="1" cellspacing="0" cellpadding="5">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            // Print the content
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+
+function downloadExcel() {
+    // Ensure the month filter element exists and retrieve its value
+    const monthElement = document.getElementById('monthFilter');
+    const month = monthElement ? monthElement.value : ''; // Default to empty if not found
+
+    // Build the query string based on the selected month filter
+    let queryString = '';
+    if (month) queryString += `month=${encodeURIComponent(month)}`;
+
+    // Ensure the query string is well-formed
+    queryString = queryString ? '?' + queryString : '';
+
+    // Construct the fetch URL, with or without filters
+    const fetchUrl = `/treated_water/all${queryString}`;
+
+    // Fetch the data from the server
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            // Create a new worksheet from the data
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Treated Water Consumption");
+
+            // Add column headers to the worksheet
+            XLSX.utils.sheet_add_aoa(worksheet, [[
+                "Campus", "Month", "Date", "Previous Reading (m³)", "Current Reading (m³)",
+                "Consumption (m³)", "Total Amount (₱)", "Price per m³ (₱)",
+                "Factor (kg CO₂/m³)"
+            ]], { origin: "A1" });
+
+            // Write the Excel file
+            XLSX.writeFile(workbook, "TreatedWaterConsumptionReport.xlsx");
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
+
+
+
+
+
         function deleteRow(id) {
         if (confirm("Are you sure you want to delete this record?")) {
             fetch(`/delete_report/${id}`, {
