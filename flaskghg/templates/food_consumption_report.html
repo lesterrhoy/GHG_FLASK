@@ -336,11 +336,43 @@
             <div class="mb-3">
                 <button id="downloadPdfBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>
                 <button id="downloadExcelBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-            </div>
+                <button id="downloadCsvBtn" style="background-color: #007bff; border-color: #007bff;" class="btn btn-info" onclick="generateCSV()">Download CSV</button>            </div>
     </div>
 
 
 <script>
+     function generateCSV() {
+    // Get the table element
+    const table = document.getElementById('food_data');
+    if (!table) {
+        alert('No data available to download as CSV.');
+        return;
+    }
+
+    // Extract data from the table
+    let csvContent = '';
+    const rows = table.querySelectorAll('tr');
+    rows.forEach((row) => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = [];
+        cells.forEach((cell) => {
+            rowData.push(`"${cell.textContent.trim()}"`); // Escape content with quotes
+        });
+        csvContent += rowData.join(',') + '\n';
+    });
+
+    // Create a Blob from the CSV content
+    const csvBlob = new Blob([csvContent], { type: 'text/csv' });
+
+    // Create a link element and trigger the download
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(csvBlob);
+    link.download = 'food_consumption_report.csv'; // Set the filename
+    link.click(); // Trigger the download
+}
+
+   
+
     function downloadPDF() {
         // Get filter values
         const campus = document.getElementById("campus").value;

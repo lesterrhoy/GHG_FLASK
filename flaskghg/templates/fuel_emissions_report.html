@@ -312,13 +312,62 @@
                     <button id="exportToExcelBtn" onclick="downloadExcel()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
                         Export to Excel
                     </button>
-                    
+                    <button id="downloadCSVBtn" onclick="downloadCSV()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">
+                        Download CSV
+                    </button>
+                    <BR>
                 </div>
             </main>
         </div>
     </div>
 
     <script>
+        function downloadCSV() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const url = `/report/fuel_emissions/all_data?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                alert("No data available to export.");
+                return;
+            }
+
+            // Prepare the CSV data
+            const headers = [
+                "Campus", "Date", "Driver", "Type", "Vehicle Type", "Plate Number",
+                "Category", "Fuel Type", "Quantity (Liters)", "Total Amount",
+                "CO₂ Emission (kg)", "NH₄ Emission (kg CO₂-e)", "N₂O Emission (kg CO₂-e)",
+                "Total Emission (kg CO₂-e)", "Total Emission (t CO₂-e)"
+            ];
+            const rows = data.map(report => [
+                report.campus, report.date, report.driver, report.type, report.vehicle_equipment,
+                report.plate_no, report.category, report.fuel_type, report.quantity_liters,
+                report.total_amount, report.co2_emission, report.nh4_emission, report.n2o_emission,
+                report.total_emission, report.total_emission_t
+            ]);
+
+            // Convert rows to CSV string
+            const csvContent = [
+                headers.join(","), // Add headers
+                ...rows.map(row => row.map(value => `"${value}"`).join(",")) // Add data rows
+            ].join("\n");
+
+            // Create a Blob and trigger the download
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const csvUrl = URL.createObjectURL(blob);
+            link.setAttribute("href", csvUrl);
+            link.setAttribute("download", "Fuel_Emissions_Report.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
+        .catch(error => console.error("Error fetching data for CSV export:", error));
+}
+
     function downloadPDF() {
     const campus = document.getElementById("campus").value;
     const year = document.getElementById("year").value;

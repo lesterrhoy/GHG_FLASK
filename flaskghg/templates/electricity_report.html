@@ -324,9 +324,63 @@
             <div class="mb-3">
                 <button id="downloadPDFBtn" class="btn btn-danger" style="background-color: #d50000; border-color: #d50000;" onclick="downloadPDF()">Download PDF</button>
                 <button id="downloadExcelBtn" class="btn btn-success" style="background-color: #d50000; border-color: #d50000;" onclick="downloadExcel()">Download Excel</button>
+                <button id="downloadCSVBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="downloadCSV()">Download CSV</button>
+</div>
             </div>
 
             <script>
+                function downloadCSV() {
+    const campus = document.getElementById("campus").value;
+    const category = document.getElementById("category").value;
+    const month = document.getElementById("month").value;
+    const quarter = document.getElementById("quarter").value;
+    const year = document.getElementById("year").value;
+
+    const url = `/fetch_all_electricity_data?campus=${encodeURIComponent(campus)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}&quarter=${encodeURIComponent(quarter)}&year=${encodeURIComponent(year)}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                alert("No data available to export.");
+                return;
+            }
+
+            // Define CSV headers and rows
+            const headers = [
+                "Campus", "Category", "Month", "Quarter", "Year", 
+                "Prev Reading", "Current Reading", "Multiplier", 
+                "Total Amount", "Consumption", "Price Per KWH", 
+                "KG CO₂ per KWH", "T CO₂ per KWH"
+            ];
+            const rows = data.map(row => [
+                row.campus, row.category, row.month, row.quarter, row.year,
+                row.prev_reading, row.current_reading, row.multiplier,
+                row.total_amount, row.consumption, row.price_per_kwh,
+                row.kg_co2_per_kwh, row.t_co2_per_kwh
+            ]);
+
+            // Combine headers and rows into CSV format
+            const csvContent = [
+                headers.join(","), // Add headers
+                ...rows.map(row => row.map(value => `"${value}"`).join(",")) // Add data rows
+            ].join("\n");
+
+            // Create a Blob and trigger download
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const csvUrl = URL.createObjectURL(blob);
+            link.setAttribute("href", csvUrl);
+            link.setAttribute("download", "Electricity_Consumption_Report.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
+        .catch(error => {
+            console.error("Error fetching data for CSV export:", error);
+        });
+}
+
                  function downloadPDF() {
                             const campus = document.getElementById("campus").value;
                             const category = document.getElementById("category").value;

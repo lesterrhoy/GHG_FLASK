@@ -337,12 +337,49 @@
                     <button id="downloadExcelBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-success" onclick="downloadAccommodationExcel()">
                         Download Excel
                     </button>
+                    <!-- CSV Download Button -->
+                    <button id="downloadCsvBtn" class="btn btn-info" style="background-color: #007bff; border-color: #007bff;" onclick="downloadAccommodationCSV()">
+                        Download CSV
+                    </button>
                 </div>
                 
             </main>
         </div>
     </div>
     <script>
+        function downloadAccommodationCSV() {
+    // Get the table element
+    const table = document.getElementById('accommodation_data');
+    if (!table) {
+        alert('No data available to download as CSV.');
+        return;
+    }
+
+    // Initialize CSV content
+    let csvContent = '';
+
+    // Extract table rows
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = [];
+        cells.forEach(cell => {
+            // Escape and add cell content
+            rowData.push(`"${cell.textContent.trim().replace(/"/g, '""')}"`);
+        });
+        csvContent += rowData.join(',') + '\n'; // Join cells with commas and add newline
+    });
+
+    // Create a Blob from the CSV content
+    const csvBlob = new Blob([csvContent], { type: 'text/csv' });
+
+    // Create a download link and trigger it
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(csvBlob);
+    link.download = 'accommodation_emissions_report.csv'; // Set the file name
+    link.click(); // Trigger the download
+}
+
         // Function to download PDF report
         function downloadAccommodationPDF() {
             // Gather filter values from the form

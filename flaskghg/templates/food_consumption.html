@@ -907,54 +907,71 @@ function deleteRecord(recordId) {
     }
 }
 function downloadCSV() {
-    // Get filter values from the dropdowns
-    const month = document.getElementById('monthFilter')?.value || '';
-    const office = document.getElementById('officeFilter')?.value || '';
-    const year = document.getElementById('yearFilter')?.value || '';
+    // Get filter values from the form or dropdowns
+    const campus = document.getElementById('campus')?.value || '';
+    const year = document.getElementById('year')?.value || '';
+    const month = document.getElementById('month')?.value || '';
 
-    // Build the query string based on the selected filters
-    let queryString = `?month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}&year=${encodeURIComponent(year)}`;
+    // Construct the query string with the filters
+    const queryString = `?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
 
-    // Fetch data for the CSV
-    fetch(`/food_consumption/all${queryString}`)
-        .then(response => response.json())
+    // Fetch all data directly from the backend
+    fetch(`/waste_unseg/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.length === 0) {
                 alert('No data available to download.');
                 return;
             }
 
-            // Prepare the CSV data
+            // Prepare CSV headers
             const headers = [
-                "Campus", "Year", "Month", "Office", "Food Type", 
-                "Servings", "GHG Emission (KG CO2e)", "GHG Emission (T CO2e)"
+                'Campus', 'Year', 'Month', 'Waste Type', 'Quantity (KG)',
+                'Sent to Landfill (KG)', 'Sent to Landfill (TONS)',
+                'GHG Emission (KG CO₂e)', 'GHG Emission (T CO₂e)'
             ];
+
+            // Map the data into CSV rows
             const rows = data.map(record => [
-                record.Campus, record.YearTransaction, record.Month, record.Office,
-                record.TypeOfFoodServed, record.QuantityOfServing, 
-                record.GHGEmissionKGCO2e, record.GHGEmissionTCO2e
+                record.Campus || '',
+                record.Year || '',
+                record.Month || '',
+                record.WasteType || '',
+                record.QuantityInKG || 0,
+                record.SentToLandfillKG || 0,
+                record.SentToLandfillTONS || 0,
+                record.GHGEmissionKGCO2e || 0,
+                record.GHGEmissionTCO2e || 0
             ]);
 
-            // Convert to CSV format
+            // Convert the rows into CSV format
             const csvContent = [headers, ...rows]
                 .map(row => row.map(value => `"${value}"`).join(","))
                 .join("\n");
 
-            // Trigger download
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", "FoodConsumptionReport.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Create a Blob for the CSV file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            // Create a download link and trigger it
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'WasteUnsegregationReport.csv'; // Set the filename
+            document.body.appendChild(link); // Append link to body
+            link.click(); // Trigger download
+            document.body.removeChild(link); // Remove link after download
         })
         .catch(error => {
             console.error('Error exporting data:', error);
             alert('An error occurred while exporting the data. Please try again.');
         });
 }
+
+
 
        
     </script>

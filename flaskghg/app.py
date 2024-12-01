@@ -2855,6 +2855,48 @@ def download_water_data():
     # Send the file to the client
     return send_file(output, download_name="water_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@app.route('/download_water_csv')
+def download_water_csv():
+    # Retrieve filter parameters
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    category = request.args.get("category", None)
+
+    # Fetch the data based on filters
+    data = fetch_water_consumption_data(campus=campus, year=year, category=category)
+
+    # Create a CSV response
+    def generate_csv():
+        # Define the CSV header
+        header = [
+            "Campus", "Category", "Date", 
+            "Previous Reading (m³)", "Current Reading (m³)", 
+            "Consumption (m³)", "Total Amount (₱)", 
+            "Price per m³ (₱)", "Factor (kg CO₂/m³)", 
+            "Factor (t CO₂/m³)"
+        ]
+        yield ",".join(header) + "\n"
+
+        # Write the data rows
+        for row in data:
+            yield ",".join([
+                row.Campus,
+                row.Category,
+                row.Date,
+                str(row.PreviousReading),
+                str(row.CurrentReading),
+                str(row.Consumption),
+                str(row.TotalAmount),
+                str(row.PricePerLiter),
+                str(row.FactorKGCO2e),
+                str(row.FactorTCO2e)
+            ]) + "\n"
+
+    # Return the response as a CSV
+    response = Response(generate_csv(), mimetype='text/csv')
+    response.headers["Content-Disposition"] = "attachment; filename=water_consumption_report.csv"
+    return response
+
 @app.route('/download_water_pdf')
 def download_water_pdf():
     # Retrieve filter parameters from request arguments
@@ -2899,9 +2941,7 @@ def download_water_pdf():
 
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="water_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
-
-
-# Helper function to fetch data from the database with pagination and filters
+  
 def fetch_waste_segregation_data(page=1, per_page=20, campus=None, year=None, quarter=None, main_category=None):
     # Start the base query with a condition that always matches
     base_query = "SELECT * FROM tblsolidwastesegregated WHERE 1=1"
@@ -3299,6 +3339,7 @@ def fetch_food_data(page=1, per_page=20, campus=None, month=None, year=None, off
             db_connection.close()
 
     return data, total_records
+
 
 @app.route('/report/food_consumption')
 def food_consumption_report():
@@ -6058,10 +6099,6 @@ def fetch_waste_unseg_data(page=1, per_page=20, campus=None, year=None, month=No
             db_connection.close()
 
     return data, total_records
-
-
-
-
 
 @app.route('/sdo_food_consumption_report')
 def sdo_food_consumption_report():

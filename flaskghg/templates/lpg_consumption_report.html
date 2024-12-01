@@ -340,6 +340,9 @@
                 <button id="downloadExcelBtn" class="btn btn-success mb-3"  style="background-color:#d50000; color: white;" onclick="downloadLPGExcel()">
                     Download Excel
                 </button>
+                <button id="downloadCsvBtn" class="btn btn-info mb-3" style="background-color:#007bff; color: white;" onclick="generateLPGCSV()">
+                    Download CSV
+                </button>
             </main>
         </div>
     </div>
@@ -379,6 +382,67 @@
         // Trigger the download
         window.open(url, '_blank');
     }
+    function generateLPGCSV() {
+    // Get filter values from the dropdowns or inputs (if any)
+    const campus = document.getElementById('campus')?.value || '';
+    const year = document.getElementById('year')?.value || '';
+
+    // Build the query string with filters
+    const queryString = `?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}`;
+
+    // Fetch all data directly from the backend
+    fetch(`/lpg_consumption/all${queryString}`)
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (!data || data.length === 0) {
+                alert('No data available to download.');
+                return;
+            }
+
+            // Prepare CSV headers
+            const headers = [
+                'Campus', 'Year', 'Month', 'Department', 
+                'LPG Consumption (kg)', 'GHG Emission (kg CO₂e)', 'GHG Emission (t CO₂e)'
+            ];
+
+            // Convert the data into CSV rows
+            const rows = data.map((record) => [
+                record.Campus || '',
+                record.Year || '',
+                record.Month || '',
+                record.Department || '',
+                record.LPGConsumptionKG || 0,
+                record.GHGEmissionKGCO2e || 0,
+                record.GHGEmissionTCO2e || 0,
+            ]);
+
+            // Combine headers and rows into CSV content
+            const csvContent = [headers, ...rows]
+                .map((row) => row.map((value) => `"${value}"`).join(','))
+                .join('\n');
+
+            // Create a Blob for the CSV file
+            const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            // Create a download link and trigger it
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(csvBlob);
+            link.download = 'LPGConsumptionReport.csv'; // Set the filename
+            document.body.appendChild(link); // Append the link
+            link.click(); // Trigger the download
+            document.body.removeChild(link); // Remove the link after download
+        })
+        .catch((error) => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
+
     </script>
     
 </body>

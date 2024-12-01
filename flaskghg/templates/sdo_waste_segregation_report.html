@@ -329,7 +329,41 @@
     <a href="{{ url_for('sdo_waste_segregation_excel', campus=campus_filter, year=year_filter, quarter=quarter_filter, main_category=main_category_filter) }}" class="btn btn-success" style="background-color: #d50000; border-color: #d50000; color: white;">
         <i class="fas fa-download"></i> Download Excel Report
     </a>
+    <button id="downloadCSV" class="btn btn-warning" style="background-color: #d50000; border-color: #d50000; color: white;">
+        <i class="fas fa-download"></i> Download CSV Report
+    </button>
 </div>
             </div>
         </div>
+        <script>
+            // Function to convert the table data to CSV format
+            function tableToCSV() {
+                const table = document.getElementById("waste_segregation");
+                const rows = Array.from(table.querySelectorAll("tr"));
+                const csvContent = rows.map(row => {
+                    const cols = Array.from(row.querySelectorAll("td, th")).map(cell => `"${cell.textContent.trim()}"`);
+                    return cols.join(",");
+                }).join("\n");
+                return csvContent;
+            }
         
+            // Function to trigger CSV file download
+            function downloadCSV(csvContent, filename) {
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        
+            // Add event listener to the CSV download button
+            document.getElementById("downloadCSV").addEventListener("click", () => {
+                const csvContent = tableToCSV();
+                const filename = "waste_segregation_report.csv";
+                downloadCSV(csvContent, filename);
+            });
+        </script>
