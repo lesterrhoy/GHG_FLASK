@@ -7,30 +7,33 @@
     <meta name="description" content="Food Consumption" />
     <meta name="author" content="Your Name" />
     <title>Food Consumption</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/bsu.png') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+        /* Table Styling */
         table {
-         width: 100%; /* Full width for table */
-         border-collapse: collapse; /* Collapse borders */
-         font-size: 10px; /* Smaller table font */
-     }
-     
-     th, td {
-    padding: 4px; /* Smaller cell padding */
-    text-align: center; /* Center align text */
-    border: 1px solid #000000 !important; /* Force black border with !important */
-}
-
-     
-     th {
-         background-color:  #d50000 !important; /* Background color */
-         color: #fff; /* Red text color with !important */
-         font-size: 11px; /* Reduce font size for headers to prevent overflow */
-     }
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
      
              #yearFilter, #quarterFilter, #monthFilter {
              margin: 10px 0; /* Adds top and bottom margin */
@@ -240,12 +243,12 @@
      }
      
      button:last-child {
-         background-color: #d50000;
-         color: white;
+         background-color: #ffffff;
+         color: rgb(0, 0, 0);
      }
      
      button:last-child:hover {
-         background-color: #b71c1c;
+         background-color: #d50000;
      }
      
      .pagination-container {
@@ -315,21 +318,25 @@
          </ul>
     </nav>
 
-    <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark">
-                <div class="nav">
-                    <div class="sb-sidenav-menu-heading">Core</div>
-                    <a class="nav-link" href="{{ url_for('procurement_dashboard') }}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                        Dashboard
-                    </a>
-                    <div class="sb-sidenav-menu-heading">Consumption</div>
-                    <a class="nav-link" href="{{ url_for('food_consumption') }}">Food</a>
-                    <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
-                </div>
-            </nav>
-        </div>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">Core</div>
+                            <a class="nav-link" href="{{ url_for('procurement_dashboard') }}">
+                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                Dashboard
+                            </a>
+                            <div class="sb-sidenav-menu-heading">Consumption</div>
+                            <nav class="sb-sidenav-menu-nested nav">
+                            <a class="nav-link" href="{{ url_for('food_consumption') }}">Food</a>
+                            <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
+                            </nav>
+                        </div>
+                    </div>
+                </nav>
+            </div>
 
 
         <div id="layoutSidenav_content">
@@ -351,9 +358,10 @@
 
 
                     <div id="FoodSection" class="d-flex justify-content-start gap-2 mt-3">
-                        <button id="openModalBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        <button id="openModalBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate</button>
                         <button onclick="printFoodReport()" class="btn btn-secondary" style="background-color:#d50000;">Print Report</button>
-                        <button onclick="downloadExcel()" class="btn btn-danger" style="background-color:#d50000;">Download Excel</button>
+                        <button onclick="downloadExcel()" class="btn btn-danger" style="background-color:#d50000; color: white;">Download Excel</button>
+                        <button onclick="downloadCSV()" class="btn btn-success" style="background-color:#d50000; color: white;">Download CSV</button>
                     </div>
                     
 
@@ -361,11 +369,17 @@
                         <label for="yearFilter">Filter by Year:</label>
                         <select id="yearFilter" onchange="filterFoodReport()">
                             <option value="">All Years</option>
-                            <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
-                            <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
-                            <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
-                            <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
-                            <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+                            <option value="2014" {% if selected_year == "2014" %}selected{% endif %}>2014</option>
+                            <option value="2015" {% if selected_year == "2015" %}selected{% endif %}>2015</option>
+                            <option value="2016" {% if selected_year == "2016" %}selected{% endif %}>2016</option>
+                            <option value="2017" {% if selected_year == "2017" %}selected{% endif %}>2017</option>
+                            <option value="2018" {% if selected_year == "2018" %}selected{% endif %}>2018</option>
+                            <option value="2019" {% if selected_year == "2019" %}selected{% endif %}>2014</option>
+                            <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
                         </select>
                     
                         <label for="monthFilter">Filter by Month:</label>
@@ -389,8 +403,46 @@
                         <select id="officeFilter" onchange="filterFoodReport()">
                             <option value="">All Offices</option>
                             <option value="Procurement" {% if selected_office == 'Procurement' %}selected{% endif %}>Procurement</option>
-                            <option value="Auxiliary Services" {% if selected_office == 'Auxiliary Services' %}selected{% endif %}>Auxiliary Services</option>
+                            <option value="Auxillary Services" {% if selected_office == 'Auxillary Services' %}selected{% endif %}>Auxillary Services</option>
                             <option value="RGO" {% if selected_office == 'RGO' %}selected{% endif %}>RGO</option>
+                            <option value="IAU" {% if office == 'IAU' %}selected{% endif %}>IAU</option>
+                            <option value="QAM" {% if office == 'QAM' %}selected{% endif %}>QAM</option>
+                            <option value="SDO" {% if office == 'SDO' %}selected{% endif %}>SDO</option>
+                            <option value="PDO" {% if office == 'PDO' %}selected{% endif %}>PDO</option>
+                            <option value="EA" {% if office == 'EA' %}selected{% endif %}>EA</option>
+                            <option value="ICT" {% if office == 'ICT' %}selected{% endif %}>ICT</option>
+                            <option value="CAS" {% if office == 'CAS' %}selected{% endif %}>CAS</option>
+                            <option value="CABE" {% if office == 'CABE' %}selected{% endif %}>CABE</option>
+                            <option value="CICS" {% if office == 'CICS' %}selected{% endif %}>CICS</option>
+                            <option value="CET" {% if office == 'CET' %}selected{% endif %}>CET</option>
+                            <option value="CTE" {% if office == 'CTE' %}selected{% endif %}>CTE</option>
+                            <option value="CE" {% if office == 'CE' %}selected{% endif %}>CE</option>
+                            <option value="CA" {% if office == 'CA' %}selected{% endif %}>CA</option>
+                            <option value="TAO" {% if office == 'TAO' %}selected{% endif %}>TAO</option>
+                            <option value="ORS" {% if office == 'ORS' %}selected{% endif %}>ORS</option>
+                            <option value="SFAO" {% if office == 'SFAO' %}selected{% endif %}>SFAO</option>
+                            <option value="GC" {% if office == 'GC' %}selected{% endif %}>GC</option>
+                            <option value="OLS" {% if office == 'OLS' %}selected{% endif %}>OLS</option>
+                            <option value="SOO" {% if office == 'SOO' %}selected{% endif %}>SOO</option>
+                            <option value="SD" {% if office == 'SD' %}selected{% endif %}>SD</option>
+                            <option value="OJT" {% if office == 'OJT' %}selected{% endif %}>OJT</option>
+                            <option value="NSTP" {% if office == 'NSTP' %}selected{% endif %}>NSTP</option>
+                            <option value="HRMO" {% if office == 'HRMO' %}selected{% endif %}>HRMO</option>
+                            <option value="RMO" {% if office == 'RMO' %}selected{% endif %}>RMO</option>
+                            <option value="PO" {% if office == 'PO' %}selected{% endif %}>PO</option>
+                            <option value="BO" {% if office == 'BO' %}selected{% endif %}>BO</option>
+                            <option value="CD" {% if office == 'CD' %}selected{% endif %}>CD</option>
+                            <option value="AO" {% if office == 'AO' %}selected{% endif %}>AO</option>
+                            <option value="PFMO" {% if office == 'PFMO' %}selected{% endif %}>PFMO</option>
+                            <option value="EMU" {% if office == 'EMU' %}selected{% endif %}>EMU</option>
+                            <option value="PSO" {% if office == 'PSO' %}selected{% endif %}>PSO</option>
+                            <option value="GSO" {% if office == 'GSO' %}selected{% endif %}>GSO</option>
+                            <option value="ESO" {% if office == 'ESO' %}selected{% endif %}>ESO</option>
+                            <option value="RO" {% if office == 'RO' %}selected{% endif %}>RO</option>
+                            <option value="OVCRDES" {% if office == 'OVCRDES' %}selected{% endif %}>OVCRDES</option>
+                            <option value="OVCDEA" {% if office == 'OVCDEA' %}selected{% endif %}>OVCDEA</option>
+                            <option value="OVCAA" {% if office == 'OVCAA' %}selected{% endif %}>OVCAA</option>
+                            <option value="OVCAF" {% if office == 'OVCAF' %}selected{% endif %}>OVCAF</option>
                         </select>
                     </div>
                     
@@ -507,8 +559,47 @@
                             <label for="office">Office:</label>
                             <select id="office" name="office" required>
                                 <option value=""></option>
-                                <option value="Auxiliary Services">Auxiliary Services</option>
+                                <option value="Auxillary Services">Auxillary Services</option>
                                 <option value="RGO">RGO</option>
+                                <option value="IAU" {% if office == 'IAU' %}selected{% endif %}>IAU</option>
+                                <option value="QAM" {% if office == 'QAM' %}selected{% endif %}>QAM</option>
+                                <option value="SDO" {% if office == 'SDO' %}selected{% endif %}>SDO</option>
+                                <option value="PDO" {% if office == 'PDO' %}selected{% endif %}>PDO</option>
+                                <option value="EA" {% if office == 'EA' %}selected{% endif %}>EA</option>
+                                <option value="RGO" {% if office == 'RGO' %}selected{% endif %}>RGO</option>
+                                <option value="ICT" {% if office == 'ICT' %}selected{% endif %}>ICT</option>
+                                <option value="CAS" {% if office == 'CAS' %}selected{% endif %}>CAS</option>
+                                <option value="CABE" {% if office == 'CABE' %}selected{% endif %}>CABE</option>
+                                <option value="CICS" {% if office == 'CICS' %}selected{% endif %}>CICS</option>
+                                <option value="CET" {% if office == 'CET' %}selected{% endif %}>CET</option>
+                                <option value="CTE" {% if office == 'CTE' %}selected{% endif %}>CTE</option>
+                                <option value="CE" {% if office == 'CE' %}selected{% endif %}>CE</option>
+                                <option value="CA" {% if office == 'CA' %}selected{% endif %}>CA</option>
+                                <option value="TAO" {% if office == 'TAO' %}selected{% endif %}>TAO</option>
+                                <option value="ORS" {% if office == 'ORS' %}selected{% endif %}>ORS</option>
+                                <option value="SFAO" {% if office == 'SFAO' %}selected{% endif %}>SFAO</option>
+                                <option value="GC" {% if office == 'GC' %}selected{% endif %}>GC</option>
+                                <option value="OLS" {% if office == 'OLS' %}selected{% endif %}>OLS</option>
+                                <option value="SOO" {% if office == 'SOO' %}selected{% endif %}>SOO</option>
+                                <option value="SD" {% if office == 'SD' %}selected{% endif %}>SD</option>
+                                <option value="OJT" {% if office == 'OJT' %}selected{% endif %}>OJT</option>
+                                <option value="NSTP" {% if office == 'NSTP' %}selected{% endif %}>NSTP</option>
+                                <option value="HRMO" {% if office == 'HRMO' %}selected{% endif %}>HRMO</option>
+                                <option value="RMO" {% if office == 'RMO' %}selected{% endif %}>RMO</option>
+                                <option value="PO" {% if office == 'PO' %}selected{% endif %}>PO</option>
+                                <option value="BO" {% if office == 'BO' %}selected{% endif %}>BO</option>
+                                <option value="CD" {% if office == 'CD' %}selected{% endif %}>CD</option>
+                                <option value="AO" {% if office == 'AO' %}selected{% endif %}>AO</option>
+                                <option value="PFMO" {% if office == 'PFMO' %}selected{% endif %}>PFMO</option>
+                                <option value="EMU" {% if office == 'EMU' %}selected{% endif %}>EMU</option>
+                                <option value="PSO" {% if office == 'PSO' %}selected{% endif %}>PSO</option>
+                                <option value="GSO" {% if office == 'GSO' %}selected{% endif %}>GSO</option>
+                                <option value="ESO" {% if office == 'ESO' %}selected{% endif %}>ESO</option>
+                                <option value="RO" {% if office == 'RO' %}selected{% endif %}>RO</option>
+                                <option value="OVCRDES" {% if office == 'OVCRDES' %}selected{% endif %}>OVCRDES</option>
+                                <option value="OVCDEA" {% if office == 'OVCDEA' %}selected{% endif %}>OVCDEA</option>
+                                <option value="OVCAA" {% if office == 'OVCAA' %}selected{% endif %}>OVCAA</option>
+                                <option value="OVCAF" {% if office == 'OVCAF' %}selected{% endif %}>OVCAF</option>
                             </select>
 
                             <label for="foodType">Type of Food Served:</label>
@@ -529,15 +620,23 @@
                             <label for="servings">No. of Servings:</label>
                             <input type="number" id="servings" name="servings" step="0.01" required>
 
-                            <!-- GHG Emission fields that will be calculated -->
-                            <label for="ghgEmissionKg">GHG Emission (KG CO2e):</label>
-                            <input type="number" id="ghgEmissionKg" name="ghgEmissionKg" step="0.01" readonly>
+                            <button type="button" onclick="calculateCO2Emission()">Calculate</button>
 
-                            <label for="ghgEmissionTons">GHG Emission (T CO2e):</label>
-                            <input type="number" id="ghgEmissionTons" name="ghgEmissionTons" step="0.01" readonly>
+                           <!-- GHG Emission fields that will be calculated -->
+                            <div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                    <label for="ghgEmissionKg" style="font-weight: bold; color: #333; margin-right: 10px;">GHG Emission (KG CO₂e):</label>
+                                    <input type="number" id="ghgEmissionKg" name="ghgEmissionKg" step="0.01" readonly 
+                                        style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                                </div>
+                                <div style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+                                    <label for="ghgEmissionTons" style="font-weight: bold; color: #333; margin-right: 10px;">GHG Emission (T CO₂e):</label>
+                                    <input type="number" id="ghgEmissionTons" name="ghgEmissionTons" step="0.01" readonly 
+                                        style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                                </div>
+                            </div>
 
                             <!-- Buttons to calculate and generate report -->
-                            <button type="button" onclick="calculateCO2Emission()">Calculate CO2 Emission</button>
                             <button type="button" onclick="generateReport()">Generate Report</button>
                         </form>
                     </div>
@@ -806,6 +905,55 @@ function deleteRecord(recordId) {
             alert("An error occurred while deleting the record.");
         });
     }
+}
+function downloadCSV() {
+    // Get filter values from the dropdowns
+    const month = document.getElementById('monthFilter')?.value || '';
+    const office = document.getElementById('officeFilter')?.value || '';
+    const year = document.getElementById('yearFilter')?.value || '';
+
+    // Build the query string based on the selected filters
+    let queryString = `?month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}&year=${encodeURIComponent(year)}`;
+
+    // Fetch data for the CSV
+    fetch(`/food_consumption/all${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available to download.');
+                return;
+            }
+
+            // Prepare the CSV data
+            const headers = [
+                "Campus", "Year", "Month", "Office", "Food Type", 
+                "Servings", "GHG Emission (KG CO2e)", "GHG Emission (T CO2e)"
+            ];
+            const rows = data.map(record => [
+                record.Campus, record.YearTransaction, record.Month, record.Office,
+                record.TypeOfFoodServed, record.QuantityOfServing, 
+                record.GHGEmissionKGCO2e, record.GHGEmissionTCO2e
+            ]);
+
+            // Convert to CSV format
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(value => `"${value}"`).join(","))
+                .join("\n");
+
+            // Trigger download
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "FoodConsumptionReport.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
 }
 
        

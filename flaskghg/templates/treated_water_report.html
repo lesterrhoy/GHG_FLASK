@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Treated Water Report</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -213,6 +215,7 @@
 </form>
 
                     {% if data %}
+                    <div class="table-responsive mt-4">
                         <table class="table table-bordered mt-4" id="treated_water">
                             <thead>
                                 <tr>
@@ -241,6 +244,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        </div>
                         
                     <!-- Pagination controls -->
                     <div class="pagination-container mt-3">

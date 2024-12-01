@@ -5,9 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Center for Sustainable Development</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.2/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.8.0/dist/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/scrolltrigger"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-50">
@@ -18,14 +24,33 @@
         <header class="bg-white border-b border-gray-200 py-4 sticky top-0 z-10 shadow-lg" id="header">
             <div class="container mx-auto px-4 flex justify-between items-center">
                 <div class="flex items-center space-x-2">
-                  <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Batangas State University Logo" alt="Batangas State University Logo" width="50" height="50" class="rounded-full" id="logo">
-                    <span class="text-2xl font-semibold text-gray-800">CSD</span>
+                    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="CSD Logo" class="rounded-full" width="50" height="50">
+                    <span class="text-2xl font-semibold text-gray-800">Center for Sustainable Development</span>
                 </div>
                 <nav class="space-x-6 hidden md:flex" id="nav">
                     <a href="#about" class="text-sm text-gray-600 hover:text-green-600 transition-colors">About</a>
                     <a href="#mandates" class="text-sm text-gray-600 hover:text-green-600 transition-colors">Mandates</a>
                     <a href="#objectives" class="text-sm text-gray-600 hover:text-green-600 transition-colors">Objectives</a>
                     <a href="/login" class="inline-block border px-4 py-2 text-sm text-gray-800 border-gray-500 rounded-md hover:bg-gray-200">Login</a>
+                </nav>
+
+                <!-- Mobile Menu Icon -->
+                <div class="md:hidden flex items-center" id="mobile-menu-icon">
+                    <button id="menu-toggle" class="text-gray-800 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12h18M3 6h18M3 18h18"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="md:hidden hidden" id="mobile-menu">
+                <nav class="space-y-4 py-4">
+                    <a href="#about" class="block text-gray-600 hover:text-green-600 transition-colors">About</a>
+                    <a href="#mandates" class="block text-gray-600 hover:text-green-600 transition-colors">Mandates</a>
+                    <a href="#objectives" class="block text-gray-600 hover:text-green-600 transition-colors">Objectives</a>
+                    <a href="/login" class="block text-gray-800 px-4 py-2 border border-gray-500 rounded-md hover:bg-gray-200">Login</a>
                 </nav>
             </div>
         </header>
@@ -35,10 +60,10 @@
 
             <!-- Hero Section -->
             <section class="bg-gradient-to-r from-green-500 to-green-700 text-white py-20 relative" id="hero">
-              <div class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image: url('{{ url_for('static', filename='images/headerbsu.png') }}');"></div>
+                <div class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image: url('{{ url_for('static', filename='images/headerbsu.png') }}');"></div>
                 <div class="container mx-auto px-4 relative z-10 flex flex-col items-center justify-center text-center">
-                    <h1 class="text-5xl font-bold mb-6 text-white drop-shadow-lg" id="hero-title">Center for Sustainable Development</h1>
-                    <p class="text-xl mb-8 text-white drop-shadow-lg" id="hero-description">Promoting sustainability and global awareness</p>
+                    <h1 class="text-3xl md:text-5xl font-bold mb-6 text-white drop-shadow-lg" id="hero-title">Center for Sustainable Development</h1>
+                    <p class="text-lg md:text-xl mb-8 text-white drop-shadow-lg" id="hero-description">Promoting sustainability and global awareness</p>
                     <a href="#about" class="inline-block bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-800 transition-colors shadow-lg transform hover:scale-105" id="hero-button">Learn More</a>
                 </div>
             </section>
@@ -46,15 +71,15 @@
             <!-- About Section -->
             <section id="about" class="py-16 bg-gray-100 relative">
                 <div class="container mx-auto px-4">
-                    <h2 class="text-3xl font-bold text-green-700 mb-8 text-center">Welcome to the Center for Sustainable Development</h2>
+                    <h2 class="text-3xl font-bold text-green-700 mb-8 text-center" id="about-title">Welcome to the Center for Sustainable Development</h2>
                     <div class="grid md:grid-cols-2 gap-8">
-                        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" id="vision-card">
                             <h3 class="text-xl font-semibold text-green-700">University Vision</h3>
                             <p>A premier national university that develops leaders in the global knowledge economy.</p>
                         </div>
-                        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" id="mission-card">
                             <h3 class="text-xl font-semibold text-green-700">University Mission</h3>
-                            <p>A university committed to producing leaders by providing a 21st century learning environment through innovations in education, multidisciplinary research, and community and industry partnerships in order to nurture the spirit of nationhood, propel the national economy, and engage the world for sustainable development.</p>
+                            <p>Committed to producing leaders by providing a 21st-century learning environment through innovations in education, multidisciplinary research, and community partnerships.</p>
                         </div>
                     </div>
                 </div>
@@ -64,7 +89,7 @@
             <section id="mandates" class="py-16 bg-gray-50">
                 <div class="container mx-auto px-4">
                     <h2 class="text-3xl font-bold text-green-700 mb-8 text-center">Mandates of the Center</h2>
-                    <div class="grid md:grid-cols-3 gap-6">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
                             <p>Be the hub for SDGs-related information and activities.</p>
                         </div>
@@ -72,16 +97,37 @@
                             <p>Initiate the preparation of the Sustainability Plan and act as the clearing house for SDGs projects.</p>
                         </div>
                         <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
-                            <p>Foster collaboration that brings together people, ideas, and resources from various sectors to address SDGs-related issues.</p>
+                            <p>Foster collaboration to address SDGs-related issues across various sectors.</p>
                         </div>
                         <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
-                            <p>Encourage research and innovation towards achieving sustainability.</p>
+                            <p>Initiate programs and practices that integrate sustainability into the university, including policy formulation.</p>
                         </div>
                         <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
-                            <p>Provide training and capacity-building for faculty, staff, and students on SDGs and sustainability practices.</p>
+                            <p>Provide education and outreach to the University and its campuses, and the surrounding community about sustainability.</p>
                         </div>
                         <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
-                            <p>Advocate for sustainable practices at the local, national, and global levels.</p>
+                            <p>Communicate sustainability knowledge, progress, and activities.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Support and coordinate the Sustainability Council/Committee.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Further efforts to meet the goals of the university’s Sustainability Plan and sustainability commitments.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Equip campuses to envision and implement their unique contribution to sustainability.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Measure, assess, and continually improve university sustainability efforts.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Embed sustainability into the University’s culture and traditions.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Coordinate with the campuses’ student sustainability leadership program.</p>
+                        </div>
+                        <div class="h-full bg-white p-6 shadow-md rounded-md hover:shadow-lg transition-shadow duration-300">
+                            <p>Provide training for sustainability coordinators.</p>
                         </div>
                     </div>
                 </div>
@@ -90,38 +136,38 @@
             <!-- Objectives Section -->
             <section id="objectives" class="py-16 bg-gray-100">
                 <div class="container mx-auto px-4">
-                    <h2 class="text-3xl font-bold text-green-700 mb-8 text-center">Our Objectives</h2>
-                    <div class="space-y-6">
-                        <div class="flex items-start objective-card">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center mr-4">1</div>
-                            <p>To contribute to global efforts towards achieving the SDGs both locally and internationally.</p>
+                    <h2 class="text-3xl font-bold text-green-700 mb-8 text-center">Objectives of the Center for Sustainable Development</h2>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold">1</div>
+                            </div>
+                            <p class="text-gray-700 text-lg">To contribute in the global efforts towards achieving the SDGs both locally and internationally.</p>
                         </div>
-                        <div class="flex items-start objective-card">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center mr-4">2</div>
-                            <p>To advance its institutional vision for and commitment to sustainability and codify it to SDGs.</p>
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold">2</div>
+                            </div>
+                            <p class="text-gray-700 text-lg">To advance its institutional vision for and commitment to sustainability and codified it to SDGs.</p>
                         </div>
-                        <div class="flex items-start objective-card">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center mr-4">3</div>
-                            <p>To be a leader in promoting environmental sustainability through education, research, and community engagement.</p>
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold">3</div>
+                            </div>
+                            <p class="text-gray-700 text-lg">To instill among students and graduates a well-rounded education and global awareness, and equip them with the knowledge and understanding, skills and attributes needed to work and live in a way that safeguards environmental, social and economic wellbeing, both in the present and for future generations.</p>
                         </div>
-                        <div class="flex items-start objective-card">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center mr-4">4</div>
-                            <p>To create sustainable solutions for global challenges by collaborating with local, national, and international partners.</p>
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold">4</div>
+                            </div>
+                            <p class="text-gray-700 text-lg">To promote SDGs in the field of research and academics as well as in the management and operations of the University.</p>
                         </div>
-                        <div class="flex items-start objective-card">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center mr-4">5</div>
-                            <p>To ensure that the Center’s initiatives align with the global sustainable development agenda.</p>
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-bold">5</div>
+                            </div>
+                            <p class="text-gray-700 text-lg">To contribute to the sustainable development of the country through collaborations and dialogue, aiming to realize a more resilient society.</p>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Logo Section -->
-            <section class="py-16 bg-gray-50">
-                <div class="container mx-auto px-4 text-center">
-                    <h2 class="text-3xl font-bold text-green-700 mb-8">SDGs</h2>
-                    <div class="inline-block rounded-full overflow-hidden border-4 border-green-600 p-4 bg-white">
-                      <img src="{{ url_for('static', filename='images/sdgg.png') }}"  alt="Center for Sustainable Development Logo" width="200" height="200" class="rounded-full">
                     </div>
                 </div>
             </section>
@@ -129,38 +175,42 @@
         </main>
 
         <!-- Footer Section -->
-        <footer class="bg-gray-800 text-white py-8">
-            <div class="container mx-auto px-4">
-                <div class="flex flex-col md:flex-row justify-between">
+        <footer class="bg-gray-900 text-white py-12">
+            <div class="container mx-auto px-6 md:px-12">
+                <!-- Top Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Contact Us -->
                     <div>
                         <h3 class="text-xl font-bold mb-4">Contact Us</h3>
-                        <address class="not-italic">
-                            <p>Batangas State University</p>
+                        <address class="not-italic text-gray-300">
+                            <p class="mb-2">Batangas State University</p>
                             <p>Batangas City, Philippines</p>
                         </address>
                     </div>
+                    <!-- Get in Touch -->
                     <div>
                         <h3 class="text-xl font-bold mb-4">Get in Touch</h3>
-                        <p class="flex items-center mb-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
-                            +63 43 980-0385 (local 1114 or 1546)
-                        </p>
-                        <p class="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 0 0-8"></path></svg>
-                            <a href="mailto:president@g.batstate-u.edu.ph" class="hover:text-white transition-colors">president@g.batstate-u.edu.ph</a>
-                        </p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                                <span class="text-gray-300">+63 43 980-0385 (local 1114 or 1546)</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 0 0-8"></path></svg>
+                                <a href="mailto:president@g.batstate-u.edu.ph" class="text-gray-300 hover:text-white transition-colors">president@g.batstate-u.edu.ph</a>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="flex justify-center md:justify-end items-center space-x-4">
-                        <div>
-                          <img src="{{ url_for('static', filename='images/csd.png') }}"  alt="Red Spartans Logo" width="80" height="80" class="rounded-full">
-                        </div>
-                        <div>
-                          <img src="{{ url_for('static', filename='images/bsu.png') }}"  alt="CSD Logo" width="80" height="80" class="rounded-full">
-                        </div>
+                    <!-- Logos -->
+                    <div class="flex justify-center md:justify-end items-center space-x-6">
+                        <img src="{{ url_for('static', filename='images/csd.png') }}" alt="Red Spartans Logo" width="90" height="90" class="rounded-full shadow-lg">
+                        <img src="{{ url_for('static', filename='images/bsu.png') }}" alt="CSD Logo" width="90" height="90" class="rounded-full shadow-lg">
                     </div>
                 </div>
-                <div class="mt-8 pt-8 border-t border-gray-700 text-center">
-                    <p>&copy; 2024 Center for Sustainable Development. All rights reserved.</p>
+
+                <!-- Divider and Bottom Section -->
+                <div class="mt-10 pt-8 border-t border-gray-700 text-center">
+                    <p class="text-gray-400">&copy; 2024 Center for Sustainable Development. All rights reserved.</p>
                 </div>
             </div>
         </footer>
@@ -168,56 +218,20 @@
     </div>
 
     <script>
-        // GSAP Animations
+        // Toggle mobile menu
+        const menuToggle = document.getElementById("menu-toggle");
+        const mobileMenu = document.getElementById("mobile-menu");
+        menuToggle.addEventListener("click", () => {
+            mobileMenu.classList.toggle("hidden");
+        });
 
-        // Header animation
+        // GSAP Animations
         gsap.from("#header", { opacity: 0, y: -50, duration: 1 });
 
         // Hero Section
         gsap.from("#hero-title", { opacity: 0, y: 30, duration: 1, delay: 0.5 });
         gsap.from("#hero-description", { opacity: 0, y: 20, duration: 1, delay: 0.7 });
         gsap.from("#hero-button", { opacity: 0, y: 15, duration: 1, delay: 1 });
-
-        // Mandates Section
-        gsap.utils.toArray(".mandate-card").forEach(card => {
-            gsap.from(card, {
-                opacity: 0,
-                y: 50,
-                stagger: 0.2,
-                scrollTrigger: {
-                    trigger: card,
-                    start: "top 80%",
-                    end: "bottom top",
-                    scrub: true
-                }
-            });
-        });
-
-        // Objectives Section
-        gsap.utils.toArray(".objective-card").forEach(card => {
-            gsap.from(card, {
-                opacity: 0,
-                x: -50,
-                stagger: 0.2,
-                scrollTrigger: {
-                    trigger: card,
-                    start: "top 80%",
-                    end: "bottom top",
-                    scrub: true
-                }
-            });
-        });
-
-        // Hover Effects
-        const navLinks = document.querySelectorAll("a");
-        navLinks.forEach(link => {
-            link.addEventListener("mouseenter", () => {
-                gsap.to(link, { scale: 1.1, duration: 0.2 });
-            });
-            link.addEventListener("mouseleave", () => {
-                gsap.to(link, { scale: 1, duration: 0.2 });
-            });
-        });
     </script>
 </body>
 

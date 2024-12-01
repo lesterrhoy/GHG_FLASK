@@ -4,246 +4,314 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> <!-- Font Awesome -->
   <style>
-    /* General Reset and Base Styles */
+    /* Toast CSS Styling */
+    .toast {
+      visibility: hidden;
+      min-width: 250px;
+      margin-left: -125px;
+      background-color: #f44336; /* Red background for error */
+      color: white;
+      text-align: center;
+      border-radius: 2px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      left: 50%;
+      bottom: 30px;
+      font-size: 17px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* General Reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(to bottom right, #1e3a8a, #065f46); /* Background gradient */
-      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      min-height: 100vh;
+      background-color: #f5f5f5; /* Light background for contrast */
     }
-    
-    /* Logo Styles with Animation */
-.logo {
-    width: 280px;
-    margin-right: 50px; /* Adjust spacing between logo and form */
-    animation: moveLogo 5s ease-in-out infinite alternate; /* Keep the animation */
-}
 
-/* Keyframes for logo movement */
-@keyframes moveLogo {
-    0% {
-        transform: translateX(0); /* Start at the initial position */
+    .container {
+      display: flex;
+      width: 900px;
+      height: 500px;
+      background: #fff;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 1s ease-in-out; /* Container fade-in animation */
     }
-    50% {
-        transform: translateX(50px); /* Move to the right */
+
+    /* Left Section */
+    .left-section {
+      flex: 1;
+      background: linear-gradient(135deg, #ff9a3e, #ffd000, #a5d649);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
     }
-    100% {
-        transform: translateX(0); /* Return to the initial position */
+
+    .left-section img {
+      width: 80%;
+      max-width: 300px;
+      animation: bounce 3s infinite ease-in-out; /* Bounce animation for the image */
     }
-}
 
-/* Container Adjustments */
-.login-container {
-    display: flex;
-    justify-content: space-between; /* Space between logo and form */
-    align-items: center;
-    width: 100%;
-    max-width: 900px;
-    padding: 20px;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    position: relative;
-    margin: 20px;
-}
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-15px);
+      }
+    }
 
-/* Login form styling */
-.login-form {
-    flex: 1;
-    max-width: 450px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start; /* Align text to the left */
-    text-align: left; /* Align form content to the left */
-}
+    /* Right Section */
+    .right-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center; /* Center vertically */
+      align-items: center; /* Center horizontally */
+      padding: 20px;
+      animation: slideInRight 1s ease-in-out; /* Slide-in animation for the form */
+    }
 
+    .form-container {
+      width: 100%;
+      max-width: 350px;
+    }
 
-    
-    
-
-h1 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 20px;
-}
-
-p {
-    font-size: 1rem;
-    color: #666;
-    margin-bottom: 20px;
-}
+    h1 {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+      text-align: center; /* Center title text */
+    }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       width: 100%;
+      position: relative; /* For password toggle positioning */
     }
-    
+
     label {
       display: block;
       font-size: 1rem;
-      color: #333;
+      color: #666;
       margin-bottom: 8px;
     }
-    
+
     input {
       width: 100%;
       padding: 12px;
       font-size: 1rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      border-radius: 8px;
+      border: 1px solid #ddd;
       background-color: #f9f9f9;
       transition: border-color 0.3s ease;
     }
-    
+
     input:focus {
       outline: none;
-      border-color: #1e3a8a;
+      border-color: #ff9a3e;
     }
-    
-    /* Button Styling */
+
+    /* Password toggle icon */
+    .toggle-password {
+      position: absolute;
+      top: 68%;
+      right: 15px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 1rem;
+      color: #aaa;
+    }
+
+    .toggle-password:hover {
+      color: #ff9a3e;
+    }
+
     button {
       width: 100%;
       padding: 14px;
-      background-color: #1e3a8a;
+      background-color: #2ecc71;
       color: white;
       font-size: 1.2rem;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    
+
     button:hover {
-      background-color: #1e40af;
+      background-color: #27ae60;
     }
-    
-    /* Forgot Password and Divider */
+
     .forgot-password {
-      text-align: center;
       margin-top: 15px;
+      text-align: center;
       font-size: 0.9rem;
+      color: #555;
     }
-    
+
     .forgot-password a {
-      color: #1e3a8a;
+      color: #2ecc71;
       text-decoration: none;
     }
-    
+
     .forgot-password a:hover {
       text-decoration: underline;
     }
-    
-    .divider {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 20px;
+
+    /* Keyframe Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
-    
-    .divider::before,
-    .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #ccc;
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
-    
-    .divider span {
-      padding: 0 15px;
-      color: #666;
-      font-size: 0.9rem;
-    }
-    
-    .register {
-      text-align: center;
-      margin-top: 20px;
-    }
-    
-    .register a {
-      color: #1e3a8a;
-      font-size: 1rem;
-      text-decoration: none;
-    }
-    
-    .register a:hover {
-      text-decoration: underline;
-    }
-    
-    /* Responsive Design */
+
+    /* Responsive Design for Smaller Screens */
     @media (max-width: 768px) {
-      .login-container {
+      .container {
         flex-direction: column;
+        height: auto;
+      }
+
+      .left-section {
+        height: 200px;
+        width: 100%;
+      }
+
+      .right-section {
         padding: 20px;
-        align-items: center;
       }
-    
-      .logo {
-        margin-bottom: 20px;
+
+      .left-section img {
+        width: 70%;
+        max-width: 250px;
       }
-    
-      .login-form {
-        max-width: 100%;
-        margin-left: 0;
+
+      h1 {
+        font-size: 1.5rem; /* Adjust heading size for mobile */
+      }
+
+      input, button {
+        font-size: 1rem; /* Adjust input and button font size for mobile */
       }
     }
-    
+
+    @media (max-width: 480px) {
+      .form-container {
+        max-width: 280px; /* Smaller form width on very small screens */
+      }
+    }
   </style>
 </head>
+
 <body>
+  <div class="container">
+    <!-- Left Section -->
+    <div class="left-section">
+      <img src="/static/images/CSD.png" alt="Decorative Image">
+    </div>
+    <!-- Right Section -->
+    <div class="right-section">
+      <div class="form-container">
+        <h1>Center for Sustainable Development</h1>
 
-  <div class="login-container">
-    <!-- Logo positioned at the top, moving -->
-    <img src="/static/images/sdg.png" alt="Logo" class="logo">
-    <!-- Login Form Section -->
-    <div class="login-form">
-      <h1>Welcome Back</h1>
-      <p>Sign in to the Center for Sustainable Development Portal</p>
-  
-      <!-- Display error message if login fails -->
-      {% if message %}
-        <p style="color:red; text-align: center;">{{ message }}</p>
-      {% endif %}
-  
-      <form method="POST" action="/login">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input
-            id="username"
-            name="username"
-            placeholder="Enter your username"
-            required
-            type="text"
-          />
+        <!-- Show Toast Notification if Flash Message Exists -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <!-- Only display messages that are not 'info' category (for logged out message) -->
+                    {% if category != 'info' %}
+                        <div id="toast" class="toast show">
+                            <p>{{ message }}</p>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/login">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input id="username" name="username" placeholder="Enter your username" required type="text">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input id="password" name="password" required type="password" placeholder="Enter your password">
+            <i class="fa fa-eye-slash toggle-password" id="toggle-password" onclick="togglePasswordVisibility()"></i>
+          </div>
+          <button type="submit">LOGIN</button>
+        </form>
+        <div class="forgot-password">
+          <a href="{{ url_for('change_password') }}">Forgot Password?</a>
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            required
-            type="password"
-            placeholder="Enter your password"
-          />
-        </div>
-  
-        <button type="submit">Sign In</button>
-      </form>
-  
-      <div class="forgot-password">
-        <a href="/change_password">Forgot your password?</a>
       </div>
-  
+    </div>
+  </div>
 
+  <script>
+    // Toggle password visibility
+    function togglePasswordVisibility() {
+      const passwordField = document.getElementById('password');
+      const toggleIcon = document.getElementById('toggle-password');
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+      } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+      }
+    }
+
+    // Show the toast message for 3 seconds, then hide it
+    {% if messages %}
+    setTimeout(function() {
+      var toast = document.getElementById("toast");
+      toast.style.display = "center"; // Hide toast after 3 seconds
+    }, 3000); // Time duration in milliseconds (3 seconds)
+    {% endif %}
+  </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Treated Water Consumption</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/emu.jpg') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,22 +14,24 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-     table {
-            width: 100%; /* Full width for table */
-            border-collapse: collapse; /* Collapse borders */
-            font-size: 10px; /* Smaller table font */
+      /* Table Styling */
+      table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
         }
-
-        th, td {
-            padding: 4px; /* Smaller cell padding */
-            text-align: center; /* Center align text */
-            border: 1px solid #ddd; /* Add border */
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
         }
-
+        
         th {
-            background-color: #d50000; /* Red background for table headers */
-            color: white; /* White text for better contrast */
-            font-size: 11px; /* Reduce font size for headers to prevent overflow */
+            background-color: #f2f2f2;
+            font-weight: bold;
         }
         #yearFilter, #quarterFilter, #monthFilter {
         margin: 10px 0; /* Adds top and bottom margin */
@@ -224,7 +227,7 @@ button.btn-secondary:hover {
 }
 
 button.btn-danger {
-    background-color: #d50000;
+    background-color: #ffffff;
     color: white;
 }
 
@@ -260,18 +263,38 @@ button:first-child {
     background-color: #666;
     color: white;
 }
+.buttons-container button {
+    padding: 10px 20px; /* Adjust padding for uniform button size */
+    margin: 0; /* Reset any extra margin */
+    font-size: 16px; /* Ensure consistent font size */
+    line-height: 1; /* Align text vertically */
+    border: none; /* Remove borders for a clean look */
+    border-radius: 5px; /* Add rounded corners */
+    background-color: #d50000; /* Consistent background color */
+    color: white; /* Text color */
+    cursor: pointer; /* Add pointer cursor on hover */
+}
+
+.buttons-container button:hover {
+    background-color: #b71c1c; /* Darker color on hover */
+}
+
+/* Optional: Add space between buttons */
+.buttons-container button + button {
+    margin-left: 10px;
+}
 
 button:first-child:hover {
     background-color: #555;
 }
 
 button:last-child {
-    background-color: #d50000;
-    color: white;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
 }
 
 button:last-child:hover {
-    background-color: #b71c1c;
+    background-color: #d50000;
 }
 
 .pagination-container {
@@ -349,13 +372,15 @@ button:last-child:hover {
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Consumption</div>
-                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
-                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
-                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
-                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
-                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                        <div class="sb-sidenav-menu-heading">Consumption Report</div>
+                        <nav class="sb-sidenav-menu-nested nav">
+                            <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                            <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                            <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                            <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                            <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                            <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                            </nav>
                     </div>
                 </div>
             </nav>
@@ -378,9 +403,10 @@ button:last-child:hover {
 
                     <div id="TreatedSection">
                         <div class="buttons-container mt-3 d-flex justify-content-start align-items-center gap-2">
-                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
-                            <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
+                        <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate</button>
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
                         <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadCSV()">Download CSV</button>
                         </div>
                     </div>
 
@@ -400,7 +426,8 @@ button:last-child:hover {
                             <option value="November" {% if selected_month == 'November' %}selected{% endif %}>November</option>
                             <option value="December" {% if selected_month == 'December' %}selected{% endif %}>December</option>
                         </select>
-
+                    
+                    <div class="table-responsive mt-4">
                     <table id="reportTable">
                         <thead>
                             <tr>
@@ -410,8 +437,8 @@ button:last-child:hover {
                                 <th>Reused Treated Water Volume (m³)</th>
                                 <th>Effluent Volume (m³)</th>
                                 <th>Price per Liter</th>
-                                <th>Factor (kg CO₂-e/m³)</th>
-                                <th>Factor (t CO₂-e/m³)</th>
+                                <th>GHG Emission (kg CO₂-e/m³)</th>
+                                <th>GHG Emission (t CO₂-e/m³)</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -432,6 +459,7 @@ button:last-child:hover {
                             </tr>
                             {% endfor %}
                         </tbody>
+                    </div>
                     </table>
 
                     <!-- Pagination controls -->
@@ -509,22 +537,33 @@ button:last-child:hover {
                         <label for="reusedVolume">Reused Treated Water Volume (m³):</label>
                         <input type="number" id="reusedVolume" name="reusedVolume" step="0.01" required>
     
-                        <!-- Auto-calculated fields -->
-                        <label for="effluentVolume">Effluent Volume (m³):</label>
-                        <input type="number" id="effluentVolume" name="effluentVolume" step="0.01" readonly>
-    
-                        <label for="pricePerLiter">Price per Liter (kg CO₂-e/m³):</label>
-                        <input type="number" id="pricePerLiter" name="pricePerLiter" step="0.01" readonly>
-    
-                        <!-- New fields for Factor (kg CO₂-e/m³) and Factor (t CO₂-e/m³) -->
-                        <label for="factorKgCO2e">Factor (kg CO₂-e/m³):</label>
-                        <input type="number" id="factorKgCO2e" name="factorKgCO2e" step="0.01" readonly>
-    
-                        <label for="factorTCO2e">Factor (t CO₂-e/m³):</label>
-                        <input type="number" id="factorTCO2e" name="factorTCO2e" step="0.000001" readonly>
-    
-                        <button type="button" class="btn btn-primary" onclick="calculateValues()">Calculate</button>
-                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                        <button type="button" class="btn btn-primary" style="background-color: #666; color: white;" onclick="calculateValues()">Calculate</button>
+
+                       <!-- Auto-calculated fields -->
+                        <div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <label for="effluentVolume" style="font-weight: bold; color: #333; margin-right: 10px;">Effluent Volume (m³):</label>
+                                <input type="number" id="effluentVolume" name="effluentVolume" step="0.01" readonly 
+                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                            </div>
+                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <label for="pricePerLiter" style="font-weight: bold; color: #333; margin-right: 10px;">Price per Liter (kg CO₂-e/m³):</label>
+                                <input type="number" id="pricePerLiter" name="pricePerLiter" step="0.01" readonly 
+                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                            </div>
+                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <label for="factorKgCO2e" style="font-weight: bold; color: #333; margin-right: 10px;">GHG Emission (kg CO₂-e/m³):</label>
+                                <input type="number" id="factorKgCO2e" name="factorKgCO2e" step="0.01" readonly 
+                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                            </div>
+                            <div style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+                                <label for="factorTCO2e" style="font-weight: bold; color: #333; margin-right: 10px;">GHG Emission (t CO₂-e/m³):</label>
+                                <input type="number" id="factorTCO2e" name="factorTCO2e" step="0.000001" readonly 
+                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.000000">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="background-color: #666; color: white;">Generate Report</button>
                     </form>
                 </div>
             </div>
@@ -745,6 +784,75 @@ function downloadExcel() {
     document.getElementById('pricePerLiter').value = pricePerLiter.toFixed(2);
     document.getElementById('factorKgCO2e').value = factorKgCO2e.toFixed(2);
     document.getElementById('factorTCO2e').value = factorTCO2e.toFixed(6); // More precision for tons
+}
+function downloadCSV() {
+    // Retrieve the filter values
+    const month = document.getElementById('monthFilter')?.value || '';
+
+    // Build the query string based on filters
+    let queryString = '';
+    if (month) queryString += `month=${encodeURIComponent(month)}`;
+
+    const fetchUrl = queryString ? `/treated_water/all?${queryString}` : `/treated_water/all`;
+
+    // Fetch data from the server
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            // Define CSV headers
+            const headers = [
+                "Campus",
+                "Month",
+                "Treated Water Volume (m³)",
+                "Reused Treated Water Volume (m³)",
+                "Effluent Volume (m³)",
+                "Price per Liter",
+                "GHG Emission (kg CO₂-e/m³)",
+                "GHG Emission (t CO₂-e/m³)"
+            ];
+
+            // Create CSV rows
+            const csvRows = [headers.join(",")];
+            data.forEach(report => {
+                const row = [
+                    report.Campus,
+                    report.Month,
+                    report.TreatedWaterVolume,
+                    report.ReusedTreatedWaterVolume,
+                    report.EffluentVolume,
+                    report.PricePerLiter,
+                    report.FactorKGCO2e,
+                    report.FactorTCO2e
+                ].join(",");
+                csvRows.push(row);
+            });
+
+            // Create a Blob from the CSV content
+            const csvBlob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+            const csvUrl = URL.createObjectURL(csvBlob);
+
+            // Create a temporary link and trigger the download
+            const tempLink = document.createElement("a");
+            tempLink.href = csvUrl;
+            tempLink.download = "TreatedWaterConsumptionReport.csv";
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        })
+        .catch(error => {
+            console.error('Error exporting CSV:', error.message);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
 }
 
     </script>

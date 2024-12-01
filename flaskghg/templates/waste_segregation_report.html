@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Waste Segregation Report</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -215,10 +217,10 @@
                 <label for="quarter">Quarter:</label>
                 <select id="quarter" name="quarter" class="form-control" onchange="document.getElementById('filterForm').submit()">
                     <option value="">All Quarters</option>
-                    <option value="1" {% if quarter == '1' %}selected{% endif %}>Q1</option>
-                    <option value="2" {% if quarter == '2' %}selected{% endif %}>Q2</option>
-                    <option value="3" {% if quarter == '3' %}selected{% endif %}>Q3</option>
-                    <option value="4" {% if quarter == '4' %}selected{% endif %}>Q4</option>
+                    <option value="Q1" {% if quarter == 'Q1' %}selected{% endif %}>Q1</option>
+                    <option value="Q2" {% if quarter == 'Q2' %}selected{% endif %}>Q2</option>
+                    <option value="Q3" {% if quarter == 'Q3' %}selected{% endif %}>Q3</option>
+                    <option value="Q4" {% if quarter == 'Q4' %}selected{% endif %}>Q4</option>
                 </select>
             </div>
             
@@ -235,6 +237,7 @@
         </div>
     </form>
                     {% if data %}
+                    <div class="table-responsive mt-4">
                         <table class="table table-bordered mt-4" id="waste_segregation">
                             <thead>
                                 <tr>
@@ -252,7 +255,7 @@
                             <tbody>
                                 {% for report in data %}
                                 <tr>
-                                    <td>{{ report.Campus }}</td>
+<td>{{ report.Campus }}</td>
                                     <td>{{ report.Year }}</td>
                                     <td>{{ report.Quarter }}</td>
                                     <td>{{ report.Month }}</td>
@@ -265,6 +268,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
                          <!-- Pagination Controls -->
         <div class="pagination-container mt-3">
             <nav aria-label="Page navigation example">
@@ -291,8 +295,8 @@
                     {% endif %}
                 </div>
 
-                <button onclick="downloadPDF()" class="btn btn-primary" id="downloadPdfBtn">Download PDF</button>
-                <button onclick="downloadExcel()" class="btn btn-success" id="downloadExcelBtn">Download Excel</button>
+                <button onclick="downloadPDF()" style="background-color: #d50000; border-color: #d50000;" class="btn btn-primary" id="downloadPdfBtn">Download PDF</button>
+                <button onclick="downloadExcel()" style="background-color: #d50000; border-color: #d50000;"  class="btn btn-success" id="downloadExcelBtn">Download Excel</button>
             </main>
         </div>
     </div>

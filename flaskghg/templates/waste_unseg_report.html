@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Waste Unsegregation Report</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -142,10 +144,6 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <a class="nav-link" href="{{ url_for('manage_account') }}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
-                            Manage Account
-                        </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
                             Report
@@ -165,6 +163,10 @@
                                 <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
                             </nav>
                         </div>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -220,6 +222,7 @@
                     
                     
                     {% if data %}
+                    <div class="table-responsive mt-4">
                         <table class="table table-bordered mt-4" id="waste_unsegregation">
                             <thead>
                                 <tr>
@@ -250,6 +253,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
                         <div class="pagination-container mt-3">
                             <nav aria-label="Page navigation example">
                                 <ul class="pagination justify-content-start">
@@ -280,9 +284,9 @@
                     {% endif %}
                 </div>
                 <div class="mb-3">
-                    <button id="downloadPDFBtn" class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>
+                    <button id="downloadPDFBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="downloadPDF()">Download PDF</button>
                     <!-- Download Excel Button -->
-<button id="downloadExcelBtn" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+<button id="downloadExcelBtn" class="btn btn-success" style="background-color: #d50000; border-color: #d50000;" onclick="downloadExcel()">Download Excel</button>
 
                 </div>
             </main>

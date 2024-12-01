@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Flight Emissions Report</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -141,10 +143,6 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <a class="nav-link" href="{{ url_for('manage_account') }}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
-                            Manage Account
-                        </a>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
                             <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
                             Report
@@ -164,6 +162,10 @@
                                 <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
                             </nav>
                         </div>
+                        <a class="nav-link" href="{{ url_for('manage_account') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                            Manage Account
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -207,6 +209,45 @@
                 <option value="OVCRDES" {% if request.args.get('office') == 'OVCRDES' %}selected{% endif %}>OVCRDES</option>
                 <option value="OC" {% if request.args.get('office') == 'OC' %}selected{% endif %}>OC</option>
                 <option value="CICS" {% if request.args.get('office') == 'CICS' %}selected{% endif %}>CICS</option>
+                <option value="IAU" {% if office == 'IAU' %}selected{% endif %}>IAU</option>
+                <option value="QAM" {% if office == 'QAM' %}selected{% endif %}>QAM</option>
+                <option value="SDO" {% if office == 'SDO' %}selected{% endif %}>SDO</option>
+                <option value="PDO" {% if office == 'PDO' %}selected{% endif %}>PDO</option>
+                <option value="EA" {% if office == 'EA' %}selected{% endif %}>EA</option>
+                <option value="RGO" {% if office == 'RGO' %}selected{% endif %}>RGO</option>
+                <option value="ICT" {% if office == 'ICT' %}selected{% endif %}>ICT</option>
+                <option value="CAS" {% if office == 'CAS' %}selected{% endif %}>CAS</option>
+                <option value="CABE" {% if office == 'CABE' %}selected{% endif %}>CABE</option>
+                <option value="CICS" {% if office == 'CICS' %}selected{% endif %}>CICS</option>
+                <option value="CET" {% if office == 'CET' %}selected{% endif %}>CET</option>
+                <option value="CTE" {% if office == 'CTE' %}selected{% endif %}>CTE</option>
+                <option value="CE" {% if office == 'CE' %}selected{% endif %}>CE</option>
+                <option value="CA" {% if office == 'CA' %}selected{% endif %}>CA</option>
+                <option value="TAO" {% if office == 'TAO' %}selected{% endif %}>TAO</option>
+                <option value="ORS" {% if office == 'ORS' %}selected{% endif %}>ORS</option>
+                <option value="SFAO" {% if office == 'SFAO' %}selected{% endif %}>SFAO</option>
+                <option value="GC" {% if office == 'GC' %}selected{% endif %}>GC</option>
+                <option value="OLS" {% if office == 'OLS' %}selected{% endif %}>OLS</option>
+                <option value="SOO" {% if office == 'SOO' %}selected{% endif %}>SOO</option>
+                <option value="SD" {% if office == 'SD' %}selected{% endif %}>SD</option>
+                <option value="OJT" {% if office == 'OJT' %}selected{% endif %}>OJT</option>
+                <option value="NSTP" {% if office == 'NSTP' %}selected{% endif %}>NSTP</option>
+                <option value="HRMO" {% if office == 'HRMO' %}selected{% endif %}>HRMO</option>
+                <option value="RMO" {% if office == 'RMO' %}selected{% endif %}>RMO</option>
+                <option value="PO" {% if office == 'PO' %}selected{% endif %}>PO</option>
+                <option value="BO" {% if office == 'BO' %}selected{% endif %}>BO</option>
+                <option value="CD" {% if office == 'CD' %}selected{% endif %}>CD</option>
+                <option value="AO" {% if office == 'AO' %}selected{% endif %}>AO</option>
+                <option value="PFMO" {% if office == 'PFMO' %}selected{% endif %}>PFMO</option>
+                <option value="EMU" {% if office == 'EMU' %}selected{% endif %}>EMU</option>
+                <option value="PSO" {% if office == 'PSO' %}selected{% endif %}>PSO</option>
+                <option value="GSO" {% if office == 'GSO' %}selected{% endif %}>GSO</option>
+                <option value="ESO" {% if office == 'ESO' %}selected{% endif %}>ESO</option>
+                <option value="RO" {% if office == 'RO' %}selected{% endif %}>RO</option>
+                <option value="OVCRDES" {% if office == 'OVCRDES' %}selected{% endif %}>OVCRDES</option>
+                <option value="OVCDEA" {% if office == 'OVCDEA' %}selected{% endif %}>OVCDEA</option>
+                <option value="OVCAA" {% if office == 'OVCAA' %}selected{% endif %}>OVCAA</option>
+                <option value="OVCAF" {% if office == 'OVCAF' %}selected{% endif %}>OVCAF</option>
             </select>
         </div>
 
@@ -223,6 +264,7 @@
 </form>
 
                     {% if data %}
+                    <div class="table-responsive mt-4">
                         <table class="table table-bordered mt-4" id="flight_data">
                             <thead>
                                 <tr>
@@ -259,6 +301,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
               <!-- Pagination Controls -->
 <div class="pagination-container mt-3">
     <nav aria-label="Page navigation example">
@@ -288,12 +331,12 @@
                 </div>
                 <div class="mb-3">
                     <!-- PDF Download Button -->
-                    <button id="downloadPDFBtn" class="btn btn-primary" style="background-color:#d50000; color: white;" onclick="downloadFlightPDF()">
+                    <button id="downloadPDFBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-primary" style="background-color:#d50000; color: white;" onclick="downloadFlightPDF()">
                         Download PDF
                     </button>
                     
                     <!-- Excel Download Button -->
-                    <button id="downloadExcelBtn" class="btn btn-success" onclick="downloadFlightExcel()">
+                    <button id="downloadExcelBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-success" onclick="downloadFlightExcel()">
                         Download Excel
                     </button>
                 </div>

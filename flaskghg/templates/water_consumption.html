@@ -5,30 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Water Consumption</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/emu.jpg') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        table {
-         width: 100%; /* Full width for table */
-         border-collapse: collapse; /* Collapse borders */
-         font-size: 10px; /* Smaller table font */
-     }
-     
-     th, td {
-    padding: 4px; /* Smaller cell padding */
-    text-align: center; /* Center align text */
-    border: 1px solid #000000 !important; /* Force black border with !important */
-}
-
-     
-     th {
-         background-color:  #d50000 !important; /* Background color */
-         color: #fff; /* Red text color with !important */
-         font-size: 11px; /* Reduce font size for headers to prevent overflow */
-     }
-     
+          /* Table Styling */
+       table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
              #yearFilter, #quarterFilter, #monthFilter {
              margin: 10px 0; /* Adds top and bottom margin */
               }
@@ -237,12 +238,12 @@
      }
      
      button:last-child {
-         background-color: #d50000;
-         color: white;
+         background-color: #ffffff;
+         color: rgb(0, 0, 0);
      }
      
      button:last-child:hover {
-         background-color: #b71c1c;
+         background-color: #d50000;
      }
      
      .pagination-container {
@@ -322,13 +323,15 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Consumption</div>
+                        <div class="sb-sidenav-menu-heading">Consumption Report</div>
+                        <nav class="sb-sidenav-menu-nested nav">
                         <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
                         <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water</a>
                         <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
                         <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
                         <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                    </nav>
                     </div>
                 </div>
             </nav>
@@ -351,9 +354,10 @@
                     <!-- Button to open the modal -->
                     <div id="WaterSection">
                         <div>
-                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="openCalculatorModal()">Calculate Water Consumption</button>
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="openCalculatorModal()">Calculate</button>
                             <button style="background-color: #d50000; color: white; border: none;"onclick="printReport()">Print Report</button>
-                            <button class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
+                            <button class="btn btn-success" style="background-color: #d50000; color: white;" onclick="downloadExcel()">Download Excel</button>
+                            <button class="btn btn-info" style="background-color: #d50000; color: white;" onclick="downloadCSV()">Download CSV</button>
                         </div>
                     </div>
 
@@ -361,6 +365,17 @@
                         <label for="yearFilter">Filter by Year:</label>
                         <select id="yearFilter" onchange="applyFilters()">
                             <option value="">All Years</option>
+                            <option value="2014" {% if selected_year == "2014" %}selected{% endif %}>2014</option>
+                            <option value="2015" {% if selected_year == "2015" %}selected{% endif %}>2015</option>
+                            <option value="2016" {% if selected_year == "2016" %}selected{% endif %}>2016</option>
+                            <option value="2017" {% if selected_year == "2017" %}selected{% endif %}>2017</option>
+                            <option value="2018" {% if selected_year == "2018" %}selected{% endif %}>2018</option>
+                            <option value="2019" {% if selected_year == "2019" %}selected{% endif %}>2014</option>
+                            <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
                         </select>
                 
                         <!-- Category Filter -->
@@ -419,23 +434,32 @@
                                         <label for="totalAmount">Total Amount (₱):</label>
                                         <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
 
-                                        <label for="factorKgCO2">Factor (kg CO₂/m³):</label>
-                                        <input type="number" id="factorKgCO2" name="factorKgCO2" readonly>
+                                        <button type="button" class="btn btn-primary" onclick="calculateData()">Calculate</button>
 
-                                        <label for="factorTCO2">Factor (t CO₂/m³):</label>
-                                        <input type="number" id="factorTCO2" name="factorTCO2" readonly>
-                                                                            <!-- Calculate Button remains as type="submit" -->
-                                        <button type="submit">Calculate</button>
-                                        <!-- Generate Report Button -->
-                                        <button type="button" class="btn btn-success" onclick="generateReport()">Generate Report</button>
+                                        <!-- Factor fields -->
+<div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <label for="factorKgCO2" style="font-weight: bold; color: #333; margin-right: 10px;">Factor (kg CO₂/m³):</label>
+        <input type="number" id="factorKgCO2" name="factorKgCO2" readonly 
+               style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+    </div>
+    <div style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+        <label for="factorTCO2" style="font-weight: bold; color: #333; margin-right: 10px;">Factor (t CO₂/m³):</label>
+        <input type="number" id="factorTCO2" name="factorTCO2" readonly 
+               style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+    </div>
+</div>
 
+
+                                        <!-- Replace the form submission button type with JavaScript to submit the form -->
+                                        <button type="button" class="btn btn-success" onclick="submitForm()">Generate Report</button>
                                     </form>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <!-- Data table -->
-                    <h2 class="mt-4"></h2>
+                    <div class="table-responsive mt-4">
                     <table class="table table-bordered">
                         <thead>
                             <tr>
@@ -472,7 +496,7 @@
                             </tr>
                             {% endfor %}
                         </tbody>
-                        
+                    </div>
                     </table>
 
 <!-- Pagination controls -->
@@ -499,51 +523,42 @@
 
                 </div>
             </main>
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     </div>
 
     <script>
-        // Intercept form submission to handle "Calculate" button
-document.getElementById('waterForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent form from submitting
-
-    // Perform the calculations for CO₂ factors
-    const consumption = parseFloat(document.getElementById('consumption').value);
-
-    if (isNaN(consumption) || consumption <= 0) {
-        alert("Please enter a valid consumption value in m³.");
-        return;
-    }
-
-    // Calculate CO₂ factors
-    const kgCO2PerM3 = consumption * 0.0149;
-    const tCO2PerM3 = kgCO2PerM3 / 1000;
-
-    // Display the calculated factors in the modal
-    document.getElementById('factorKgCO2').value = kgCO2PerM3.toFixed(4);
-    document.getElementById('factorTCO2').value = tCO2PerM3.toFixed(6);
-});
-
-function generateReport() {
-    // Close the modal after calculation
-    const modal = document.getElementById('myModal');
-    modal.style.display = 'none';
-
-    // Proceed with form submission if needed
-    // You can trigger form submission or further action here
-}        
+        function calculateData() {
+            // Perform the calculations for CO₂ factors
+            const consumption = parseFloat(document.getElementById('consumption').value);
+        
+            if (isNaN(consumption) || consumption <= 0) {
+                alert("Please enter a valid consumption value in m³.");
+                return;
+            }
+        
+            // Calculate CO₂ factors
+            const kgCO2PerM3 = consumption * 0.0149;
+            const tCO2PerM3 = kgCO2PerM3 / 1000;
+        
+            // Display the calculated factors in the modal
+            document.getElementById('factorKgCO2').value = kgCO2PerM3.toFixed(4);
+            document.getElementById('factorTCO2').value = tCO2PerM3.toFixed(6);
+        
+            // Keep the modal open (no code needed to keep it open; it's already open)
+        }
+        
+        function submitForm() {
+            // Submit the form programmatically
+            document.getElementById('waterForm').submit();
+        
+            // Close the modal after submission
+            closeModal();
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('myModal');
+            modal.style.display = 'none'; // Hide the modal
+        }
         
 
         let currentPage = 1;
@@ -798,6 +813,74 @@ function deleteRow(id) {
                 closeModal();
             }
         };
+
+        function downloadCSV() {
+    const year = document.getElementById('yearFilter')?.value || '';
+    const category = document.getElementById('categoryFilter')?.value || '';
+
+    // Build query string with filters
+    let queryString = '';
+    if (year) queryString += `year=${encodeURIComponent(year)}&`;
+    if (category) queryString += `category=${encodeURIComponent(category)}`;
+
+    const fetchUrl = queryString ? `/water_consumption/all?${queryString}` : `/water_consumption/all`;
+
+    // Fetch data from the server
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            // Generate CSV content
+            const headers = [
+                "Campus", "Category", "Date", "Previous Reading (m³)", "Current Reading (m³)",
+                "Consumption (m³)", "Total Amount (₱)", "Price per m³ (₱)", 
+                "Factor (kg CO₂/m³)", "Factor (t CO₂/m³)"
+            ];
+            const csvRows = [headers.join(",")];
+
+            data.forEach(record => {
+                const row = [
+                    record.Campus,
+                    record.Category,
+                    record.Date,
+                    record.PreviousReading,
+                    record.CurrentReading,
+                    record.Consumption,
+                    record.TotalAmount,
+                    record.PricePerLiter,
+                    record.FactorKGCO2e,
+                    record.FactorTCO2e
+                ].join(",");
+                csvRows.push(row);
+            });
+
+            // Create a Blob from the CSV content
+            const csvBlob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+            const csvUrl = URL.createObjectURL(csvBlob);
+
+            // Create a temporary download link
+            const tempLink = document.createElement("a");
+            tempLink.href = csvUrl;
+            tempLink.download = "WaterConsumptionReport.csv";
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        })
+        .catch(error => {
+            console.error('Error:', error.message);
+            alert('An error occurred while exporting the data: ' + error.message);
+        });
+}
+
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>

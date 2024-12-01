@@ -7,6 +7,7 @@
     <meta name="description" content="LPG Consumption" />
     <meta name="author" content="Your Name" />
     <title>LPG Consumption</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/bsu.png') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
@@ -19,23 +20,26 @@
 
 
     <style>
-        table {
-               width: 100%; /* Full width for table */
-               border-collapse: collapse; /* Collapse borders */
-               font-size: 10px; /* Smaller table font */
-           }
-   
-           th, td {
-               padding: 4px; /* Smaller cell padding */
-               text-align: center; /* Center align text */
-               border: 1px solid #ddd; /* Add border */
-           }
-   
-           th {
-                 background-color: #d50000 !important; /* Red background for table headers */
-                 color: white !important; /* White text for better contrast */
-                 font-size: 11px; /* Reduce font size for headers to prevent overflow */
-             }
+       /* Table Styling */
+       table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
            #yearFilter, #quarterFilter, #monthFilter {
            margin: 10px 0; /* Adds top and bottom margin */
             }
@@ -229,12 +233,12 @@
    }
    
    button.btn-danger {
-       background-color: #d50000;
-       color: white;
+       background-color: #ffffff;
+       color: rgb(0, 0, 0);
    }
    
    button.btn-danger:hover {
-       background-color: #b71c1c;
+       background-color: #d50000;
    }
    
    
@@ -271,12 +275,12 @@
    }
    
    button:last-child {
-       background-color: #d50000;
-       color: white;
+       background-color: #ffffff;
+       color: rgb(0, 0, 0);
    }
    
    button:last-child:hover {
-       background-color: #b71c1c;
+       background-color: #d50000;
    }
    
    .pagination .page-item.active .page-link {
@@ -346,9 +350,11 @@
                                 <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                                 Dashboard
                             </a>
-                            <div class="sb-sidenav-menu-heading">Consumption</div>
+                            <div class="sb-sidenav-menu-heading">Consumption Report</div>
+                            <nav class="sb-sidenav-menu-nested nav">
                             <a class="nav-link" href="{{ url_for('food_consumption') }}">Food</a>
                             <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
+                            </nav>
                         </div>
                     </div>
                 </nav>
@@ -377,26 +383,33 @@
 
                     <div id="LpgSection">
                         <div>
-                            <button id="openModalBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate Consumption</button>
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;" onclick="openCalculatorModal()">Calculate</button>
                             <button id="printReportBtn" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">Print Report</button>
                             <button onclick="downloadLPGExcel()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">Export to Excel</button>
+                            <button onclick="downloadLPGCSV()" class="btn btn-primary" style="background-color:#d50000; color: white; border: none;">Export to CSV</button>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label for="yearFilter">Year:</label>
                         <select id="yearFilter" onchange="filterLPGReport()">
-                            <option value="">All</option>
-                            <option value="2020" {% if selected_year == '2020' %}selected{% endif %}>2020</option>
-                            <option value="2021" {% if selected_year == '2021' %}selected{% endif %}>2021</option>
-                            <option value="2022" {% if selected_year == '2022' %}selected{% endif %}>2022</option>
-                            <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
-                            <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+                            <option value="">All Years</option>
+                            <option value="2014" {% if selected_year == "2014" %}selected{% endif %}>2014</option>
+                            <option value="2015" {% if selected_year == "2015" %}selected{% endif %}>2015</option>
+                            <option value="2016" {% if selected_year == "2016" %}selected{% endif %}>2016</option>
+                            <option value="2017" {% if selected_year == "2017" %}selected{% endif %}>2017</option>
+                            <option value="2018" {% if selected_year == "2018" %}selected{% endif %}>2018</option>
+                            <option value="2019" {% if selected_year == "2019" %}selected{% endif %}>2014</option>
+                            <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
+                            <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
+                            <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
+                            <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
+                            <option value="2024" {% if selected_year == "2024" %}selected{% endif %}>2024</option>
                         </select>
                     
                         <label for="monthFilter">Month:</label>
                         <select id="monthFilter" onchange="filterLPGReport()">
-                            <option value="">All</option>
+                            <option value="">All Months</option>
                             <option value="January" {% if selected_month == 'January' %}selected{% endif %}>January</option>
                             <option value="February" {% if selected_month == 'February' %}selected{% endif %}>February</option>
                             <option value="March" {% if selected_month == 'March' %}selected{% endif %}>March</option>
@@ -413,7 +426,7 @@
                     
                         <label for="officeFilter">Office:</label>
                         <select id="officeFilter" onchange="filterLPGReport()">
-                            <option value="">All</option>
+                            <option value="">All Office</option>
                             <option value="Procurement" {% if selected_office == 'Procurement' %}selected{% endif %}>Procurement</option>
                             <option value="Auxiliary Services" {% if selected_office == 'Auxiliary Services' %}selected{% endif %}>Auxiliary Services</option>
                             <option value="RGO" {% if selected_office == 'RGO' %}selected{% endif %}>RGO</option>
@@ -452,9 +465,9 @@
                                 <td>{{ record['GHGEmissionKGCO2e'] }}</td> <!-- Match the field name here -->
                                 <td>{{ record['GHGEmissionTCO2e'] }}</td> <!-- Match the field name here -->
                                 <td>
-                                    <span class="delete-icon" onclick="deleteRow({{ record['id'] }})">
-                                        <i class="fa-solid fa-trash-can" style="color: #fd0808;"></i>
-                                    </span>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteRow({{ record['id'] }})">
+                                        <i class=></i> Delete
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -562,13 +575,22 @@
                         <label for="tankWeight">Tank weight (in kg):</label>
                         <input type="number" id="tankWeight" name="tankWeight" step="0.01" required>
 
-                        <label for="GHGEmissionKGCO2e">GHG Emission (KG CO2e):</label>
-                        <input type="number" id="GHGEmissionKGCO2e" name="GHGEmissionKGCO2e" readonly>
-    
-                        <label for="GHGEmissionTCO2e">GHG Emission (T CO2e):</label>
-                        <input type="number" id="GHGEmissionTCO2e" name="GHGEmissionTCO2e" readonly>
-    
-                        <button type="button" onclick="calculateEmissions()">Calculate CO2 Emission</button>
+                        <button type="button" onclick="calculateEmissions()">Calculate</button>
+
+                       <!-- GHG Emission fields -->
+                        <div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                <label for="GHGEmissionKGCO2e" style="font-weight: bold; color: #333; margin-right: 10px;">GHG Emission (KG CO₂e):</label>
+                                <input type="number" id="GHGEmissionKGCO2e" name="GHGEmissionKGCO2e" readonly 
+                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                            </div>
+                            <div style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+                                <label for="GHGEmissionTCO2e" style="font-weight: bold; color: #333; margin-right: 10px;">GHG Emission (T CO₂e):</label>
+                                <input type="number" id="GHGEmissionTCO2e" name="GHGEmissionTCO2e" readonly 
+                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                            </div>
+                        </div>
+
                         <button type="submit" onclick="closeModal()">Generate Report</button>
                     </form>
                 </div>
@@ -768,6 +790,57 @@ function downloadLPGExcel() {
         });
 }
 
+function downloadLPGCSV() {
+    // Get filter values from the dropdowns if present
+    const year = document.getElementById('yearFilter')?.value || '';
+    const month = document.getElementById('monthFilter')?.value || '';
+    const office = document.getElementById('officeFilter')?.value || '';
+
+    // Build the query string based on the selected filters
+    let queryString = `?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}`;
+
+    // Fetch data for the CSV
+    fetch(`/lpg_consumption/all${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available to download.');
+                return;
+            }
+
+            // Prepare the CSV data
+            const headers = [
+                "Campus", "Year", "Month", "Office", "Concessionaire Type", 
+                "Qty (no. of tanks)", "Tank Weight", "Tank Volume", 
+                "Total Tank Volume", "GHG Emission (KG CO2e)", "GHG Emission (T CO2e)"
+            ];
+            const rows = data.map(record => [
+                record.Campus, record.YearTransact, record.Month, record.Office,
+                record.ConcessionariesType, record.TankQuantity, record.TankWeight,
+                record.TankVolume, record.TotalTankVolume, 
+                record.GHGEmissionKGCO2e, record.GHGEmissionTCO2e
+            ]);
+
+            // Convert to CSV format
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(value => `"${value}"`).join(","))
+                .join("\n");
+
+            // Trigger download
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "LPGConsumptionReport.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
 
     </script>
 </body>

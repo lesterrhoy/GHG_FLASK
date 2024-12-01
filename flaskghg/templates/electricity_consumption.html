@@ -5,30 +5,32 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Electricity Consumption</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/emu.jpg') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-   table {
-    width: 100%; /* Full width for table */
-    border-collapse: collapse; /* Collapse borders */
-    font-size: 10px; /* Smaller table font */
-}
-
-th, td {
-    padding: 4px; /* Smaller cell padding */
-    text-align: center; /* Center align text */
-    border: 1px solid #000000 !important; /* Force black border with !important */
-}
-
-
-th {
-    background-color: #d50000; /* Red background for table headers */
-    color: white; /* White text for better contrast */
-    font-size: 11px; /* Reduce font size for headers to prevent overflow */
-}
+    /* Table Styling */
+    table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
         #yearFilter, #quarterFilter, #monthFilter {
         margin: 10px 0; /* Adds top and bottom margin */
          }
@@ -173,23 +175,6 @@ th {
     background-color: #f9f9f9;
     color: #333;
     font-size: 14px;
-}
-
-    width: 100%; /* Full width for table */
-    border-collapse: collapse; /* Collapse borders */
-    font-size: 10px; /* Smaller table font */
-}
-
-th, td {
-    padding: 4px; /* Smaller cell padding */
-    text-align: center; /* Center align text */
-    border: 1px solid #000000; /* Add border */
-}
-
-th {
-    background-color:  #d50000 !important; /* Background color */
-    color: #fff; /* Red text color with !important */
-    font-size: 11px; /* Reduce font size for headers to prevent overflow */
 }
 
         #yearFilter, #quarterFilter, #monthFilter {
@@ -369,12 +354,12 @@ button.btn-secondary:hover {
 }
 
 button.btn-danger {
-    background-color: #d50000;
-    color: white;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
 }
 
 button.btn-danger:hover {
-    background-color: #b71c1c;
+    background-color: #d50000;
 }
 
 .pagination-container {
@@ -419,19 +404,18 @@ button.btn-danger:hover {
     </style>
 </head>
 <body>
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+    <nav class="sb-topnav navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
-         <!-- Spacer to push "Sign-out" to the right -->
-         <div class="ms-auto"></div>
-    
-         <!-- Sign-out Icon and Link -->
-         <ul class="navbar-nav">
-             <li class="nav-item">
-                 <a class="nav-link" href="{{ url_for('logout') }}">
-                     <i class="fas fa-power-off fa-fw"></i> Sign-out
-                 </a>
-             </li>
-         </ul>
+       
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-power-off fa-fw"></i> Sign-out
+                    </a>
+                </li>
+            </ul>
+        </div>
     </nav>
 
     <div id="layoutSidenav">
@@ -444,13 +428,15 @@ button.btn-danger:hover {
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Consumption</div>
-                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
-                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
-                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
-                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
-                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                        <div class="sb-sidenav-menu-heading">Consumption Report</div>
+                        <nav class="sb-sidenav-menu-nested nav">
+                            <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                            <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                            <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                            <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                            <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                            <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                        </nav>
                     </div>
                 </div>
             </nav>
@@ -465,20 +451,21 @@ button.btn-danger:hover {
                         <li class="breadcrumb-item active">Electricity</li>
                     </ol>
 
-                    <div class="mb-4">
+                    <div class=" card mb-4">
+                        <div class="card-body">
                         <p>Electricity consumption is a critical aspect of monitoring greenhouse gas emissions. This report tracks the usage of electricity across various campuses and categories. The data includes previous and current readings, multipliers, total amounts, and the resulting carbon footprint in terms of CO2 emissions.</p>
+                        </div>
                     </div>
+
 
 
                     <div class="buttons-container mt-3 d-flex justify-content-start align-items-center gap-2">
-                        <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate Consumption</button>
+                        <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate</button>
                         <button class="btn btn-primary" onclick="printReport()">Print Report</button>
                         <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
-                       
+                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadCSV()">Download CSV</button>
                     </div>
                     
-                    
-
                     <div class="mb-4">
                         <label for="monthFilter">Filter by Month:</label>
                         <select id="monthFilter" onchange="applyFilter()">
@@ -509,6 +496,13 @@ button.btn-danger:hover {
                         <label for="yearFilter">Filter by Year:</label>
                         <select id="yearFilter" onchange="applyFilter()">
                             <option value="">All Years</option>
+                            <option value="2014" {% if selected_year == "2014" %}selected{% endif %}>2014</option>
+                            <option value="2015" {% if selected_year == "2015" %}selected{% endif %}>2015</option>
+                            <option value="2016" {% if selected_year == "2016" %}selected{% endif %}>2016</option>
+                            <option value="2017" {% if selected_year == "2017" %}selected{% endif %}>2017</option>
+                            <option value="2018" {% if selected_year == "2018" %}selected{% endif %}>2018</option>
+                            <option value="2019" {% if selected_year == "2019" %}selected{% endif %}>2014</option>
+                            <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
                             <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
                             <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
                             <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
@@ -539,7 +533,7 @@ button.btn-danger:hover {
                                             <option value="Rosario">Rosario</option>
                                             <option value="San Juan">San Juan</option>
                                         </select>
-
+                                    
                                         <label for="category">Category:</label>
                                         <select id="category" name="category" required>
                                             <option value=""></option>
@@ -547,9 +541,9 @@ button.btn-danger:hover {
                                             <option value="Mains">Mains</option>
                                             <option value="Others">Others</option>
                                         </select>
-
+                                    
                                         <label for="month">Month:</label>
-                                        <select id="month" name="month" required>
+                                        <select id="month" name="month" required onchange="updateQuarter()">
                                             <option value=""></option>
                                             <option value="January">January</option>
                                             <option value="February">February</option>
@@ -566,51 +560,64 @@ button.btn-danger:hover {
                                         </select>
 
                                         <label for="quarter">Quarter:</label>
-                                        <select id="quarter" name="quarter" required>
-                                            <option value=""></option>
-                                            <option value="Q1">Q1</option>
-                                            <option value="Q2">Q2</option>
-                                            <option value="Q3">Q3</option>
-                                            <option value="Q4">Q4</option>
-                                        </select>
-
+<input type="text" id="quarter" name="quarter" readonly style="background: #f9f9f9; border: 1px solid #ccc; padding: 5px; width: 320px;" value="">
+                                    
                                         <label for="year">Year:</label>
                                         <select id="year" name="year" required>
                                             <option value=""></option>
+                                            <option value="2017">2017</option>
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
                                             <option value="2021">2021</option>
                                             <option value="2022">2022</option>
                                             <option value="2023">2023</option>
                                             <option value="2024">2024</option>
+                                            <option value="2025">2025</option>
                                         </select>
-
+                                    
                                         <label for="prevReading">Previous Reading (kWh):</label>
                                         <input type="number" id="prevReading" name="prevReading" step="0.01" required>
-
+                                    
                                         <label for="currentReading">Current Reading (kWh):</label>
                                         <input type="number" id="currentReading" name="currentReading" step="0.01" required>
-
+                                    
                                         <label for="multiplier">Multiplier:</label>
                                         <input type="number" id="multiplier" name="multiplier" step="0.01" required>
-
+                                    
                                         <label for="totalAmount">Total Amount:</label>
                                         <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
-
+                                    
+                                        <!-- Submit button after entering total amount -->
+                                        <button type="button" onclick="calculateConsumption()" style="background-color: #666; color: white; margin-top: 10px;">Calculate</button>
+                                    
                                         <!-- New fields to show the calculated results -->
-                                        <label for="totalConsumption">Total Consumption (kWh):</label>
-                                        <input type="number" id="totalConsumption" name="totalConsumption" step="0.01" readonly>
-
-                                        <label for="pricePerKwh">Price per kWh:</label>
-                                        <input type="number" id="pricePerKwh" name="pricePerKwh" step="0.01" readonly>
-
-                                        <label for="kgCO2PerKwh">Factor (kg CO2/kWh):</label>
-                                        <input type="number" id="kgCO2PerKwh" name="kgCO2PerKwh" step="0.01" readonly>
-
-                                        <label for="tCO2PerKwh">Factor (t CO2/kWh):</label>
-                                        <input type="number" id="tCO2PerKwh" name="tCO2PerKwh" step="0.01" readonly>
-
-                                        <button type="button" onclick="calculateConsumption()">Calculate</button>
-                                        <button type="submit">Generate Report</button>
+                                        <div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+                                                <label for="totalConsumption" style="font-weight: bold; color: #333;">Total Consumption (kWh):</label>
+                                                <input type="number" id="totalConsumption" name="totalConsumption" step="0.01" readonly 
+                                                    style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0.00">
+                                            </div>
+                                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+                                                <label for="pricePerKwh" style="font-weight: bold; color: #333;">Price per kWh:</label>
+                                                <input type="number" id="pricePerKwh" name="pricePerKwh" step="0.01" readonly 
+                                                    style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0.00">
+                                            </div>
+                                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+                                                <label for="kgCO2PerKwh" style="font-weight: bold; color: #333;">GHG Emission (kg CO2/kWh):</label>
+                                                <input type="number" id="kgCO2PerKwh" name="kgCO2PerKwh" step="0.01" readonly 
+                                                    style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0.00">
+                                            </div>
+                                            <div style="margin-bottom: 0; display: flex; justify-content: space-between;">
+                                                <label for="tCO2PerKwh" style="font-weight: bold; color: #333;">GHG Emission (t CO2/kWh):</label>
+                                                <input type="number" id="tCO2PerKwh" name="tCO2PerKwh" step="0.01" readonly 
+                                                    style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0.00">
+                                            </div>
+                                        </div>
+                                    
+                                        <button type="submit" style="background-color: #666; color: white; margin-top: 10px;">Generate Report</button>
                                     </form>
+                                    
                                 </div>
 
                                 <!-- Result and Chart Container -->
@@ -624,7 +631,7 @@ button.btn-danger:hover {
                     </div>
 
                     <!-- Data table -->
-                    <h2 class="mt-4"></h2>
+                    <div class="table-responsive mt-4">
                     <table class="table table-bordered">
                         <thead>
                             <tr>
@@ -639,8 +646,8 @@ button.btn-danger:hover {
                                 <th>Total Amount</th>
                                 <th>Total Consumption (kWh)</th>
                                 <th>Price per kWh</th>
-                                <th>Factor (kg CO2/kWh)</th>
-                                <th>Factor (t CO2/kWh)</th>
+                                <th>GHG Emission (kg CO2/kWh)</th>
+                                <th>GHG Emission (t CO2/kWh)</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -668,6 +675,7 @@ button.btn-danger:hover {
                             </tr>
                             {% endfor %}
                         </tbody>
+                    </div>
                     </table>
                     
                         
@@ -696,19 +704,6 @@ button.btn-danger:hover {
 </div>
                 </div>
             </main>
-
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     </div>
 
@@ -811,8 +806,8 @@ function printReport() {
                         <th>Total Amount</th>
                         <th>Total Consumption (kWh)</th>
                         <th>Price per kWh</th>
-                        <th>Factor (kg CO2/kWh)</th>
-                        <th>Factor (t CO2/kWh)</th>
+                        <th>GHG Emission (kg CO2/kWh)</th>
+                        <th>GHG Emissiom (t CO2/kWh)</th>
                     </tr>
                 </thead>`;
 
@@ -908,8 +903,96 @@ function downloadExcel() {
             alert('An error occurred while exporting the data. Please try again.');
         });
 }
-
     </script>
+
+<script>
+    function updateQuarter() {
+        const month = document.getElementById('month').value;
+        const quarterDropdown = document.getElementById('quarter');
+
+        let quarter = "";
+        if (["January", "February", "March"].includes(month)) {
+            quarter = "Q1";
+        } else if (["April", "May", "June"].includes(month)) {
+            quarter = "Q2";
+        } else if (["July", "August", "September"].includes(month)) {
+            quarter = "Q3";
+        } else if (["October", "November", "December"].includes(month)) {
+            quarter = "Q4";
+        }
+
+        // Set the quarter dropdown value
+        quarterDropdown.value = quarter;
+    }
+
+    function downloadCSV() {
+    // Get filter values from the dropdowns if present
+    const month = document.getElementById('monthFilter')?.value || '';
+    const quarter = document.getElementById('quarterFilter')?.value || '';
+    const year = document.getElementById('yearFilter')?.value || '';
+
+    // Build the query string based on the filter values
+    let queryString = `?month=${encodeURIComponent(month)}&quarter=${encodeURIComponent(quarter)}&year=${encodeURIComponent(year)}`;
+
+    // Fetch the data from the server
+    fetch(`/electricity_consumption/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                alert('No data available for export.');
+                return;
+            }
+
+            // Convert the data to CSV
+            const headers = [
+                "Campus", "Year", "Month", "Quarter", "Previous Reading (kWh)",
+                "Current Reading (kWh)", "Multiplier", "Total Amount", 
+                "Consumption (kWh)", "Price per kWh", "Factor (kg CO2/kWh)", "Factor (t CO2/kWh)"
+            ];
+            const csvRows = [headers.join(",")];
+
+            data.forEach(report => {
+                const row = [
+                    report.campus,
+                    report.year,
+                    report.month,
+                    report.quarter,
+                    report.prev_reading,
+                    report.current_reading,
+                    report.multiplier,
+                    report.total_amount,
+                    report.consumption,
+                    report.price_per_kwh,
+                    report.kg_co2_per_kwh,
+                    report.t_co2_per_kwh,
+                ].join(",");
+                csvRows.push(row);
+            });
+
+            // Create a Blob for the CSV data
+            const csvBlob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+            const csvUrl = URL.createObjectURL(csvBlob);
+
+            // Create a temporary anchor element to download the CSV
+            const tempLink = document.createElement("a");
+            tempLink.href = csvUrl;
+            tempLink.download = "ElectricityConsumptionReport.csv";
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        })
+        .catch(error => {
+            console.error('Error exporting data:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
+
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>

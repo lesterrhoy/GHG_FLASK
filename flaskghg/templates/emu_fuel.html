@@ -5,29 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Fuel Consumption</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/emu.jpg') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
+        /* Table Styling */
         table {
-         width: 100%; /* Full width for table */
-         border-collapse: collapse; /* Collapse borders */
-         font-size: 10px; /* Smaller table font */
-     }
-     
-     th, td {
-    padding: 4px; /* Smaller cell padding */
-    text-align: center; /* Center align text */
-    border: 1px solid #000000 !important; /* Force black border with !important */
-}
-
-     
-     th {
-         background-color:  #d50000 !important; /* Background color */
-         color: #fff; /* Red text color with !important */
-         font-size: 11px; /* Reduce font size for headers to prevent overflow */
-     }
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000 !important;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
      
              #yearFilter, #quarterFilter, #monthFilter {
              margin: 10px 0; /* Adds top and bottom margin */
@@ -237,12 +239,12 @@
      }
      
      button:last-child {
-         background-color: #d50000;
-         color: white;
+         background-color: #ffffff;
+         color: rgb(0, 0, 0);
      }
      
      button:last-child:hover {
-         background-color: #b71c1c;
+         background-color: #d50000;
      }
      
      .pagination-container {
@@ -322,13 +324,15 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <div class="sb-sidenav-menu-heading">Consumption</div>
-                        <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
-                        <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
-                        <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
-                        <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
-                        <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
-                        <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                        <div class="sb-sidenav-menu-heading">Consumption Report</div>
+                        <nav class="sb-sidenav-menu-nested nav">
+                            <a class="nav-link" href="{{ url_for('electricity_consumption') }}">Electricity</a>
+                            <a class="nav-link" href="{{ url_for('emu_fuel') }}">Fuel</a>
+                            <a class="nav-link" href="{{ url_for('water_consumption') }}">Water Consumption</a>
+                            <a class="nav-link" href="{{ url_for('treated_water') }}">Treated Water</a>
+                            <a class="nav-link" href="{{ url_for('waste_segregation') }}">Waste Segregation</a>
+                            <a class="nav-link" href="{{ url_for('waste_unsegregation') }}">Waste Unsegregation</a>
+                            </nav>
                     </div>
                 </div>
             </nav>
@@ -351,9 +355,10 @@
                     
                     <div id="FuelSection">
                     <div class="buttons-container mt-3 d-flex justify-content-start align-items-center gap-2">
-                    <button id="openModalBtn" style="background-color: #d50000;"btn btn-primary onclick="openCalculatorModal()">Calculate Consumption</button>
+                    <button id="openModalBtn" style="background-color: #d50000;"btn btn-primary onclick="openCalculatorModal()">Calculate</button>
                     <button style="background-color: #d50000; color: white; border: none;" onclick="printReport()">Print Report</button>
                     <button style="background-color: #d50000; color: white; border: none;"onclick="downloadExcel()">Download Excel</button>
+                    <button style="background-color: #d50000; color: white; border: none;" onclick="downloadCSV()">Download CSV</button>
                     </div>
                     </div>
 
@@ -361,6 +366,13 @@
                 <label for="yearFilter">Filter by Year:</label>
                 <select id="yearFilter" onchange="filterByYear()">
                     <option value="">All Years</option>
+                    <option value="2014" {% if selected_year == "2014" %}selected{% endif %}>2014</option>
+                    <option value="2015" {% if selected_year == "2015" %}selected{% endif %}>2015</option>
+                    <option value="2016" {% if selected_year == "2016" %}selected{% endif %}>2016</option>
+                    <option value="2017" {% if selected_year == "2017" %}selected{% endif %}>2017</option>
+                    <option value="2018" {% if selected_year == "2018" %}selected{% endif %}>2018</option>
+                    <option value="2019" {% if selected_year == "2019" %}selected{% endif %}>2014</option>
+                    <option value="2020" {% if selected_year == "2020" %}selected{% endif %}>2020</option>
                     <option value="2021" {% if selected_year == "2021" %}selected{% endif %}>2021</option>
                     <option value="2022" {% if selected_year == "2022" %}selected{% endif %}>2022</option>
                     <option value="2023" {% if selected_year == "2023" %}selected{% endif %}>2023</option>
@@ -455,13 +467,24 @@
                                         <label for="totalAmount">Total Amount:</label>
                                         <input type="number" id="totalAmount" step="0.01" name="totalAmount" required>
 
-                                        <label for="totalEmissionKg">Total Emission (kg CO₂-e):</label>
-                                        <input type="number" id="totalEmissionKg" name="totalEmissionKg" readonly>
-                                        
-                                        <label for="totalEmissionTons">Total Emission (t CO₂-e):</label>
-                                        <input type="number" id="totalEmissionTons" name="totalEmissionTons" readonly>
-                                        
                                         <button type="button" class="yellow-button" onclick="calculateAndSubmit()">Calculate</button>
+
+
+                                        <!-- New fields to show the calculated results -->
+                                        <div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                                                <label for="totalEmissionKg" style="font-weight: bold; color: #333; margin-right: 10px;">Total Emission (kg CO₂-e):</label>
+                                                <input type="number" id="totalEmissionKg" name="totalEmissionKg" readonly 
+                                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                                            </div>
+                                            <div style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center;">
+                                                <label for="totalEmissionTons" style="font-weight: bold; color: #333; margin-right: 10px;">Total Emission (t CO₂-e):</label>
+                                                <input type="number" id="totalEmissionTons" name="totalEmissionTons" readonly 
+                                                    style="border: none; background: transparent; color: #555; text-align: right; width: 100px;" value="0.00">
+                                            </div>
+                                        </div>
+
+                                        
                                         <!-- "Generate Report" Button -->
                                         <button type="button" class="yellow-button" onclick="generateReport()">Generate Report</button>
                                     </form>
@@ -473,7 +496,7 @@
                     </div>
 
 
-                    <div class="report_container">
+                    <div class="table-responsive mt-4">
                         <table id="reportTable">
                             <thead>
     <tr>
@@ -547,18 +570,7 @@
                 </div>
             </main>
 
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+        
         </div>
     </div>
 
@@ -936,6 +948,82 @@ function filterByYear() {
     window.location.href = url;
 }
 
+function downloadCSV() {
+    // Retrieve filter values from the current page
+    const year = document.getElementById('yearFilter').value || '';
+    const category = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : '';
+    const fuelType = document.getElementById('fuelTypeFilter') ? document.getElementById('fuelTypeFilter').value : '';
+
+    // Build the query string based on filters
+    let queryString = '';
+    if (year) queryString += `year=${year}&`;
+    if (category) queryString += `category=${category}&`;
+    if (fuelType) queryString += `fuelType=${fuelType}`;
+    
+    queryString = queryString.endsWith('&') ? queryString.slice(0, -1) : queryString;
+    const fetchUrl = queryString ? `/emu_fuel/all?${queryString}` : `/emu_fuel/all`;
+
+    // Fetch the data from the server
+    fetch(fetchUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                alert('No data available to export.');
+                return;
+            }
+
+            // Generate CSV content
+            const headers = [
+                "Campus", "Date", "Driver", "Type", "Vehicle Type", "Plate Number",
+                "Category", "Fuel Type", "Quantity (Liters)", "Total Amount",
+                "CO₂ Emission (kg)", "NH₄ Emission (kg CO₂-e)", "N₂O Emission (kg CO₂-e)",
+                "Total Emission (kg CO₂-e)", "Total Emission (t CO₂-e)"
+            ];
+            const csvRows = [headers.join(",")];
+
+            data.forEach(report => {
+                const row = [
+                    report.campus,
+                    report.date,
+                    report.driver,
+                    report.type,
+                    report.vehicle_equipment,
+                    report.plate_no,
+                    report.category,
+                    report.fuel_type,
+                    report.quantity_liters,
+                    report.total_amount,
+                    report.co2_emission,
+                    report.nh4_emission,
+                    report.n2o_emission,
+                    report.total_emission,
+                    report.total_emission_t
+                ].join(",");
+                csvRows.push(row);
+            });
+
+            // Create a Blob from the CSV content
+            const csvBlob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+            const csvUrl = URL.createObjectURL(csvBlob);
+
+            // Create a temporary download link
+            const tempLink = document.createElement("a");
+            tempLink.href = csvUrl;
+            tempLink.download = "FuelConsumptionReport.csv";
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while exporting the data. Please try again.');
+        });
+}
 
 
     </script>

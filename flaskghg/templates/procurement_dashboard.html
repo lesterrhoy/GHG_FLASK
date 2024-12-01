@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +8,8 @@
     <meta name="description" content="Procurement Dashboard">
     <meta name="author" content="Your Name">
     <title>Procurement Dashboard</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/bsu.png') }}" type="image/x-icon">
+
 
     <!-- CSS Files -->
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
@@ -52,23 +55,13 @@
                         <div class="sb-sidenav-menu-heading">PROCUREMENT</div>
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseProcurement" aria-expanded="false" aria-controls="collapseProcurement">
                             <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
-                            Procurement
+                            Consumption Report
                             <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                         </a>
                         <div class="collapse" id="collapseProcurement" aria-labelledby="headingProcurement" data-bs-parent="#sidenavAccordion">
                             <nav class="sb-sidenav-menu-nested nav">
                                 <a class="nav-link" href="{{ url_for('food_consumption') }}">Food</a>
                                 <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
-                            </nav>
-                        </div>
-                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
-                            <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
-                            REPORT
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapsePages">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="{{ url_for('pro_report') }}">Consumption Report</a>
                             </nav>
                         </div>
                     </div>
@@ -90,51 +83,68 @@
                                 The Procurement Dashboard illustrates an overview of forecasted trends and historical data related to resource metrics. The visualized data shows significant variations across different months, highlighting initial increases followed by a decline and eventual stabilization. This insight helps in anticipating future changes and supports strategic planning for better resource management and sustainability.                            </p>
                         </div>
                     </div>
-                    <!-- Total Emission Card -->
-<div class="row mb-4">
-    <div class="col-xl-12">
-        <div class="card bg-dark text-white h-100">
-            <div class="card-body">
-                <div class="card-title">Total Emission</div>
-                <div><strong>Total CO₂ Emission:</strong> {{ total_emission }} CO₂e</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Individual Consumption Cards -->
-<div class="row">
-    <!-- Food Consumption Card -->
-    <div class="col-xl-6 col-md-6 mb-4">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="card-title">Food Consumption</div>
-                <div><strong>Current Emission:</strong> {{ current_emission_data.food }} CO₂e</div>
-                <div><strong>Quantity:</strong> {{ food_waste_data[-1]['QuantityOfServing'] if food_waste_data else 0 }} servings</div>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="food_consumption">View Details</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- LPG Consumption Card -->
-    <div class="col-xl-6 col-md-6 mb-4">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body">
-                <div class="card-title">LPG Consumption</div>
-                <div><strong>Current Emission:</strong> {{ current_emission_data.lpg }} CO₂e</div>
-                <div><strong>Volume:</strong> {{ lpg_data[-1]['TotalTankVolume'] if lpg_data else 0 }} liters</div>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="lpg_consumption">View Details</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-            </div>
-        </div>
-    </div>
-</div>
-
+                    <div class="row mb-4">
+                        <!-- Total Emission Card -->
+                        <div class="col-xl-12">
+                            <div class="card bg-dark text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Total Emission</div>
+                                    <div>
+                                        <strong>Total CO₂ Emission:</strong> 
+                                        <span class="highlighted-result">
+                                            {{ "%.2f"|format(current_emission_data.food_waste + current_emission_data.lpg) }} CO₂e
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Individual Consumption Cards -->
+                    <div class="row">
+                        <!-- Food Consumption Card -->
+                        <div class="col-xl-6 col-md-6 mb-4">
+                            <div class="card bg-success text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Food Consumption</div>
+                                    <div>
+                                        <strong>Current Emission:</strong> 
+                                        <span class="highlighted-result">
+                                            {{ "%.2f"|format(current_emission_data.food_waste) }} CO₂e
+                                        </span>
+                                    </div>
+                                </div>
+                                    <a class="small text-white stretched-link" href="food_consumption"></a>
+                                    <div class="small text-white"><i></i></div>
+                            </div>
+                        </div>
+                    
+                        <!-- LPG Consumption Card -->
+                        <div class="col-xl-6 col-md-6 mb-4">
+                            <div class="card bg-primary text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">LPG Consumption</div>
+                                    <div>
+                                        <strong>Current Emission:</strong> 
+                                        <span class="highlighted-result">
+                                            {{ "%.2f"|format(current_emission_data.lpg) }} CO₂e
+                                        </span>
+                                    </div>
+                                </div>
+                                    <a class="small text-white stretched-link" href="lpg_consumption"></a>
+                                    <div class="small text-white"><i></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <style>
+                        .highlighted-result {
+                            font-weight: bold;
+                            color: #white; /* You can change this to any color you'd like for highlighting */
+                            font-size: 1.5rem; /* Makes the font size larger */
+                        }
+                    </style>
+                    
 <form id="yearFilterForm" action="{{ url_for('procurement_dashboard') }}" method="get" style="margin-bottom: 20px;">
     <label for="yearSelect">Select Year:</label>
     <select name="year" id="yearSelect" onchange="document.getElementById('yearFilterForm').submit();">
@@ -172,137 +182,149 @@
                             </div>
                         </div>
                     </div>
-
-
-            <footer class="py-4 bg-light mt-auto">
-                <div class="container-fluid px-4">
-                    <div class="d-flex align-items-center justify-content-between small">
-                        <div class="text-muted">Copyright &copy; Your Website 2023</div>
-                        <div>
-                            <a href="#">Privacy Policy</a>
-                            &middot;
-                            <a href="#">Terms &amp; Conditions</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/simple-datatables.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Helper function to get month labels with year formatting (MM/YY)
-        function getMonthLabels(startMonthIndex, startYear, totalMonths) {
-            let labels = [];
-            for (let i = 0; i < totalMonths; i++) {
-                let monthIndex = (startMonthIndex + i) % 12;
-                let year = startYear + Math.floor((startMonthIndex + i) / 12);
-                let month = (monthIndex + 1).toString().padStart(2, '0');
-                let yearShort = year.toString().slice(-2);
-                labels.push(`${month}/${yearShort}`);
-            }
-            return labels;
-        }
-    
-        const selectedYear = {{ selected_year }};
-        const isForecastYear = selectedYear === 2024;
-        const labels = getMonthLabels(0, selectedYear, isForecastYear ? 14 : 12);  // 14 months for 2024, 12 otherwise
-    
-        // Data for Food Waste Chart
-        const foodWasteForecast = {{ forecast_data.food_waste_forecast | tojson }};
-        const foodWasteChartCtx = document.getElementById('foodWasteChart').getContext('2d');
-    
-        new Chart(foodWasteChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Food Waste Data (Historical + Forecast)',
-                    data: foodWasteForecast,
-                    borderColor: isForecastYear ? 'black' : 'red',  // Black line only for 2024 forecasts
-                    pointBackgroundColor: function(context) {
-                        // Pure black points for forecast (only for 2024) in Nov/Dec (index 10, 11); otherwise red
-                        if (isForecastYear && context.dataIndex >= 10 && foodWasteForecast[context.dataIndex] !== null) {
-                            return 'black';
-                        } else if (foodWasteForecast[context.dataIndex] !== null) {
-                            return 'red';  // Red points for historical data
-                        }
-                        return null;  // No color for null values
-                    },
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            usePointStyle: true,
-                            padding: 15
-                        }
-                    }
-                }
-            }
-        });
-    
-        // Data for LPG Chart
-        const lpgForecast = {{ forecast_data.lpg_forecast | tojson }};
-        const lpgChartCtx = document.getElementById('lpgChart').getContext('2d');
-    
-        new Chart(lpgChartCtx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'LPG Data (Historical + Forecast)',
-                    data: lpgForecast,
-                    borderColor: isForecastYear ? 'black' : 'blue',  // Black line only for 2024 forecasts
-                    pointBackgroundColor: function(context) {
-                        // Pure black points for forecast (only for 2024) in Nov/Dec (index 10, 11); otherwise blue
-                        if (isForecastYear && context.dataIndex >= 10 && lpgForecast[context.dataIndex] !== null) {
-                            return 'black';
-                        } else if (lpgForecast[context.dataIndex] !== null) {
-                            return 'blue';  // Blue points for historical data
-                        }
-                        return null;  // No color for null values
-                    },
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'Month' } },
-                    y: { title: { display: true, text: 'GHG Emission (kg CO2e)' } }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            usePointStyle: true,
-                            padding: 15
-                        }
-                    }
-                }
-            }
-        });
-    </script>
-    
-    
-    
-    
-    
+   <!-- Scripts -->
+  <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/simple-datatables.min.js" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js" defer></script>
+
+<script>
+   document.addEventListener('DOMContentLoaded', function () {
+       const selectedYear = {{ selected_year }}; // Year selected in Flask
+       const labels = {{ labels | tojson }}; // Labels for the months (e.g., "Jan/23", "Feb/23", ...)
+
+       const foodWasteForecastData = {{ forecast_data.food_waste_forecast.prophet.forecast | tojson }}; // Prophet forecasted data
+       const foodWasteHistoricalData = {{ food_waste_data | tojson }}; // Historical food waste data
+
+       const lpgForecastData = {{ forecast_data.lpg_forecast.prophet.forecast | tojson }}; // Prophet forecasted LPG data
+       const lpgHistoricalData = {{ lpg_data | tojson }}; // Historical LPG data
+
+       /**
+        * Function to create a line chart displaying historical and forecast data.
+        * @param {string} chartId - The HTML ID of the canvas element.
+        * @param {string} label - Chart label, such as "Electricity Consumption".
+        * @param {Array} historicalData - Array of historical data values.
+        * @param {Array} forecastData - Array of forecasted data values.
+        * @param {Array} chartLabels - Labels for the x-axis.
+        * @param {string} historicalColor - Color for the historical data line.
+        * @param {string} forecastColor - Color for the forecast data line.
+        * @param {string} yAxisLabel - Label for the Y-axis (e.g., "kg CO2/kWh").
+        */
+       function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
+           const ctx = document.getElementById(chartId).getContext('2d');
+
+           // Create the chart
+           return new Chart(ctx, {
+               type: 'line',
+               data: {
+                   labels: chartLabels,
+                   datasets: [
+                       {
+                           label: `${label} (Actual)`,
+                           data: historicalData,
+                           borderColor: historicalColor,
+                           backgroundColor: historicalColor,
+                           fill: false,
+                           borderWidth: 2,
+                           pointBackgroundColor: historicalColor,
+                           showLine: true
+                       },
+                       {
+                           label: `${label} (Forecast)`,
+                           data: forecastData,
+                           borderColor: forecastColor,
+                           backgroundColor: forecastColor,
+                           fill: false,
+                           borderDash: [5, 5], // Dashed line for forecast
+                           borderWidth: 2,
+                           pointBackgroundColor: forecastColor,
+                           showLine: true
+                       }
+                   ]
+               },
+               options: {
+                   responsive: true,
+                   plugins: {
+                       title: {
+                           display: true,
+                           text: `${label} Forecast for ${selectedYear}`
+                       },
+                       legend: {
+                           display: true,
+                           labels: {
+                               usePointStyle: true,
+                               padding: 20
+                           }
+                       }
+                   },
+                   scales: {
+                       x: {
+                           title: { display: true, text: 'Month' }, // Use month labels (or year if applicable)
+                           ticks: { maxRotation: 0, minRotation: 0 } // Keeps labels horizontal
+                       },
+                       y: {
+                           title: { display: true, text: yAxisLabel },
+                           beginAtZero: true
+                       }
+                   }
+               }
+           });
+       }
+
+       // Create charts with initial data
+       const foodWasteChart = createForecastChart(
+           'foodWasteChart',
+           'Food Waste',
+           foodWasteHistoricalData,
+           foodWasteForecastData,
+           labels,
+           'orange',
+           'brown',
+           'GHG Emission (kg CO2)'
+       );
+
+       const lpgChart = createForecastChart(
+           'lpgChart',
+           'LPG Consumption',
+           lpgHistoricalData,
+           lpgForecastData,
+           labels,
+           'darkblue',
+           'gold',
+           'GHG Emission (kg CO2)'
+       );
+
+       // Connect to the Socket.IO server
+       const socket = io();
+
+       // Listen for real-time data updates and update charts
+       socket.on('update_emissions', (data) => {
+           console.log('Real-time emission update:', data);
+
+           // Update the data for each chart with new data received
+           updateChartData(foodWasteChart, data.food_waste);
+           updateChartData(lpgChart, data.lpg);
+       });
+
+       socket.on('update_forecast', (forecastData) => {
+           console.log('Real-time forecast update:', forecastData);
+
+           // Update forecast data dynamically for each chart
+           updateChartData(foodWasteChart, forecastData.food_waste_forecast, 1);
+           updateChartData(lpgChart, forecastData.lpg_forecast, 1);
+       });
+
+       // Function to update chart data and refresh the chart
+       function updateChartData(chart, newData, datasetIndex = 0) {
+           chart.data.datasets[datasetIndex].data = newData;
+           chart.update();
+       }
+   });
+</script>
+
 </body>
 </html>
