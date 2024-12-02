@@ -303,41 +303,18 @@
         </div>
     </div>
     <script>
-     function downloadCSV() {
-    // Get the table element
-    const table = document.getElementById('waste_segregation');
-    if (!table) {
-        alert('No data available for export.');
-        return;
-    }
+    function downloadCSV() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const quarter = document.getElementById("quarter").value;
+    const mainCategory = document.getElementById("main_category").value;
 
-    // Initialize CSV content
-    let csvContent = '';
+    // Construct the URL with query parameters for filtering
+    const url = `/download_waste_segregation_csv?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&quarter=${encodeURIComponent(quarter)}&main_category=${encodeURIComponent(mainCategory)}`;
 
-    // Extract table rows
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        const rowData = [];
-        cells.forEach(cell => {
-            // Escape and format cell content
-            rowData.push(`"${cell.textContent.trim().replace(/"/g, '""')}"`);
-        });
-        csvContent += rowData.join(',') + '\n'; // Join cells with commas and add a newline
-    });
-
-    // Create a Blob from the CSV content
-    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-    // Create a download link and trigger it
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(csvBlob);
-    link.download = 'WasteSegregationReport.csv'; // Set the filename
-    document.body.appendChild(link); // Append link to body
-    link.click(); // Trigger download
-    document.body.removeChild(link); // Remove link after download
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
 }
-
 
     function downloadExcel() {
         const campus = document.getElementById("campus").value;

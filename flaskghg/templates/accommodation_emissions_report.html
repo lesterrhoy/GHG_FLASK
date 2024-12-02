@@ -338,7 +338,7 @@
                         Download Excel
                     </button>
                     <!-- CSV Download Button -->
-                    <button id="downloadCsvBtn" class="btn btn-info" style="background-color: #007bff; border-color: #007bff;" onclick="downloadAccommodationCSV()">
+                    <button onclick="downloadAccommodationCSV()" class="btn btn-info" style="background-color: #007bff; border-color: #007bff;" onclick="downloadAccommodationCSV()">
                         Download CSV
                     </button>
                 </div>
@@ -347,39 +347,17 @@
         </div>
     </div>
     <script>
-        function downloadAccommodationCSV() {
-    // Get the table element
-    const table = document.getElementById('accommodation_data');
-    if (!table) {
-        alert('No data available to download as CSV.');
-        return;
+          function downloadAccommodationCSV() {
+        const campus = document.getElementById("campus").value;
+        const office = document.getElementById("office").value;
+        const year = document.getElementById("year").value;
+
+        // Construct the URL with query parameters
+        const url = `/download_accommodation_emissions_csv?campus=${encodeURIComponent(campus)}&office=${encodeURIComponent(office)}&year=${encodeURIComponent(year)}`;
+
+        // Redirect to the URL to initiate the download
+        window.location.href = url;
     }
-
-    // Initialize CSV content
-    let csvContent = '';
-
-    // Extract table rows
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        const rowData = [];
-        cells.forEach(cell => {
-            // Escape and add cell content
-            rowData.push(`"${cell.textContent.trim().replace(/"/g, '""')}"`);
-        });
-        csvContent += rowData.join(',') + '\n'; // Join cells with commas and add newline
-    });
-
-    // Create a Blob from the CSV content
-    const csvBlob = new Blob([csvContent], { type: 'text/csv' });
-
-    // Create a download link and trigger it
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(csvBlob);
-    link.download = 'accommodation_emissions_report.csv'; // Set the file name
-    link.click(); // Trigger the download
-}
-
         // Function to download PDF report
         function downloadAccommodationPDF() {
             // Gather filter values from the form

@@ -340,7 +340,7 @@
                         Download Excel
                     </button>
                     <!-- CSV Download Button -->
-                    <button id="downloadCsvBtn" style="background-color: #007bff; border-color: #007bff;" class="btn btn-info" onclick="downloadFlightCSV()">
+                    <button onclick="downloadFlightEmissionsCSV()" style="background-color: #007bff; border-color: #007bff;" class="btn btn-info" onclick="downloadFlightCSV()">
                         Download CSV
                     </button>
 
@@ -350,39 +350,17 @@
         </div>
     </div>
     <script>
-        function downloadFlightCSV() {
-    // Get the table element
-    const table = document.getElementById('flight_data');
-    if (!table) {
-        alert('No data available to download as CSV.');
-        return;
+       function downloadFlightEmissionsCSV() {
+        const campus = document.getElementById("campus").value;
+        const office = document.getElementById("office").value;
+        const year = document.getElementById("year").value;
+
+        // Construct the URL with query parameters
+        const url = `/download_flight_emissions_csv?campus=${encodeURIComponent(campus)}&office=${encodeURIComponent(office)}&year=${encodeURIComponent(year)}`;
+
+        // Redirect to the URL to initiate the download
+        window.location.href = url;
     }
-
-    // Initialize CSV content
-    let csvContent = '';
-
-    // Extract table rows
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        const rowData = [];
-        cells.forEach(cell => {
-            // Escape cell text and add it to the row
-            rowData.push(`"${cell.textContent.trim().replace(/"/g, '""')}"`);
-        });
-        csvContent += rowData.join(',') + '\n'; // Join cells with commas and add a new line
-    });
-
-    // Create a Blob from the CSV content
-    const csvBlob = new Blob([csvContent], { type: 'text/csv' });
-
-    // Create a download link and trigger it
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(csvBlob);
-    link.download = 'flight_emissions_report.csv'; // Set file name
-    link.click(); // Trigger the download
-}
-
         // Function to download PDF report
         function downloadFlightPDF() {
             // Gather filter values from the form

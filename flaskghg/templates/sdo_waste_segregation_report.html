@@ -336,34 +336,17 @@
             </div>
         </div>
         <script>
-            // Function to convert the table data to CSV format
-            function tableToCSV() {
-                const table = document.getElementById("waste_segregation");
-                const rows = Array.from(table.querySelectorAll("tr"));
-                const csvContent = rows.map(row => {
-                    const cols = Array.from(row.querySelectorAll("td, th")).map(cell => `"${cell.textContent.trim()}"`);
-                    return cols.join(",");
-                }).join("\n");
-                return csvContent;
-            }
+            document.getElementById("downloadCSV").addEventListener("click", function () {
+                const year = document.getElementById("year").value;
+                const quarter = document.getElementById("quarter").value;
+                const month = document.getElementById("month").value;
+                const mainCategory = document.getElementById("main_category").value;
         
-            // Function to trigger CSV file download
-            function downloadCSV(csvContent, filename) {
-                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", filename);
-                link.style.display = "none";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+                // Construct the URL with query parameters for filtering
+                const url = `/export_waste_segregation_csv?year=${encodeURIComponent(year)}&quarter=${encodeURIComponent(quarter)}&month=${encodeURIComponent(month)}&main_category=${encodeURIComponent(mainCategory)}`;
         
-            // Add event listener to the CSV download button
-            document.getElementById("downloadCSV").addEventListener("click", () => {
-                const csvContent = tableToCSV();
-                const filename = "waste_segregation_report.csv";
-                downloadCSV(csvContent, filename);
+                // Redirect to the URL to initiate the download
+                window.location.href = url;
             });
         </script>
+        

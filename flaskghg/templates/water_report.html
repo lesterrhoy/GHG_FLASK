@@ -285,71 +285,19 @@
         </div>
     </div>
     <script>
-    function downloadCSV() {
-    // Get the filters for campus, year, and category
-    const campus = document.getElementById("campus") ? document.getElementById("campus").value : '';
-    const year = document.getElementById("year") ? document.getElementById("year").value : '';
-    const category = document.getElementById("category") ? document.getElementById("category").value : '';
+function downloadCSV() {
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const category = document.getElementById("category").value;
 
-    // Construct the API URL to fetch all data
-    const apiUrl = `/water_consumption/all?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&category=${encodeURIComponent(category)}`;
+    // Construct the URL with query parameters
+    const url = `/download_water_data_csv?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&category=${encodeURIComponent(category)}`;
 
-    // Fetch the full dataset from the server
-    fetch(apiUrl)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`Error fetching data: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then((data) => {
-            if (!data || data.length === 0) {
-                alert('No data available for export.');
-                return;
-            }
-
-            // Define the CSV headers
-            const headers = [
-                'Campus', 'Category', 'Date', 'Previous Reading (m³)', 
-                'Current Reading (m³)', 'Consumption (m³)', 
-                'Total Amount (₱)', 'Price per m³ (₱)', 
-                'Factor (kg CO₂/m³)', 'Factor (t CO₂/m³)'
-            ];
-
-            // Map the data to CSV rows
-            const rows = data.map((item) => [
-                item.Campus || '',
-                item.Category || '',
-                item.Date || '',
-                item.PreviousReading || 0,
-                item.CurrentReading || 0,
-                item.Consumption || 0,
-                item.TotalAmount || 0,
-                item.PricePerLiter || 0,
-                item.FactorKGCO2e || 0,
-                item.FactorTCO2e || 0
-            ]);
-
-            // Combine headers and rows
-            const csvContent = [headers, ...rows]
-                .map((row) => row.map((value) => `"${value}"`).join(',')) // Escape and join columns
-                .join('\n'); // Join rows with newlines
-
-            // Create a Blob and trigger download
-            const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(csvBlob);
-            link.download = 'water_consumption_report.csv';
-            link.click();
-        })
-        .catch((error) => {
-            console.error('Error exporting CSV:', error);
-            alert('An error occurred while exporting the data to CSV.');
-        });
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
 }
 
-
-      function downloadPDF() {
+function downloadPDF() {
     const campus = document.getElementById("campus").value;
     const year = document.getElementById("year").value;
     const category = document.getElementById("category").value;

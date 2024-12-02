@@ -336,56 +336,24 @@
             <div class="mb-3">
                 <button id="downloadPdfBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>
                 <button id="downloadExcelBtn" style="background-color: #d50000; border-color: #d50000;" class="btn btn-success" onclick="downloadExcel()">Download Excel</button>
-                <button id="downloadCsvBtn" style="background-color: #007bff; border-color: #007bff;" class="btn btn-info" onclick="generateCSV()">Download CSV</button>            </div>
+                <button onclick="generateCSV()"style="background-color: #007bff; border-color: #007bff;" class="btn btn-info" onclick="generateCSV()">Download CSV</button>            </div>
     </div>
 
 
 <script>
-     function generateCSV() {
-    // Get the table element
-    const table = document.getElementById('food_data');
-    if (!table) {
-        alert('No data available to download as CSV.');
-        return;
-    }
+function generateCSV() {
+    const campus = document.getElementById("campus").value;
+    const month = document.getElementById("month").value;
+    const year = document.getElementById("year").value;
+    const office = document.getElementById("office").value;
 
-    // Extract data from the table
-    let csvContent = '';
-    const rows = table.querySelectorAll('tr');
-    rows.forEach((row) => {
-        const cells = row.querySelectorAll('th, td');
-        const rowData = [];
-        cells.forEach((cell) => {
-            rowData.push(`"${cell.textContent.trim()}"`); // Escape content with quotes
-        });
-        csvContent += rowData.join(',') + '\n';
-    });
+    // Construct the URL with query parameters
+    const url = `/download_food_consumption_csv?campus=${encodeURIComponent(campus)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&office=${encodeURIComponent(office)}`;
 
-    // Create a Blob from the CSV content
-    const csvBlob = new Blob([csvContent], { type: 'text/csv' });
-
-    // Create a link element and trigger the download
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(csvBlob);
-    link.download = 'food_consumption_report.csv'; // Set the filename
-    link.click(); // Trigger the download
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
 }
 
-   
-
-    function downloadPDF() {
-        // Get filter values
-        const campus = document.getElementById("campus").value;
-        const month = document.getElementById("month").value;
-        const year = document.getElementById("year").value;
-        const office = document.getElementById("office").value;
-
-        // Construct the URL with query parameters
-        const url = `/download_food_consumption_pdf?campus=${encodeURIComponent(campus)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&office=${encodeURIComponent(office)}`;
-
-        // Open the URL to trigger PDF download
-        window.open(url, '_blank');
-    }
 
     function downloadExcel() {
     const campus = document.getElementById("campus") ? document.getElementById("campus").value : '';

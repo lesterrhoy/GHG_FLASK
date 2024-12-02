@@ -282,65 +282,15 @@
         </div>
     </div>
     <script>
-    function downloadCSV() {
-    // Get filter values for the treated water report
-    const campus = document.getElementById("campus") ? document.getElementById("campus").value : '';
-    const month = document.getElementById("month") ? document.getElementById("month").value : '';
+ function downloadCSV() {
+    const campus = document.getElementById("campus").value;
+    const month = document.getElementById("month").value;
 
-    // Construct the API endpoint to fetch all data
-    const apiUrl = `/treated_water/all?campus=${encodeURIComponent(campus)}&month=${encodeURIComponent(month)}`;
+    // Construct the URL with query parameters
+    const url = `/download_treated_water_data_csv?campus=${encodeURIComponent(campus)}&month=${encodeURIComponent(month)}`;
 
-    // Fetch the full dataset
-    fetch(apiUrl)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`Error fetching data: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then((data) => {
-            if (!data || data.length === 0) {
-                alert('No data available for export.');
-                return;
-            }
-
-            // Define the CSV headers
-            const headers = [
-                'Campus', 'Month', 'Treated Water Volume (m³)', 
-                'Reused Treated Water Volume (m³)', 'Effluent Volume (m³)', 
-                'Price per Liter', 'Factor (kg CO₂-e/m³)', 'Factor (t CO₂-e/m³)'
-            ];
-
-            // Map the data into CSV rows
-            const rows = data.map((item) => [
-                item.Campus || '',
-                item.Month || '',
-                item.TreatedWaterVolume || 0,
-                item.ReusedTreatedWaterVolume || 0,
-                item.EffluentVolume || 0,
-                item.PricePerLiter || 0,
-                item.FactorKGCO2e || 0,
-                item.FactorTCO2e || 0
-            ]);
-
-            // Combine headers and rows into CSV content
-            const csvContent = [headers, ...rows]
-                .map((row) => row.map((value) => `"${value}"`).join(',')) // Escape and join columns
-                .join('\n'); // Join rows with newlines
-
-            // Create a Blob from the CSV content
-            const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-            // Create a download link and trigger it
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(csvBlob);
-            link.download = 'treated_water_report.csv';
-            link.click();
-        })
-        .catch((error) => {
-            console.error('Error exporting CSV:', error);
-            alert('An error occurred while exporting the data to CSV.');
-        });
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
 }
 
 

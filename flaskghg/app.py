@@ -2624,7 +2624,6 @@ def fetch_treated_water_data(page=1, per_page=20, campus=None, month=None):
     return data, total_records
 
 
-
 # Route for Treated Water Report with pagination and filters
 @app.route('/report/treated_water')
 def treated_water_report():
@@ -2730,6 +2729,52 @@ def download_treated_water_pdf():
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="treated_water_report.pdf", as_attachment=True, mimetype='application/pdf')
 
+@app.route('/export_treated_water_csv')
+def export_treated_water_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get other filter parameters from the request (query parameters)
+    month = request.args.get("month", None)
+
+    # Base query with mandatory campus filter
+    query = "SELECT * FROM tbltreatedwater WHERE campus = %s"
+    params = [campus]
+
+    # Add additional filters dynamically to the query
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+
+    # Execute the query to fetch the data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # If no data is returned, handle the empty case
+    if not data:
+        return "No data available to generate CSV", 404
+
+    # Convert data to CSV
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+
+    # Send the CSV file as a download
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="treated_water_report.csv")
+    return response
+
 @app.route('/download_treated_water_data')
 def download_treated_water_data():
     campus = request.args.get("campus")
@@ -2750,6 +2795,25 @@ def download_treated_water_data():
 
     # Send the file to the client
     return send_file(output, download_name="treated_water_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/download_treated_water_data_csv')
+def download_treated_water_data_csv():
+    campus = request.args.get("campus")
+    month = request.args.get("month")
+
+    # Fetch all data based on the filters
+    data = fetch_all_treated_water_data(campus, month)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    output = BytesIO()
+    df.to_csv(output, index=False, encoding='utf-8')
+    output.seek(0)
+
+    # Send the file to the client
+    return send_file(output, download_name="treated_water_data.csv", as_attachment=True, mimetype='text/csv')
 
 @app.route('/fetch_all_water_data')
 def fetch_all_water_data():
@@ -2805,6 +2869,17 @@ def fetch_water_data(campus=None, year=None, category=None, page=None, per_page=
         print(f"Error fetching data: {err}")
         raise  # Raising the error to make it visible as an HTTP 500 error
 
+@app.route('/report/water/all_data')
+def all_water_data():
+    campus = request.args.get('campus', '')
+    year = request.args.get('year', '')
+    category = request.args.get('category', '')
+
+    # Fetch all data based on the filters
+    data = fetch_water_data(campus, year, category)
+
+    # Return data as JSON
+    return jsonify(data)
 # Route for Water Consumption Report with filtering and pagination
 @app.route('/report/water')
 def water_report():
@@ -2833,6 +2908,27 @@ def water_report():
         category=category
     )
 
+@app.route('/download_water_data_csv')
+def download_water_data_csv():
+    campus = request.args.get("campus")
+    year = request.args.get("year")
+    category = request.args.get("category")
+
+    # Fetch data using the existing function which should return data in a list of dicts
+    data, _ = fetch_water_data(campus, year, category, page=None, per_page=None)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    output = BytesIO()
+    df.to_csv(output, index=False, encoding='utf-8')
+    output.seek(0)
+
+    # Send the file to the client
+    return send_file(output, download_name="water_data.csv", as_attachment=True, mimetype='text/csv')
+
+
 @app.route('/download_water_data')
 def download_water_data():
     campus = request.args.get("campus")
@@ -2855,46 +2951,54 @@ def download_water_data():
     # Send the file to the client
     return send_file(output, download_name="water_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-@app.route('/download_water_csv')
-def download_water_csv():
-    # Retrieve filter parameters
-    campus = request.args.get("campus", None)
-    year = request.args.get("year", None)
+@app.route('/export_water_report_csv')
+def export_water_report_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get other filter parameters from the request (query parameters)
     category = request.args.get("category", None)
+    year = request.args.get("year", None)
 
-    # Fetch the data based on filters
-    data = fetch_water_consumption_data(campus=campus, year=year, category=category)
+    # Base query with mandatory campus filter
+    query = "SELECT * FROM tblwater WHERE campus = %s"
+    params = [campus]
 
-    # Create a CSV response
-    def generate_csv():
-        # Define the CSV header
-        header = [
-            "Campus", "Category", "Date", 
-            "Previous Reading (m³)", "Current Reading (m³)", 
-            "Consumption (m³)", "Total Amount (₱)", 
-            "Price per m³ (₱)", "Factor (kg CO₂/m³)", 
-            "Factor (t CO₂/m³)"
-        ]
-        yield ",".join(header) + "\n"
+    # Add additional filters dynamically to the query
+    if category:
+        query += " AND category = %s"
+        params.append(category)
+    if year:
+        query += " AND year = %s"
+        params.append(year)
 
-        # Write the data rows
-        for row in data:
-            yield ",".join([
-                row.Campus,
-                row.Category,
-                row.Date,
-                str(row.PreviousReading),
-                str(row.CurrentReading),
-                str(row.Consumption),
-                str(row.TotalAmount),
-                str(row.PricePerLiter),
-                str(row.FactorKGCO2e),
-                str(row.FactorTCO2e)
-            ]) + "\n"
+    # Execute the query to fetch the data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
 
-    # Return the response as a CSV
-    response = Response(generate_csv(), mimetype='text/csv')
-    response.headers["Content-Disposition"] = "attachment; filename=water_consumption_report.csv"
+    # If no data is returned, handle the empty case
+    if not data:
+        return "No data available to generate CSV", 404
+
+    # Convert data to CSV
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+
+    # Send the CSV file as a download
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="water_consumption_report.csv")
     return response
 
 @app.route('/download_water_pdf')
@@ -3047,6 +3151,28 @@ def waste_segregation_report():
     
 )
 
+@app.route('/download_waste_segregation_csv')
+def download_waste_segregation_csv():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    quarter = request.args.get("quarter", None)
+    main_category = request.args.get("main_category", None)
+
+    # Fetch all data based on the filters
+    data, _ = fetch_waste_segregation_data(page=None, per_page=None, campus=campus, year=year, quarter=quarter, main_category=main_category)
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    output = BytesIO()
+    df.to_csv(output, index=False, encoding='utf-8')
+    output.seek(0)
+
+    # Send the file to the client
+    return send_file(output, download_name="waste_segregation_data.csv", as_attachment=True, mimetype='text/csv')
+
 @app.route('/download_waste_segregation_data')
 def download_waste_segregation_data():
     # Retrieve filter parameters from request arguments
@@ -3070,6 +3196,64 @@ def download_waste_segregation_data():
 
     # Send the file to the client
     return send_file(output, download_name="waste_segregation_data.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/export_waste_segregation_csv')
+def export_waste_segregation_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get filter parameters from the request (query parameters)
+    year = request.args.get("year", None)
+    quarter = request.args.get("quarter", None)
+    month = request.args.get("month", None)
+    main_category = request.args.get("main_category", None)
+
+    # Base query with mandatory campus filter
+    query = "SELECT * FROM tblsolidwastesegregated WHERE campus = %s"
+    params = [campus]
+
+    # Add additional filters dynamically to the query
+    if year:
+        query += " AND year = %s"
+        params.append(year)
+    if quarter:
+        query += " AND quarter = %s"
+        params.append(quarter)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+    if main_category:
+        query += " AND main_category = %s"
+        params.append(main_category)
+
+    # Execute the query to fetch the data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # Handle case where no data is returned
+    if not data:
+        return "No data available to generate CSV", 404
+
+    # Convert data to CSV
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+
+    # Send the CSV file as a downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="waste_segregation_report.csv")
+    return response
 
 @app.route('/download_waste_segregation_pdf')
 def download_waste_segregation_pdf():
@@ -3166,6 +3350,61 @@ def fetch_waste_unsegregation_data(page=1, per_page=20, campus=None, year=None, 
 
     return data, total_records
 
+from flask import Flask, request, session, Response, jsonify
+import pandas as pd
+import mysql.connector
+
+@app.route('/export_waste_unseg_csv')
+def export_waste_unseg_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get filter parameters from the request
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+
+    # Base query with mandatory campus filter
+    query = "SELECT * FROM tblsolidwasteunsegregated WHERE campus = %s"
+    params = [campus]
+
+    # Add additional filters dynamically
+    if year:
+        query += " AND year = %s"
+        params.append(year)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+
+    # Execute the query to fetch the data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # If no data is found, return an appropriate response
+    if not data:
+        return "No data available to generate CSV", 404
+
+    # Convert the data to a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Convert the DataFrame to CSV format
+    csv_data = df.to_csv(index=False)
+
+    # Return the CSV file as a downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="waste_unsegregated_report.csv")
+    return response
 
 @app.route('/download_waste_unseg_pdf')
 def download_waste_unseg_pdf():
@@ -3222,6 +3461,31 @@ def download_waste_unseg_pdf():
 
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="waste_unsegregation_report.pdf", as_attachment=True, mimetype='application/pdf')
+
+@app.route('/download_waste_unseg_csv')
+def download_waste_unseg_csv():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+
+    # Fetch data based on filters
+    data, _ = fetch_waste_unsegregation_data(page=1, per_page=10000, campus=campus, year=year, month=month)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate CSV file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False, encoding='utf-8')
+    buffer.seek(0)
+
+    # Send the CSV file as a downloadable file
+    return send_file(buffer, download_name="waste_unsegregation_report.csv", as_attachment=True, mimetype='text/csv')
 
 @app.route('/download_waste_unseg_excel')
 def download_waste_unseg_excel():
@@ -3340,7 +3604,6 @@ def fetch_food_data(page=1, per_page=20, campus=None, month=None, year=None, off
 
     return data, total_records
 
-
 @app.route('/report/food_consumption')
 def food_consumption_report():
     per_page = 20  # Items per page
@@ -3375,6 +3638,31 @@ def food_consumption_report():
         year=year,
         office=office
     )
+@app.route('/download_food_consumption_csv')
+def download_food_consumption_csv():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    month = request.args.get("month", None)
+    year = request.args.get("year", None)
+    office = request.args.get("office", None)
+
+    # Fetch data based on filters (with a large per_page to ensure we get all data)
+    data, _ = fetch_food_data(page=1, per_page=10000, campus=campus, month=month, year=year, office=office)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate CSV file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False, encoding='utf-8')
+    buffer.seek(0)
+
+    # Send the CSV file as a downloadable file
+    return send_file(buffer, download_name="food_consumption_report.csv", as_attachment=True, mimetype='text/csv')
 
 @app.route('/download_food_consumption_excel')
 def download_food_consumption_excel():
@@ -3411,6 +3699,61 @@ def download_food_consumption_excel():
     # Send the Excel file as a downloadable file
     return send_file(buffer, download_name="food_consumption_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@app.route('/export_food_consumption_csv')
+def export_food_consumption_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get filter parameters from the request
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+    office = request.args.get("office", None)
+
+    # Base query with campus filter
+    query = "SELECT * FROM tblfoodwaste WHERE campus = %s"
+    params = [campus]
+
+    # Add filters dynamically
+    if year:
+        query += " AND year_transaction = %s"
+        params.append(year)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+    if office:
+        query += " AND office = %s"
+        params.append(office)
+
+    # Execute the query to fetch data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # If no data is returned
+    if not data:
+        return "No data available to generate CSV", 404
+
+    # Convert data to pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Convert DataFrame to CSV
+    csv_data = df.to_csv(index=False)
+
+    # Return the CSV file as a downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="food_consumption_report.csv")
+    return response
 
 @app.route('/download_food_consumption_pdf')
 def download_food_consumption_pdf():
@@ -3548,6 +3891,65 @@ def lpg_consumption_report():
         office=office
     )
 
+@app.route('/export_lpg_consumption_csv')
+def export_lpg_consumption_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get filter parameters from the request
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+    office = request.args.get("office", None)
+
+    # Base query with campus filter
+    query = "SELECT * FROM tbllpg WHERE campus = %s"
+    params = [campus]
+
+    # Add filters dynamically based on input
+    if year:
+        query += " AND year_transact = %s"
+        params.append(year)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+    if office:
+        query += " AND office = %s"
+        params.append(office)
+
+    # Execute the query to fetch data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": f"Database error: {str(err)}"}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # If no data is returned
+    if not data:
+        return jsonify({"error": "No data available to generate CSV"}), 404
+
+    # Convert data to pandas DataFrame
+    try:
+        df = pd.DataFrame(data)
+    except ValueError:
+        return jsonify({"error": "Error converting data to CSV"}), 500
+
+    # Convert DataFrame to CSV
+    csv_data = df.to_csv(index=False)
+
+    # Return the CSV file as a downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="lpg_consumption_report.csv")
+    return response
+
 @app.route('/download_lpg_consumption_pdf')
 def download_lpg_consumption_pdf():
     # Retrieve filter parameters from request arguments
@@ -3599,6 +4001,7 @@ def download_lpg_consumption_pdf():
 
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="lpg_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
+
 @app.route('/download_lpg_consumption_excel')
 def download_lpg_consumption_excel():
     # Retrieve filter parameters from request arguments
@@ -3633,6 +4036,32 @@ def download_lpg_consumption_excel():
 
     # Send the Excel file as a downloadable file
     return send_file(buffer, download_name="lpg_consumption_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/download_lpg_consumption_csv')
+def download_lpg_consumption_csv():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    year = request.args.get("year", None)
+    month = request.args.get("month", None)
+    office = request.args.get("office", None)
+
+    # Fetch data based on filters (set a high `per_page` value to retrieve all data)
+    data, _ = fetch_lpg_data(page=1, per_page=10000, campus=campus, year=year, month=month, office=office)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate CSV file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False, encoding='utf-8')
+    buffer.seek(0)
+
+    # Send the CSV file as a downloadable file
+    return send_file(buffer, download_name="lpg_consumption_report.csv", as_attachment=True, mimetype='text/csv')
 
 # Helper function to fetch data with pagination and filters
 def fetch_flight_data(page=1, per_page=20, campus=None, office=None, year=None):
@@ -3685,36 +4114,18 @@ def fetch_flight_data(page=1, per_page=20, campus=None, office=None, year=None):
     return data, total_records
 
 # Route for Flight Emissions Report
-# Route for Flight Emissions Report
 @app.route('/report/flight_emissions')
 def flight_emissions_report():
     per_page = 20  # Items per page
     current_page = request.args.get("page", 1, type=int)
 
-    # Get campus from session
-    logged_in_campus = session.get('campus')
-
-    # Define campus-to-data mapping
-    campus_data_mapping = {
-        'Alangilan': ['Lobo', 'Mabini', 'Balayan'],
-        'Pablo Borbon': ['Lemery', 'San Juan', 'Rosario', 'Central']
-    }
-
-    # Determine relevant offices based on logged-in campus
-    relevant_offices = campus_data_mapping.get(logged_in_campus, [])
+    # Get filter values from request args
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
 
     # Fetch filtered and paginated data
-    data, total_records = fetch_flight_data(
-        page=current_page,
-        per_page=per_page,
-        campus=logged_in_campus,
-        office=request.args.get("office", None),  # Use the filter if provided
-        year=request.args.get("year", None)
-    )
-
-    # Filter data further by relevant offices
-    if relevant_offices:
-        data = [item for item in data if item['office'] in relevant_offices]
+    data, total_records = fetch_flight_data(page=current_page, per_page=per_page, campus=campus, office=office, year=year)
 
     # Calculate total pages
     total_pages = math.ceil(total_records / per_page)
@@ -3724,10 +4135,60 @@ def flight_emissions_report():
         data=data,
         current_page=current_page,
         total_pages=total_pages,
-        campus=logged_in_campus,
-        office=request.args.get("office", None),
-        year=request.args.get("year", None)
+        campus=campus,
+        office=office,
+        year=year
     )
+
+@app.route('/export_flight_emissions_csv')
+def export_flight_emissions_csv():
+    # Retrieve campus from session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Retrieve filter parameters
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Base query
+    query = "SELECT * FROM tblflight WHERE campus = %s"
+    params = [campus]
+
+    # Add dynamic filters
+    if office:
+        query += " AND office = %s"
+        params.append(office)
+    if year:
+        query += " AND year = %s"
+        params.append(year)
+
+    # Execute query and fetch data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": f"Database error: {err}"}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # Check if data is empty
+    if not data:
+        return jsonify({"error": "No data available to generate CSV"}), 404
+
+    # Create DataFrame and convert to CSV
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+
+    # Return as downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="flight_emissions_report.csv")
+    return response
 
 
 @app.route('/download_flight_emissions_pdf')
@@ -3815,6 +4276,31 @@ def download_flight_emissions_excel():
     # Send the Excel file as a downloadable file
     return send_file(buffer, download_name="flight_emissions_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@app.route('/download_flight_emissions_csv')
+def download_flight_emissions_csv():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Fetch data based on filters (set a high `per_page` value to retrieve all data)
+    data, _ = fetch_flight_data(page=1, per_page=10000, campus=campus, office=office, year=year)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate CSV file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False, encoding='utf-8')
+    buffer.seek(0)
+
+    # Send the CSV file as a downloadable file
+    return send_file(buffer, download_name="flight_emissions_report.csv", as_attachment=True, mimetype='text/csv')
+
 # Updated helper function to fetch data with filters
 def fetch_accommodation_data(page=1, per_page=20, campus=None, office=None, year=None):
     offset = (page - 1) * per_page
@@ -3870,30 +4356,13 @@ def accommodation_emissions_report():
     per_page = 20  # Number of records per page
     current_page = request.args.get("page", 1, type=int)
 
-    # Get campus from session
-    logged_in_campus = session.get('campus')
-
-    # Define campus-to-data mapping
-    campus_data_mapping = {
-        'Alangilan': ['Lobo', 'Mabini', 'Balayan', 'Alangilan'],
-        'Pablo Borbon': ['Lemery', 'San Juan', 'Rosario', 'Central', 'Pablo Borbon']
-    }
-
-    # Determine relevant offices based on logged-in campus
-    relevant_offices = campus_data_mapping.get(logged_in_campus, [])
+    # Get filter values from query parameters
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
 
     # Fetch paginated and filtered data
-    data, total_records = fetch_accommodation_data(
-        page=current_page,
-        per_page=per_page,
-        campus=logged_in_campus,
-        office=request.args.get("office", None),  # Optional: filter by office
-        year=request.args.get("year", None)      # Optional: filter by year
-    )
-
-    # Filter data further by relevant offices
-    if relevant_offices:
-        data = [item for item in data if item['office'] in relevant_offices]
+    data, total_records = fetch_accommodation_data(page=current_page, per_page=per_page, campus=campus, office=office, year=year)
 
     # Calculate total pages based on filtered results
     total_pages = math.ceil(total_records / per_page)
@@ -3903,11 +4372,10 @@ def accommodation_emissions_report():
         data=data,
         current_page=current_page,
         total_pages=total_pages,
-        campus=logged_in_campus,
-        office=request.args.get("office", None),
-        year=request.args.get("year", None)
+        campus=campus,
+        office=office,
+        year=year
     )
-
 
 @app.route('/download_accommodation_emissions_pdf')
 def download_accommodation_emissions_pdf():
@@ -3995,6 +4463,30 @@ def download_accommodation_emissions_excel():
     # Send the Excel file as a downloadable file
     return send_file(buffer, download_name="accommodation_emissions_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@app.route('/download_accommodation_emissions_csv')
+def download_accommodation_emissions_csv():
+    # Retrieve filter parameters from request arguments
+    campus = request.args.get("campus", None)
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Fetch data based on filters (set a high `per_page` value to retrieve all data)
+    data, _ = fetch_accommodation_data(page=1, per_page=10000, campus=campus, office=office, year=year)
+
+    # Handle empty data case
+    if not data:
+        return "No data available to generate CSV file", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a CSV file in memory
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False, encoding='utf-8')
+    buffer.seek(0)
+
+    # Send the CSV file as a downloadable file
+    return send_file(buffer, download_name="accommodation_emissions_report.csv", as_attachment=True, mimetype='text/csv')
 
 # Route for the Center for Sustainable Development Report
 @app.route('/csd_report', methods=['GET'])
@@ -4716,6 +5208,66 @@ def sdo_electricity_report():
         year=year_filter
     )
 
+from flask import Response
+
+@app.route('/export_electricity_report_csv')
+def export_electricity_report_csv():
+    # Retrieve the campus from the session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get other filter parameters from the request (query parameters)
+    category = request.args.get("category", None)
+    month = request.args.get("month", None)
+    quarter = request.args.get("quarter", None)
+    year = request.args.get("year", None)
+
+    # Base query with WHERE 1=1 for easy appending of filters
+    query = "SELECT * FROM electricity_consumption WHERE campus = %s"
+    params = [campus]
+
+    # Add additional filters dynamically to the query
+    if category:
+        query += " AND category = %s"
+        params.append(category)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+    if quarter:
+        query += " AND quarter = %s"
+        params.append(quarter)
+    if year:
+        query += " AND year = %s"
+        params.append(year)
+
+    # Execute the query to fetch the data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # If no data is returned, handle the empty case
+    if not data:
+        return "No data available to generate CSV", 404
+
+    # Convert data to CSV
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+
+    # Send the CSV file as a download
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="electricity_consumption_report.csv")
+    return response
+
 @app.route('/export_electricity_report_pdf')
 def export_electricity_report_pdf():
     campus = request.args.get("campus", None)
@@ -4943,7 +5495,6 @@ def sdo_fuel_emissions_report():
         year_filter=year_filter
     )
 
-
 @app.route('/export_fuel_report_pdf')
 def export_fuel_report_pdf():
     # Get filter parameters from the request (query parameters)
@@ -5113,6 +5664,65 @@ def export_fuel_report_excel():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+@app.route('/export_fuel_report_csv')
+def export_fuel_report_csv():
+    # Retrieve campus from the session
+    campus = session.get('campus')
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Get other filter parameters from the request (query parameters)
+    category = request.args.get('category')
+    month = request.args.get('month')
+    quarter = request.args.get('quarter')
+    year = request.args.get('year')
+
+    # Start building the query
+    query = "SELECT * FROM fuel_emissions WHERE campus = %s"
+    params = [campus]
+
+    # Dynamically add other filters to the query if they are provided
+    if category:
+        query += " AND category = %s"
+        params.append(category)
+    if month:
+        query += " AND month = %s"
+        params.append(month)
+    if quarter:
+        query += " AND quarter = %s"
+        params.append(quarter)
+    if year:
+        query += " AND YEAR(date_column) = %s"  # Replace 'date_column' with the actual column name
+        params.append(year)
+
+    # Execute the query
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # If no data is returned, handle the empty case
+    if not data:
+        return "No data available to generate CSV report", 404
+
+    # Convert the data to a DataFrame for easier handling
+    df = pd.DataFrame(data)
+
+    # Convert the DataFrame to CSV
+    csv_data = df.to_csv(index=False)
+
+    # Send the CSV file as a downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="fuel_emissions_report.csv")
+    return response
 
 @app.route('/sdo_water_report')
 def sdo_water_report():
@@ -6442,7 +7052,6 @@ def sdo_lpg_consumption_report():
         office_filter=office_filter
     )
 
-
 @app.route('/sdo_lpg_consumption_pdf')
 def sdo_lpg_consumption_pdf():
     # Get filter values from request arguments
@@ -6932,6 +7541,57 @@ def sdo_accommodation_emissions_report():
         year_filter=year_filter
     )
 
+@app.route('/export_accommodation_emissions_csv', methods=['GET'])
+def export_accommodation_emissions_csv():
+    # Retrieve campus from session
+    campus = session.get("campus")
+    if not campus:
+        return jsonify({"error": "Campus is not set in the session"}), 400
+
+    # Retrieve filter parameters
+    office = request.args.get("office", None)
+    year = request.args.get("year", None)
+
+    # Base query with campus filter
+    query = "SELECT * FROM tblaccommodation WHERE campus = %s"
+    params = [campus]
+
+    # Add filters dynamically
+    if office:
+        query += " AND office = %s"
+        params.append(office)
+    if year:
+        query += " AND year_transact = %s"
+        params.append(year)
+
+    # Fetch data from the database
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": f"Database error: {err}"}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
+
+    # Check if data is empty
+    if not data:
+        return jsonify({"error": "No data available to generate CSV"}), 404
+
+    # Convert data to pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Convert DataFrame to CSV
+    csv_data = df.to_csv(index=False)
+
+    # Return as downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="accommodation_emissions_report.csv")
+    return response
 
 @app.route('/sdo_accommodation_emissions_pdf')
 def sdo_accommodation_emissions_pdf():

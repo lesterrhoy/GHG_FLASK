@@ -287,76 +287,23 @@
                     <button id="downloadPDFBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="downloadPDF()">Download PDF</button>
                     <!-- Download Excel Button -->
                     <button id="downloadExcelBtn" class="btn btn-success" style="background-color: #d50000; border-color: #d50000;" onclick="downloadExcel()">Download Excel</button>
-                    <button id="downloadCsvBtn" class="btn btn-secondary" style="background-color: #17a2b8; border-color: #17a2b8;" onclick="downloadCSV()">Download CSV</button>
+                    <button id="downloadCSV" class="btn btn-secondary" style="background-color: #17a2b8; border-color: #17a2b8;" onclick="downloadCSV()">Download CSV</button>
                 </div>
             </main>
         </div>
     </div>
     <script>
    function downloadCSV() {
-    // Define the filters to include in the API request
-    const campus = document.getElementById('campus') ? document.getElementById('campus').value : '';
-    const year = document.getElementById('year') ? document.getElementById('year').value : '';
-    const month = document.getElementById('month') ? document.getElementById('month').value : '';
+    const campus = document.getElementById("campus").value;
+    const year = document.getElementById("year").value;
+    const month = document.getElementById("month").value;
 
-    // Construct the API URL with query parameters
-    const apiUrl = `/waste_unsegregation/all?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
+    // Construct the URL with query parameters
+    const url = `/download_waste_unseg_csv?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
 
-    // Fetch all data from the backend
-    fetch(apiUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data || data.length === 0) {
-                alert('No data available for export.');
-                return;
-            }
-
-            // Define CSV headers
-            const headers = [
-                'Campus', 'Year', 'Month', 'Waste Type', 'Quantity (KG)',
-                'Sent to Landfill (KG)', 'Sent to Landfill (TONS)', 
-                'GHG Emission (KG CO₂e)', 'GHG Emission (T CO₂e)'
-            ];
-
-            // Map the data to CSV rows
-            const rows = data.map(report => [
-                report.Campus || '',
-                report.Year || '',
-                report.Month || '',
-                report.WasteType || '',
-                report.QuantityInKG || 0,
-                report.SentToLandfillKG || 0,
-                report.SentToLandfillTONS || 0,
-                report.GHGEmissionKGCO2e || 0,
-                report.GHGEmissionTCO2e || 0
-            ]);
-
-            // Generate CSV content
-            const csvContent = [headers, ...rows]
-                .map(row => row.map(value => `"${value}"`).join(',')) // Escape values with quotes
-                .join('\n'); // Join rows with newlines
-
-            // Create a Blob and trigger download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'WasteUnsegregationReport.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        })
-        .catch(error => {
-            console.error('Error exporting CSV:', error);
-            alert('An error occurred while exporting the data to CSV.');
-        });
+    // Redirect to the URL to initiate the download
+    window.location.href = url;
 }
-
-
         function downloadPDF() {
             const campus = document.getElementById("campus").value;
             const year = document.getElementById("year").value;
