@@ -1,3 +1,4 @@
+
 @charset "UTF-8";
 /*!
 * Start Bootstrap - SB Admin v7.0.7 (https://startbootstrap.com/template/sb-admin)
@@ -10920,17 +10921,17 @@ body {
 }
 .sb-nav-fixed #layoutSidenav #layoutSidenav_nav {
   width: 225px;
-  height: 100vh;
+  height: 200vh;
   z-index: 1038;
 }
 .sb-nav-fixed #layoutSidenav #layoutSidenav_nav .sb-sidenav {
-  padding-top: 56px;
+  padding-top: 50px;
 }
 .sb-nav-fixed #layoutSidenav #layoutSidenav_nav .sb-sidenav .sb-sidenav-menu {
   overflow-y: auto;
 }
 .sb-nav-fixed #layoutSidenav #layoutSidenav_content {
-  padding-left: 225px;
+  padding-left: 255px;
   top: 56px;
 }
 
@@ -10956,21 +10957,35 @@ body {
   margin-right: 0.5rem;
 }
 
+/* Top Navigation Bar */
 .sb-topnav {
+  background-color: #3399FF; /* Light Blue for top navigation bar */
   padding-left: 0;
   height: 56px;
   z-index: 1039;
 }
+
 .sb-topnav .navbar-brand {
+  color: #FFFFFF; /* White color for brand text */
   width: 225px;
   margin: 0;
 }
+
+/* Sidebar Toggle in Dark Mode */
 .sb-topnav.navbar-dark #sidebarToggle {
-  color: rgba(255, 255, 255, 0.5);
+  color: #FFFFFF; /* White for sidebar toggle in dark mode */
 }
+
+/* Sidebar Toggle in Light Mode */
 .sb-topnav.navbar-light #sidebarToggle {
-  color: #212529;
+  color: #003366; /* Dark Blue for sidebar toggle in light mode */
 }
+
+/* Hover effect for Sidebar Toggle */
+.sb-topnav #sidebarToggle:hover {
+  color: #003366; /* Dark Blue on hover for contrast */
+}
+
 
 .sb-sidenav {
   display: flex;
@@ -11018,63 +11033,87 @@ body {
   flex-shrink: 0;
 }
 
+/* Dark Mode Sidebar with Updated Gray */
 .sb-sidenav-dark {
-  background-color: #212529;
-  color: rgba(255, 255, 255, 0.5);
-}
-.sb-sidenav-dark .sb-sidenav-menu .sb-sidenav-menu-heading {
-  color: rgba(255, 255, 255, 0.25);
-}
-.sb-sidenav-dark .sb-sidenav-menu .nav-link {
-  color: rgba(255, 255, 255, 0.5);
-}
-.sb-sidenav-dark .sb-sidenav-menu .nav-link .sb-nav-link-icon {
-  color: rgba(255, 255, 255, 0.25);
-}
-.sb-sidenav-dark .sb-sidenav-menu .nav-link .sb-sidenav-collapse-arrow {
-  color: rgba(255, 255, 255, 0.25);
-}
-.sb-sidenav-dark .sb-sidenav-menu .nav-link:hover {
-  color: #fff;
-}
-.sb-sidenav-dark .sb-sidenav-menu .nav-link.active {
-  color: #fff;
-}
-.sb-sidenav-dark .sb-sidenav-menu .nav-link.active .sb-nav-link-icon {
-  color: #fff;
-}
-.sb-sidenav-dark .sb-sidenav-footer {
-  background-color: #343a40;
+  background-color: #2F3E46; /* Dark Gray from uploaded image */
+  color: rgba(255, 255, 255, 0.8);
 }
 
+.sb-sidenav-dark .sb-sidenav-menu .sb-sidenav-menu-heading {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link .sb-nav-link-icon {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link .sb-sidenav-collapse-arrow {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link:hover {
+  color: #A8D5BA; /* Light Green for hover */
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link.active {
+  color: #FFB6B9; /* Light Red for active links */
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link.active .sb-nav-link-icon {
+  color: #FFB6B9; /* Light Red for active icons */
+}
+
+.sb-sidenav-dark .sb-sidenav-footer {
+  background-color: #2F3E46; /* Dark Gray from uploaded image */
+  color: rgba(255, 255, 255, 0.8); /* Footer text color */
+}
+
+/* Light Mode Sidebar with New Colors */
 .sb-sidenav-light {
-  background-color: #f8f9fa;
-  color: #212529;
+  background-color: #A8D5BA; /* Light Green */
+  color: #2F3E46; /* Dark Gray for contrast */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .sb-sidenav-menu-heading {
-  color: #adb5bd;
+  color: rgba(47, 62, 70, 0.7); /* Gray for text */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .nav-link {
-  color: #212529;
+  color: #2F3E46; /* Dark Gray for links */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .nav-link .sb-nav-link-icon {
-  color: #adb5bd;
+  color: rgba(47, 62, 70, 0.7); /* Dark Gray for icons */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .nav-link .sb-sidenav-collapse-arrow {
-  color: #adb5bd;
+  color: rgba(47, 62, 70, 0.7); /* Dark Gray for collapse arrow */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .nav-link:hover {
-  color: #0d6efd;
+  color: #FFB6B9; /* Light Red for hover */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .nav-link.active {
-  color: #0d6efd;
+  color: #FFB6B9; /* Light Red for active links */
 }
+
 .sb-sidenav-light .sb-sidenav-menu .nav-link.active .sb-nav-link-icon {
-  color: #0d6efd;
+  color: #FFB6B9; /* Light Red for active icons */
 }
+
 .sb-sidenav-light .sb-sidenav-footer {
-  background-color: #e9ecef;
+  background-color: #A8D5BA; /* Light Green */
+  color: #2F3E46; /* Dark Gray for footer text */
 }
+
+
+
+
 
 .datatable-wrapper .datatable-container {
   font-size: 0.875rem;
