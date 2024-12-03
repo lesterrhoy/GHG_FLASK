@@ -1,0 +1,690 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Office</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet">
+    <!-- Add Bootstrap JS and Popper.js at the end of your HTML before closing </body> tag -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include jQuery (for Bootstrap 4) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Layout Styling */
+        #layoutSidenav {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+    
+        #layoutSidenav_nav {
+            width: 250px;
+            background-color: #495057;
+            flex-shrink: 0;
+        }
+    
+        #layoutSidenav_content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        #layoutSidenav_nav .nav-link {
+            color: #fff;
+            font-weight: 500;
+        }
+    
+        #layoutSidenav_nav .nav-link:hover {
+            color: #fff;
+            background-color: #6c757d;
+        }
+    
+        .header {
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+    
+        .header img {
+            height: 60px;
+        }
+    
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+    
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+    
+        th {
+            background-color: #f2f2f2;
+            color: #000;
+        }
+        .content-area {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto; /* Enable scrolling */
+        }
+        .text-center {
+            margin-bottom: 50px; /* Add margin to avoid clipping at the bottom */
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .scrollable-menu {
+            max-height: 300px; /* Set a max height for the scrollable area */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        .pagination .page-link {
+            background-color: white;
+            color: #d50000;
+            border-color: #d50000;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .pagination .page-link:hover {
+            background-color: #a30000; /* Darker red on hover */
+            color: white;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #d50000;
+            color: white;
+            border-color: #d50000;
+        }
+    
+        /* Sidebar and Table Side-by-Side */
+        #mainContent {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+        }
+    
+        .content-area {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-x: auto;
+        }
+    
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+                /* General Styling */
+        body {
+            font-family: 'Roboto', sans-serif; /* Change to a more modern font */
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7; /* Slightly lighter background */
+        }
+
+        /* FAQ Section */
+        .faq-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto; /* Center-align the FAQ container */
+        }
+
+        .faq-container h1 {
+            font-size: 2.4rem;
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e5e5; /* Lighter border for better separation */
+            padding-bottom: 20px;
+        }
+
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+            cursor: pointer; /* Makes the question appear clickable */
+            transition: color 0.3s ease;
+        }
+
+        .faq-question:hover {
+            color: #007bff; /* Change text color on hover */
+        }
+
+        .faq-question p {
+            margin: 0;
+        }
+
+        /* Toggle icon style */
+        .toggle {
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .toggle:hover {
+            color: #007bff; /* Change color of the toggle icon on hover */
+            transform: rotate(180deg); /* Rotate the icon on toggle */
+        }
+
+        .faq-answer {
+            display: none;
+            margin-top: 15px;
+            padding-left: 20px;
+            font-size: 1.1rem;
+            color: #666;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .faq-answer p {
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .faq-container {
+                padding: 20px;
+            }
+
+            .faq-container h1 {
+                font-size: 2rem; /* Adjust heading size for smaller screens */
+            }
+
+            .faq-question {
+                font-size: 1.1rem; /* Slightly smaller text for mobile */
+            }
+        }
+
+
+        /* Feedback Section */
+        .feedback {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .feedback p {
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+                /* Feedback Buttons */
+        #yes-btn, #no-btn {
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #yes-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #yes-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #no-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #no-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Popup Styling */
+        .popup-container {
+            position: relative;
+            width: 100%;
+            height: 100px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .popup {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            opacity: 1;
+            transform: scale(0.8);
+            animation: popupAnimation 1.5s ease-in-out forwards;
+        }
+
+        /* Keyframes for Popup Animation */
+        @keyframes popupAnimation {
+            0% {
+                transform: translateY(0) scale(0.8);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(-50px) scale(1);
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+
+        /* General Footer Styling */
+        .footer {
+            background-color: #343a40; /* Dark background */
+            color: #ffffff; /* White text */
+            padding: 30px 0; /* Adjusted padding for better spacing */
+            font-family: 'Roboto', sans-serif; /* Modern font */
+        }
+
+        .footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            flex-wrap: wrap;
+            gap: 20px; /* Adds spacing between columns */
+        }
+
+        .footer h5 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase; /* Adds modern styling */
+            color: #f7f7f7; /* Highlight color for headers */
+        }
+
+        .footer p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .footer-logo img {
+            width: 120px; /* Adjust logo size */
+            height: auto;
+        }
+
+        .footer-bottom {
+            margin-top: 20px;
+            font-size: 12px;
+            text-align: center;
+            border-top: 1px solid #555; /* Adds a subtle divider */
+            padding-top: 10px;
+        }
+
+        /* Links in Footer */
+        .footer a {
+            color: #477df0; /* Highlight color for links */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #ffffff; /* Changes color on hover */
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .footer .container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                align-items: center;
+                gap: 30px;
+            }
+
+            .footer-logo img {
+                width: 100px; /* Adjust logo size for mobile */
+            }
+        }
+
+        .header {
+            background: linear-gradient(90deg, #001F3D, #001C3B, #062039, #283F57); /* Gradient with extracted colors */
+            color: #fff; /* White text for contrast */
+            text-align: center;
+            padding: 60px 20px;
+            border-bottom: 2px solid #ddd;
+            display: flex; /* Enable Flexbox */
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Horizontally center */
+            justify-content: center; /* Vertically center */
+            height: 100px; /* Adjust height as needed */
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .get-in-touch i {
+            color: #ffb400; /* Accent color for icons */
+            margin-right: 8px; /* Spacing between icon and text */
+            font-size: 16px; /* Icon size */
+            vertical-align: middle; /* Align icons with text */
+        }
+
+        .get-in-touch a {
+            color: #ffffff; /* Keep the link color white */
+            text-decoration: none; /* Remove underline */
+            transition: color 0.3s ease;
+        }
+
+        .get-in-touch a:hover {
+            color: #ffb400; /* Highlight link on hover */
+        }
+        
+               /* FAQ Heading Styling */
+        h2 {
+            font-size: 2.5rem; /* Larger font size for more emphasis */
+            color: #333; /* Dark gray color for readability */
+            text-align:left; /* Center-align the heading */
+            font-weight: 700; /* Bold font weight for emphasis */
+            margin-top: 20px;
+            margin-bottom: 20px; /* Space between heading and content */
+            letter-spacing: 2px; /* Slightly increase spacing between letters for better readability */
+            text-transform: uppercase; /* Make the heading text all caps for a stronger impact */
+            position: relative; /* For the underline effect */
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('procurement_dashboard') }}">PROCUREMENT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }} CAMPUS</span></a>
+         <!-- Spacer to push "Sign-out" to the right -->
+         <div class="ms-auto"></div>
+    
+         <!-- Sign-out Icon and Link -->
+         <ul class="navbar-nav">
+             <li class="nav-item">
+                 <a class="nav-link" href="{{ url_for('logout') }}">
+                     <i class="fas fa-power-off fa-fw"></i> Sign-out
+                 </a>
+             </li>
+         </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('procurement_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                
+                        <a class="nav-link" href="{{ url_for('po') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
+                            User's Guide
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <div class="header">
+                <h1>How Can We Help?</h1>
+            </div>
+                <h2>Frequently Asked Questions</h2>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is Procurement Office Office?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The primary responsibility of the Procurement Office is to ensure that sustainability remains a key element in the university's core functions, including instruction, research, innovation, extension services, and general administrative support. This responsibility extends to managing consumption in areas such as food and LPG. Through the innovative "Greenhouse Gases Emission Inventory and Analytical Dashboard" system, the office facilitates progress tracking, data visualization, and reporting for food and LPG consumption.</p>
+                    </div>
+                </div>
+        
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is the role of Procurement Office?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The role of Procurement Office is to calculate, monitor and track the emissions progress of campus within BatState-U TNEU. It provides diverse functionalities and valuable insights into consumption patterns of Food and LPG consumptions, aiding strategic decision-making to enhance sustainability.</p>
+                    </div>
+                </div>
+        
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is Food consumption?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The University food consumption refers to the quantity and types of food consumed by students, faculty, and staff on campus, typically within dining halls, cafeterias, and other food service areas.
+                           <br><br> To calculate the Food consumption, heres the sample input for the calculation:
+                        </p>
+                        <pre>Year: 2024 (Input correct year)</pre>
+                        <pre>Month: December (Input correct month)</pre>
+                        <pre>Office: RGO (Select appropriate office)</pre>
+                        <pre>Type of Food Served: 1 Standard Breakfast (Select correct type of food served)</pre>
+                        <pre>No. of Servings: 25 (Input correct no. of servings)</pre>
+                     
+                        <p>Result:</p>
+                            <pre> GHG Emission (KG CO2e): Total calculated emission of inputted food consumption</pre>
+                            <pre> GHG Emission (T CO2e): GHG Emission (KG CO2e) / 1000</pre>
+        
+                        <p>Click the "Calculation CO₂ emission" to get the result, otherwise click the "Generate Report" to display data of the calculated food consumption.</p>
+                    </div>          
+                </div>
+        
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is LPG consumption?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The LPG consumption refers to the usage of liquefied petroleum gas for campus operations, including cooking in cafeterias, heating systems, and other institutional needs. 
+                           <br><br> To calculate the LPG consumption, here’s the sample input for the calculation:
+                        </p>
+                        <pre>Year: 2024 (Input correct year)</pre>
+                        <pre>Month: December (Input correct month)</pre>
+                        <pre>Office: Procurement (Select appropriate office)</pre>
+                        <pre>Concessionaire Type: Fuel or Diesel (Choose correct type)</pre>
+                        <pre>Qty (no. of tanks): 50 (Input correct number of tanks)</pre>
+                        <pre>Tank weight (in kg): 1.00 (Input correct tank weight)</pre>
+                
+                        <p>Result:</p>
+                        <pre>Tank Volume: 1.96 * Tank weight</pre>
+                        <pre>Total Tank Volume: Qty (no. of tanks) * Tank Volume</pre>
+                        <pre>GHG Emission (KG CO2e): Total calculated emission of inputted LPG consumption</pre>
+                        <pre>GHG Emission (T CO2e): GHG Emission (KG CO2e) / 1000</pre>
+                
+                        <p>Click the "Calculation CO₂ emission" to get the result, or click the "Generate Report" to display data of the calculated LPG consumption.</p>
+                    </div>
+                </div>
+                
+        
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is the purpose of Dashboard?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The purpose of the dashboard is to monitor and track the progress of the campus on food and LPG consumption, with filters for years. It also includes the total emissions, current emissions for each type of consumption of the campus.</p>
+                    </div>
+                </div>
+        
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is the purpose of Report?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The purpose of the report is to manage food and LPG consumption data by providing filtering options and allowing export in PDF, Excel, and CSV formats.</p>
+                    </div>
+                </div>
+        
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <p>What is the purpose of Forecast Analytics?</p>
+                        <span class="toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>The purpose of forecast analytics is  to identify consumption trends and gaps on a yearly and monthly basis using the FB Prophet forecast model. It presents actual and forecasted data, offering valuable insights for implementing preventive measures to enhance the university's sustainability efforts.</p>
+                    </div>
+                </div>
+
+                <div class="feedback">
+                    <p>Was this helpful?</p>
+                    <button id="yes-btn">👍 Yes</button>
+                    <button id="no-btn">👎 No</button>
+                    <div class="popup-container" id="popup-container"></div>
+                </div>
+            
+                <footer class="footer">
+                    <div class="container">
+                        <div class="footer-content">
+                            <div class="contact-info">
+                                <h5>Contact Us</h5>
+                                <p>Batangas State University<br>Batangas City, Philippines</p>
+                            </div>
+                            <div class="get-in-touch">
+                                <h5>Get In Touch</h5>
+                                <p>
+                                    <i class="fas fa-phone-alt"></i> +63 43 980-0385 (local 1114 or 1546)
+                                </p>
+                                <p>
+                                    <i class="fas fa-envelope"></i> 
+                                    <a href="mailto:president@g.batstate-u.edu.ph">president@g.batstate-u.edu.ph</a>
+                                </p>
+                            </div>
+                            
+                            <div class="footer-logo">
+                                <img src="CSD.png" alt="BSU Logo">
+                                <img src="bsu.png" alt="BSU Logo">
+                            </div>
+                        </div>
+                        <p class="footer-bottom">© 2024 Center for Sustainable Development. All rights reserved.</p>
+                    </div>
+                </footer>
+                     
+            </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.querySelectorAll('.faq-question').forEach((question) => {
+    question.addEventListener('click', () => {
+        const answer = question.nextElementSibling;
+        const icon = question.querySelector('.toggle');
+
+        if (answer.style.display === 'none' || !answer.style.display) {
+            answer.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            answer.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    });
+});
+
+    </script>
+    
+        <script>
+            document.getElementById('yes-btn').addEventListener('click', () => {
+                showPopup('👍', '#28a745'); // Green thumbs-up
+            });
+
+            document.getElementById('no-btn').addEventListener('click', () => {
+                showPopup('👎', '#dc3545'); // Red thumbs-down
+            });
+
+            function showPopup(icon, color) {
+                const container = document.getElementById('popup-container');
+
+                for (let i = 0; i < 10; i++) {
+                    const popup = document.createElement('div');
+                    popup.className = 'popup';
+                    popup.textContent = icon;
+                    popup.style.color = color;
+
+                    // Randomize positions within a defined range
+                    const randomX = Math.random() * (container.offsetWidth - 50);
+                    const randomY = Math.random() * (container.offsetHeight / 2);
+
+                    popup.style.left = `${randomX}px`;
+                    popup.style.top = `${randomY}px`;
+                    popup.style.animationDelay = `${Math.random() * 0.3}s`;
+
+                    container.appendChild(popup);
+
+                    // Remove the popup after the animation ends
+                    popup.addEventListener('animationend', () => {
+                        popup.remove();
+                    });
+                }
+            }
+        </script>
+
+</body>
+</html>

@@ -264,6 +264,7 @@
                                     <th>Price Per KWH</th>
                                     <th>KG CO₂ per KWH</th>
                                     <th>T CO₂ per KWH</th>
+                                    <th>Tree Offset</th> <!-- New Column -->
                                 </tr>
                             </thead>
                             <tbody id="electricityData">
@@ -282,6 +283,8 @@
                                     <td>{{ row['price_per_kwh'] }}</td>
                                     <td>{{ row['kg_co2_per_kwh'] }}</td>
                                     <td>{{ row['t_co2_per_kwh'] }}</td>
+                                    <td>{{ row.tree_offset }}</td> <!-- New Data -->
+
                                 </tr>
                                 {% endfor %}
                             </tbody>

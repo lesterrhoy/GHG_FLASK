@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Section</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<style>
+    body {
+        font-family: 'Roboto', Arial, sans-serif;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 0;
+    }
+
+    .header {
+        background: linear-gradient(90deg, #FF7E79, #FFB76A, #79C1FF);
+        color: #fff;
+        text-align: center;
+        padding: 60px 20px;
+        border-bottom: 2px solid #ddd;
+        display: flex; /* Enable Flexbox */
+        flex-direction: column; /* Stack items vertically */
+        align-items: center; /* Horizontally center */
+        justify-content: center; /* Vertically center */
+        height: 100px; /* Adjust height as needed */
+    }
+
+    .header h1 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .faq-container {
+        width: 60%;
+        margin: 50px auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        text-align: left;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .faq-item {
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .faq-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .faq-question {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .faq-question p {
+        font-size: 1.2rem;
+        margin: 0;
+    }
+
+    .faq-answer {
+        display: none;
+        padding-top: 10px;
+        font-size: 1rem;
+        color: #555;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .faq-item.open .faq-answer {
+        display: block;
+        max-height: 300px;
+        opacity: 1;
+    }
+
+    .toggle {
+        font-size: 1.5rem;
+        color: #007BFF;
+    }
+
+    .footer {
+        background-color: #1e2a38;
+        color: #ffffff;
+        padding: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .footer .contact,
+    .footer .get-in-touch {
+        width: 30%;
+    }
+
+    .footer .get-in-touch ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .footer .get-in-touch li {
+        font-size: 1rem;
+        margin-bottom: 5px;
+    }
+
+    .footer .get-in-touch li i {
+        margin-right: 10px;
+        color: #28a745;
+    }
+
+    .footer .logo-container {
+        width: 20%;
+        text-align: right;
+    }
+
+    .footer .footer-logo {
+        width: 100px; /* Adjust size */
+        height: auto;
+        border-radius: 50%; /* Make it circular */
+    }
+
+    .footer-bottom {
+        width: 100%;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .footer .contact,
+        .footer .get-in-touch,
+        .footer .logo-container {
+            width: 100%;
+            text-align: center;
+        }
+
+        .footer .footer-logo {
+            margin-top: 20px;
+        }
+    }
+
+
+    .feedback {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .feedback button {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.3s ease;
+    }
+
+    .feedback button:hover {
+        background: #007BFF;
+        color: #fff;
+    }
+
+    /* Popup container styling */
+    .popup-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -150%);
+        pointer-events: none;
+    }
+
+    /* Popup thumbs styling */
+    .popup {
+        font-size: 2rem;
+        position: absolute;
+        animation: float 1s ease forwards;
+        opacity: 0;
+    }
+
+    @keyframes float {
+        0% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+    }
+
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>How Can We Help?</h1>
+    </div>
+    
+
+    <div class="faq-container">
+        <h1>Frequently Asked Questions</h1>
+        <div class="faq-item">
+            <div class="faq-question">
+                <p>What is Central Sustainable Development?</p>
+                <span class="toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>The primary responsibility of CSD is to ensure that sustainability is an essential component of the university’s core duties, including instruction, research, innovation, and extension services, as well as its general administrative and support functions. With the innovative system "Greenhouse Gases Emission Inventory and Analytical Dashboard," it provides progress tracking and data visualization for each respective campus.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <p>What is the role of Central Sustainable Development?</p>
+                <span class="toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>The role of CSD is to monitor and track the emissions progress at each campus within BatState-U TNEU. It provides diverse functionalities and valuable insights into consumption patterns, aiding strategic decision-making to enhance sustainability.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <p>What is the purpose of Dashboard?</p>
+                <span class="toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>The purpose of the dashboard is to monitor and track the progress of each campus based on consumption, with filters for campuses and years. It also includes the total emissions, total number of records, current emissions for each type of consumption, and the number of trees to be planted for electricity consumption, helping to determine how many trees need to be planted for BatState-U TNEU.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <p>What is the purpose of Report?</p>
+                <span class="toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>The purpose of the report is to manage consumption data by providing filtering options and allowing export in PDF, Excel, and CSV formats.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <p>What is the purpose of Forecast Analytics?</p>
+                <span class="toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>The purpose of forecast analytics is  to identify consumption trends and gaps on a yearly and monthly basis using the FB Prophet forecast model. It presents actual and forecasted data, offering valuable insights for implementing preventive measures to enhance the university's sustainability efforts.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <p>What is the purpose of Manage Account?</p>
+                <span class="toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                <p>The purpose of "Manage Account" is to create accounts for the Sustainable Development Office (SDO) of each campus, which is responsible for managing three user roles: Environmental Management Unit, Procurement Office, and External Affairs. The CSD also has access to save and delete the accounts they create.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback">
+        <p>Was this helpful?</p>
+        <button id="yes-btn">👍 Yes</button>
+        <button id="no-btn">👎 No</button>
+        <div class="popup-container" id="popup-container"></div>
+    </div>
+    
+
+    <div class="footer">
+        <div class="contact">
+            <h3>Contact Us</h3>
+            <p>Batangas State University</p>
+            <p>Batangas City, Philippines</p>
+        </div>
+        <div class="get-in-touch">
+            <h3>Get in Touch</h3>
+            <ul>
+                <li><i class="fas fa-phone"></i> +63 43 980-0385</li>
+                <li><i class="fas fa-envelope"></i> president@g.batstate-u.edu.ph</li>
+            </ul>
+        </div>
+        <div class="logo-container">
+            <img src="static/images/CSD.png" alt="Red Spartans Logo" class="footer-logo">
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>&copy; 2024 Center for Sustainable Development. All rights reserved.</p>
+    </div>
+
+    <script>
+        const faqItems = document.querySelectorAll('.faq-item');
+
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            const toggle = item.querySelector('.toggle');
+
+            question.addEventListener('click', () => {
+                item.classList.toggle('open');
+                toggle.textContent = item.classList.contains('open') ? '-' : '+';
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById('yes-btn').addEventListener('click', () => {
+            showPopup('👍', '#28a745'); // Green thumbs-up
+        });
+
+        document.getElementById('no-btn').addEventListener('click', () => {
+            showPopup('👎', '#dc3545'); // Red thumbs-down
+        });
+
+        function showPopup(icon, color) {
+            const container = document.getElementById('popup-container');
+            for (let i = 0; i < 10; i++) { // Number of icons
+                const popup = document.createElement('div');
+                popup.className = 'popup';
+                popup.textContent = icon;
+                popup.style.color = color;
+
+                // Randomize the position and animation delay
+                popup.style.left = `${Math.random() * 200 - 100}px`;
+                popup.style.top = `${Math.random() * 100 - 50}px`;
+                popup.style.animationDelay = `${Math.random() * 0.5}s`;
+
+                container.appendChild(popup);
+
+                // Remove the popup after the animation
+                setTimeout(() => {
+                    popup.remove();
+                }, 1000);
+            }
+        }
+    </script>
+
+</body>
+</html>
+

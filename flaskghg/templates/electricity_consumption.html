@@ -405,7 +405,7 @@ button.btn-danger:hover {
 </head>
 <body>
     <nav class="sb-topnav navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }} CAMPUS</span></a>
        
         <div class="collapse navbar-collapse" id="navbarResponsive">
             <ul class="navbar-nav ms-auto">
@@ -516,22 +516,22 @@ button.btn-danger:hover {
                             <span class="close" onclick="closeModal()">&times;</span>
                             <div class="container">
                                 <div class="form-container">
-                                    <form id="electricityForm" method="POST" action="{{ url_for('electricity_consumption') }}">
+                                    <form id="electricityForm" method="POST" action="{{ url_for('electricity_consumption') }}" onsubmit="return validateAndSubmitForm()">
                                         <label for="campus">Campus:</label>
-                                        <select id="campus" name="campus" required>
-                                            <option value=""></option>
-                                            <option value="Alangilan">Alangilan</option>
-                                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
-                                            <option value="Balayan">Balayan</option>
-                                            <option value="Central">Central</option>
-                                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
-                                            <option value="Lemery">Lemery</option>
-                                            <option value="Lipa">Lipa</option>
-                                            <option value="Lobo">Lobo</option>
-                                            <option value="Mabini">Mabini</option>
-                                            <option value="Pablo Borbon">Pablo Borbon</option>
-                                            <option value="Rosario">Rosario</option>
-                                            <option value="San Juan">San Juan</option>
+                                        <select id="campus" name="campus" disabled>
+                                            <option value="" {% if not session.get('campus') %}selected{% endif %}></option>
+                                            <option value="Alangilan" {% if session.get('campus') == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                                            <option value="ARASOF-Nasugbu" {% if session.get('campus') == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                                            <option value="Balayan" {% if session.get('campus') == 'Balayan' %}selected{% endif %}>Balayan</option>
+                                            <option value="Central" {% if session.get('campus') == 'Central' %}selected{% endif %}>Central</option>
+                                            <option value="JPLPC-Malvar" {% if session.get('campus') == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                                            <option value="Lemery" {% if session.get('campus') == 'Lemery' %}selected{% endif %}>Lemery</option>
+                                            <option value="Lipa" {% if session.get('campus') == 'Lipa' %}selected{% endif %}>Lipa</option>
+                                            <option value="Lobo" {% if session.get('campus') == 'Lobo' %}selected{% endif %}>Lobo</option>
+                                            <option value="Mabini" {% if session.get('campus') == 'Mabini' %}selected{% endif %}>Mabini</option>
+                                            <option value="Pablo Borbon" {% if session.get('campus') == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                                            <option value="Rosario" {% if session.get('campus') == 'Rosario' %}selected{% endif %}>Rosario</option>
+                                            <option value="San Juan" {% if session.get('campus') == 'San Juan' %}selected{% endif %}>San Juan</option>
                                         </select>
                                     
                                         <label for="category">Category:</label>
@@ -558,9 +558,9 @@ button.btn-danger:hover {
                                             <option value="November">November</option>
                                             <option value="December">December</option>
                                         </select>
-
+                                    
                                         <label for="quarter">Quarter:</label>
-<input type="text" id="quarter" name="quarter" readonly style="background: #f9f9f9; border: 1px solid #ccc; padding: 5px; width: 320px;" value="">
+                                        <input type="text" id="quarter" name="quarter" readonly style="background: #f9f9f9; border: 1px solid #ccc; padding: 5px; width: 320px;" value="">
                                     
                                         <label for="year">Year:</label>
                                         <select id="year" name="year" required>
@@ -588,9 +588,6 @@ button.btn-danger:hover {
                                         <label for="totalAmount">Total Amount:</label>
                                         <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
                                     
-                                        <!-- Submit button after entering total amount -->
-                                        <button type="button" onclick="calculateConsumption()" style="background-color: #666; color: white; margin-top: 10px;">Calculate</button>
-                                    
                                         <!-- New fields to show the calculated results -->
                                         <div style="margin: 20px; font-family: Arial, sans-serif; max-width: 400px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                                             <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
@@ -608,10 +605,15 @@ button.btn-danger:hover {
                                                 <input type="number" id="kgCO2PerKwh" name="kgCO2PerKwh" step="0.01" readonly 
                                                     style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0.00">
                                             </div>
-                                            <div style="margin-bottom: 0; display: flex; justify-content: space-between;">
+                                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
                                                 <label for="tCO2PerKwh" style="font-weight: bold; color: #333;">GHG Emission (t CO2/kWh):</label>
                                                 <input type="number" id="tCO2PerKwh" name="tCO2PerKwh" step="0.01" readonly 
                                                     style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0.00">
+                                            </div>
+                                            <div style="margin-bottom: 0; display: flex; justify-content: space-between;">
+                                                <label for="treeOffset" style="font-weight: bold; color: #333;">Tree Offset:</label>
+                                                <input type="number" id="treeOffset" name="treeOffset" readonly 
+                                                    style="border: none; background: transparent; color: #555; width: 100px; text-align: right;" value="0">
                                             </div>
                                         </div>
                                     
@@ -632,51 +634,51 @@ button.btn-danger:hover {
 
                     <!-- Data table -->
                     <div class="table-responsive mt-4">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Campus</th>
-                                <th>Category</th>
-                                <th>Month</th>
-                                <th>Quarter</th>
-                                <th>Year</th>
-                                <th>Previous Reading (kWh)</th>
-                                <th>Current Reading (kWh)</th>
-                                <th>Multiplier</th>
-                                <th>Total Amount</th>
-                                <th>Total Consumption (kWh)</th>
-                                <th>Price per kWh</th>
-                                <th>GHG Emission (kg CO2/kWh)</th>
-                                <th>GHG Emission (t CO2/kWh)</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reportData">
-                            {% for report in reports %}
-                            <tr class="record">
-                                <td>{{ report.campus }}</td>
-                                <td>{{ report.category }}</td>
-                                <td>{{ report.month }}</td>
-                                <td>{{ report.quarter }}</td>
-                                <td>{{ report.year }}</td>
-                                <td>{{ report.prev_reading }}</td>
-                                <td>{{ report.current_reading }}</td>
-                                <td>{{ report.multiplier }}</td>
-                                <td>{{ report.total_amount }}</td>
-                                <td>{{ report.consumption }}</td>
-                                <td>{{ report.price_per_kwh }}</td>
-                                <td>{{ report.kg_co2_per_kwh }}</td>
-                                <td>{{ report.t_co2_per_kwh }}</td>
-                                <td>
-                                    <form action="{{ url_for('delete_record', record_id=report.id) }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </div>
-                    </table>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Month</th>
+                                    <th>Quarter</th>
+                                    <th>Category</th>
+                                    <th>Previous Reading (kWh)</th>
+                                    <th>Current Reading (kWh)</th>
+                                    <th>Multiplier</th>
+                                    <th>Total Amount</th>
+                                    <th>Total Consumption (kWh)</th>
+                                    <th>Price per kWh</th>
+                                    <th>GHG Emission (kg CO2/kWh)</th>
+                                    <th>GHG Emission (t CO2/kWh)</th>
+                                    <th>Tree Offset</th> <!-- New Column -->
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportData">
+                                {% for report in reports %}
+                                <tr class="record">
+                                    <td>{{ report.year }}</td>
+                                    <td>{{ report.month }}</td>
+                                    <td>{{ report.quarter }}</td>
+                                    <td>{{ report.category }}</td>
+                                    <td>{{ report.prev_reading }}</td>
+                                    <td>{{ report.current_reading }}</td>
+                                    <td>{{ report.multiplier }}</td>
+                                    <td>{{ report.total_amount }}</td>
+                                    <td>{{ report.consumption }}</td>
+                                    <td>{{ report.price_per_kwh }}</td>
+                                    <td>{{ report.kg_co2_per_kwh }}</td>
+                                    <td>{{ report.t_co2_per_kwh }}</td>
+                                    <td>{{ report.tree_offset }}</td> <!-- New Data -->
+                                    <td>
+                                        <form action="{{ url_for('delete_record', record_id=report.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
                     
                         
 
@@ -708,36 +710,43 @@ button.btn-danger:hover {
     </div>
 
     <script>
-        function calculateConsumption() {
-            // Get the input values
-            const prevReading = parseFloat(document.getElementById('prevReading').value);
-            const currentReading = parseFloat(document.getElementById('currentReading').value);
-            const multiplier = parseFloat(document.getElementById('multiplier').value);
-            const totalAmount = parseFloat(document.getElementById('totalAmount').value);
+         function calculateConsumption() {
+        const prevReading = parseFloat(document.getElementById('prevReading').value);
+        const currentReading = parseFloat(document.getElementById('currentReading').value);
+        const multiplier = parseFloat(document.getElementById('multiplier').value);
+        const totalAmount = parseFloat(document.getElementById('totalAmount').value);
 
-            // Calculate total consumption (kWh)
-            const totalConsumption = (currentReading - prevReading) * multiplier;
-
-            if (totalConsumption < 0) {
-                alert("Consumption cannot be negative. Please check your readings.");
-                return;
-            }
-
-            // Calculate price per kWh
-            const pricePerKwh = totalAmount / totalConsumption;
-
-            // Calculate CO2 factors
-            const kgCO2PerKwh = 0.7122 * totalConsumption; // Example factor
-            const tCO2PerKwh = kgCO2PerKwh / 1000;
-
-            // Populate the readonly input fields
-            document.getElementById('totalConsumption').value = totalConsumption.toFixed(2);
-            document.getElementById('pricePerKwh').value = pricePerKwh.toFixed(2);
-            document.getElementById('kgCO2PerKwh').value = kgCO2PerKwh.toFixed(2);
-            document.getElementById('tCO2PerKwh').value = tCO2PerKwh.toFixed(2);
-
-            // Keep the modal open by not submitting the form
+        if (isNaN(prevReading) || isNaN(currentReading) || isNaN(multiplier) || isNaN(totalAmount)) {
+            alert("Please fill in all required fields.");
+            return false;
         }
+
+        const totalConsumption = (currentReading - prevReading) * multiplier;
+        if (totalConsumption < 0) {
+            alert("Consumption cannot be negative. Check your readings.");
+            return false;
+        }
+
+        const pricePerKwh = totalAmount / totalConsumption;
+        const kgCO2PerKwh = 0.7122 * totalConsumption;
+        const tCO2PerKwh = kgCO2PerKwh / 1000;
+        const treeOffset = Math.round(tCO2PerKwh / 0.0218);
+
+        document.getElementById('totalConsumption').value = totalConsumption.toFixed(2);
+        document.getElementById('pricePerKwh').value = pricePerKwh.toFixed(2);
+        document.getElementById('kgCO2PerKwh').value = kgCO2PerKwh.toFixed(2);
+        document.getElementById('tCO2PerKwh').value = tCO2PerKwh.toFixed(2);
+        document.getElementById('treeOffset').value = treeOffset;
+
+        return true;
+    }
+
+    function validateAndSubmitForm() {
+        if (calculateConsumption()) {
+            return true; // Submit the form if calculations are successful
+        }
+        return false; // Prevent form submission if calculations fail
+    }
 
         // Function to open the modal
         function openCalculatorModal() {

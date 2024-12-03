@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Environmental Management Unit</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/emu.jpg') }}" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .breadcrumb {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-nav .nav-link {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="sb-nav-fixed">
+    <nav class="sb-topnav navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fas fa-power-off fa-fw"></i> Sign-out
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('emu_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">OFFICE</div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAnalytics" aria-expanded="false" aria-controls="collapseAnalytics">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
+                            Analytics
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseAnalytics" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="{{ url_for('analytics') }}">Emission Trends</a>
+                            </nav>
+                        </div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
+                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                            Consumption Report
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="electricity_consumption">Electricity</a>
+                                <a class="nav-link" href="emu_fuel">Fuel</a>
+                                <a class="nav-link" href="waste_segregation">Waste Segregated</a>
+                                <a class="nav-link" href="waste_unsegregation">Waste Unsegregated</a>
+                                <a class="nav-link" href="treated_water">Treated Water</a>
+                                <a class="nav-link" href="water_consumption">Water</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Emission Trends</h1>
+                    <ol class="breadcrumb mb-4">
+                       
+                    </ol>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <button id="toggleForecast" class="btn btn-primary">Show Forecast</button>
+                        </div>
+                    </div>
+                    
+                    <form method="get" action="{{ url_for('analytics') }}">
+                        <label for="year">Select Year:</label>
+                        <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+                            {% for year in range(current_year + 2, current_year - 5, -1) %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+
+                    <div class="row">
+                        <!-- Electricity Chart -->
+                        <div class="col-12 col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-bolt me-1"></i> Electricity Consumption Forecast</div>
+                                <div class="card-body"><canvas id="electricityChart"></canvas></div>
+                            </div>
+                        </div>
+                        <!-- Fuel Chart -->
+                        <div class="col-12 col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-gas-pump me-1"></i> Fuel Consumption Forecast</div>
+                                <div class="card-body"><canvas id="fuelChart"></canvas></div>
+                            </div>
+                        </div>
+                        <!-- Waste Segregated Chart -->
+                        <div class="col-12 col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-recycle me-1"></i> Waste Segregated Forecast</div>
+                                <div class="card-body"><canvas id="wasteChart"></canvas></div>
+                            </div>
+                        </div>
+                        <!-- Waste Unsegregated Chart -->
+                        <div class="col-12 col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-trash-alt me-1"></i> Waste Unsegregated Forecast</div>
+                                <div class="card-body"><canvas id="wasteUnsegregatedChart"></canvas></div>
+                            </div>
+                        </div>
+                        <!-- Treated Water Chart -->
+                        <div class="col-12 col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-water me-1"></i> Treated Water Forecast</div>
+                                <div class="card-body"><canvas id="treatedWaterChart"></canvas></div>
+                            </div>
+                        </div>
+                        <!-- Water Chart -->
+                        <div class="col-12 col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header"><i class="fas fa-tint me-1"></i> Water Consumption Forecast</div>
+                                <div class="card-body"><canvas id="waterChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+<script>
+    // Extract variables from Flask context and ensure default values to avoid errors
+    const selectedYear = {{ selected_year | default(0) | tojson }}; // Year selected in Flask
+    const labels = {{ labels | default([]) | tojson }}; // Labels for the months (e.g., "Jan/23", "Feb/23", ...)
+    const treatedWaterLabels = {{ month_labels | default([]) | tojson }}; // Numeric month labels for treated water (1 to 12)
+
+    // Historical data for all categories, with default values if undefined
+    const electricityHistoricalData = {{ electricity_data | default([0] * 12) | tojson }};
+    const fuelHistoricalData = {{ fuel_data | default([0] * 12) | tojson }};
+    const wasteSegregatedHistoricalData = {{ waste_segregated_data | default([0] * 12) | tojson }};
+    const wasteUnsegregatedHistoricalData = {{ waste_unsegregated_data | default([0] * 12) | tojson }};
+    const waterHistoricalData = {{ water_data | default([0] * 12) | tojson }};
+    const treatedWaterHistoricalData = {{ treated_water_data | default([0] * 12) | tojson }};
+
+    // Function to create a forecast chart
+    function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: `${label} (Actual)`,
+                        data: historicalData,
+                        borderColor: historicalColor,
+                        backgroundColor: historicalColor,
+                        fill: false,
+                        borderWidth: 2,
+                        pointBackgroundColor: historicalColor,
+                        showLine: true
+                    },
+                    {
+                        label: `${label} (Forecast)`,
+                        data: forecastData,
+                        borderColor: forecastColor,
+                        backgroundColor: forecastColor,
+                        fill: false,
+                        borderDash: [5, 5], // Dashed line for forecast
+                        borderWidth: 2,
+                        pointBackgroundColor: forecastColor,
+                        showLine: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: `${label} Forecast for ${selectedYear}`
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Month' },
+                        ticks: { maxRotation: 0, minRotation: 0 }
+                    },
+                    y: {
+                        title: { display: true, text: yAxisLabel },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize charts for each data series
+    const electricityChart = createForecastChart('electricityChart', 'Electricity Consumption', electricityHistoricalData, [], labels, 'blue', 'red', 'kg CO2/kWh');
+    const fuelChart = createForecastChart('fuelChart', 'Fuel Consumption', fuelHistoricalData, [], labels, 'green', 'orange', 'Total Emission (kg CO2)');
+    const wasteSegregatedChart = createForecastChart('wasteChart', 'Waste Segregation', wasteSegregatedHistoricalData, [], labels, 'purple', 'brown', 'GHG Emission (kg CO2)');
+    const wasteUnsegregatedChart = createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregation', wasteUnsegregatedHistoricalData, [], labels, 'teal', 'gray', 'GHG Emission (kg CO2)');
+    const waterChart = createForecastChart('waterChart', 'Water Consumption', waterHistoricalData, [], labels, 'blue', 'lightblue', 'kg CO2/Liter');
+    const treatedWaterChart = createForecastChart('treatedWaterChart', 'Treated Water Consumption', treatedWaterHistoricalData, [], treatedWaterLabels, 'green', 'lime', 'kg CO2/m³');
+
+    // Toggle forecast data on button click
+    document.addEventListener("DOMContentLoaded", () => {
+        const toggleForecastButton = document.getElementById("toggleForecast");
+
+        // State to track whether the forecast is displayed
+        let isForecastVisible = false;
+
+        toggleForecastButton.addEventListener("click", () => {
+            if (!isForecastVisible) {
+                toggleForecastButton.textContent = "Loading...";
+                fetch('/forecast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        electricity_data: electricityHistoricalData,
+                        fuel_data: fuelHistoricalData,
+                        waste_segregated_data: wasteSegregatedHistoricalData,
+                        waste_unsegregated_data: wasteUnsegregatedHistoricalData,
+                        water_data: waterHistoricalData,
+                        treated_water_data: treatedWaterHistoricalData
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    updateForecastData(data);
+                    toggleForecastButton.textContent = "Hide Forecast";
+                    isForecastVisible = true;
+                })
+                .catch(err => {
+                    console.error("Error fetching forecast data:", err);
+                    toggleForecastButton.textContent = "Show Forecast";
+                });
+            } else {
+                removeForecastData();
+                toggleForecastButton.textContent = "Show Forecast";
+                isForecastVisible = false;
+            }
+        });
+
+        function updateForecastData(forecastData) {
+            // Update charts with forecast data
+            electricityChart.data.datasets[1].data = forecastData.electricity_forecast;
+            fuelChart.data.datasets[1].data = forecastData.fuel_forecast;
+            wasteSegregatedChart.data.datasets[1].data = forecastData.waste_segregated_forecast;
+            wasteUnsegregatedChart.data.datasets[1].data = forecastData.waste_unsegregated_forecast;
+            waterChart.data.datasets[1].data = forecastData.water_forecast;
+            treatedWaterChart.data.datasets[1].data = forecastData.treated_water_forecast;
+
+            // Refresh charts
+            electricityChart.update();
+            fuelChart.update();
+            wasteSegregatedChart.update();
+            wasteUnsegregatedChart.update();
+            waterChart.update();
+            treatedWaterChart.update();
+        }
+
+        function removeForecastData() {
+            // Clear forecast data from charts
+            electricityChart.data.datasets[1].data = [];
+            fuelChart.data.datasets[1].data = [];
+            wasteSegregatedChart.data.datasets[1].data = [];
+            wasteUnsegregatedChart.data.datasets[1].data = [];
+            waterChart.data.datasets[1].data = [];
+            treatedWaterChart.data.datasets[1].data = [];
+
+            // Refresh charts
+            electricityChart.update();
+            fuelChart.update();
+            wasteSegregatedChart.update();
+            wasteUnsegregatedChart.update();
+            waterChart.update();
+            treatedWaterChart.update();
+        }
+    });
+
+    // Connect to Socket.IO for real-time updates
+    const socket = io();
+
+    socket.on('update_emissions', (data) => {
+        console.log('Real-time emission update:', data);
+
+        updateChartData(electricityChart, data.electricity);
+        updateChartData(fuelChart, data.fuel);
+        updateChartData(wasteSegregatedChart, data.waste_segregated);
+        updateChartData(wasteUnsegregatedChart, data.waste_unsegregated);
+        updateChartData(waterChart, data.water);
+        updateChartData(treatedWaterChart, data.treated_water);
+    });
+
+    function updateChartData(chart, newData, datasetIndex = 0) {
+        chart.data.datasets[datasetIndex].data = newData;
+        chart.update();
+    }
+</script>
+
+
+
+
+
+<!-- Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+</body>
+</html>
+
+
+
+
+

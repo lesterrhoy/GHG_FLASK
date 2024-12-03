@@ -53,6 +53,21 @@
                             Dashboard
                         </a>
                         <div class="sb-sidenav-menu-heading">PROCUREMENT</div>
+
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAnalytics" aria-expanded="false" aria-controls="collapseAnalytics">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
+                            Analytics
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseAnalytics" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                             
+                                <a class="nav-link" href="{{ url_for('poanalytics') }}">Emission Trends</a>
+
+                                
+                            </nav>
+                        </div>
+
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseProcurement" aria-expanded="false" aria-controls="collapseProcurement">
                             <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
                             Consumption Report
@@ -64,6 +79,10 @@
                                 <a class="nav-link" href="{{ url_for('lpg_consumption') }}">LPG</a>
                             </nav>
                         </div>
+                        <a class="nav-link" href="{{ url_for('po') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
+                            User's Guide
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -144,46 +163,6 @@
                             font-size: 1.5rem; /* Makes the font size larger */
                         }
                     </style>
-                    
-<form id="yearFilterForm" action="{{ url_for('procurement_dashboard') }}" method="get" style="margin-bottom: 20px;">
-    <label for="yearSelect">Select Year:</label>
-    <select name="year" id="yearSelect" onchange="document.getElementById('yearFilterForm').submit();">
-        {% for year in range(2020, current_year + 1) %}
-            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
-        {% endfor %}
-    </select>
-</form>
-
-                    <!-- Charts for Each Consumption -->
-                    <div class="row">
-                        <!-- Food Waste Consumption Forecast Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-utensils me-1"></i>
-                                    Food Waste Consumption Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="foodWasteChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- LPG Consumption Forecast Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-gas-pump me-1"></i>
-                                    LPG Consumption Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="lpgChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-        </div>
-    </div>
 
    <!-- Scripts -->
   <!-- Scripts -->
@@ -192,139 +171,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js" defer></script>
 
-<script>
-   document.addEventListener('DOMContentLoaded', function () {
-       const selectedYear = {{ selected_year }}; // Year selected in Flask
-       const labels = {{ labels | tojson }}; // Labels for the months (e.g., "Jan/23", "Feb/23", ...)
 
-       const foodWasteForecastData = {{ forecast_data.food_waste_forecast.prophet.forecast | tojson }}; // Prophet forecasted data
-       const foodWasteHistoricalData = {{ food_waste_data | tojson }}; // Historical food waste data
-
-       const lpgForecastData = {{ forecast_data.lpg_forecast.prophet.forecast | tojson }}; // Prophet forecasted LPG data
-       const lpgHistoricalData = {{ lpg_data | tojson }}; // Historical LPG data
-
-       /**
-        * Function to create a line chart displaying historical and forecast data.
-        * @param {string} chartId - The HTML ID of the canvas element.
-        * @param {string} label - Chart label, such as "Electricity Consumption".
-        * @param {Array} historicalData - Array of historical data values.
-        * @param {Array} forecastData - Array of forecasted data values.
-        * @param {Array} chartLabels - Labels for the x-axis.
-        * @param {string} historicalColor - Color for the historical data line.
-        * @param {string} forecastColor - Color for the forecast data line.
-        * @param {string} yAxisLabel - Label for the Y-axis (e.g., "kg CO2/kWh").
-        */
-       function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
-           const ctx = document.getElementById(chartId).getContext('2d');
-
-           // Create the chart
-           return new Chart(ctx, {
-               type: 'line',
-               data: {
-                   labels: chartLabels,
-                   datasets: [
-                       {
-                           label: `${label} (Actual)`,
-                           data: historicalData,
-                           borderColor: historicalColor,
-                           backgroundColor: historicalColor,
-                           fill: false,
-                           borderWidth: 2,
-                           pointBackgroundColor: historicalColor,
-                           showLine: true
-                       },
-                       {
-                           label: `${label} (Forecast)`,
-                           data: forecastData,
-                           borderColor: forecastColor,
-                           backgroundColor: forecastColor,
-                           fill: false,
-                           borderDash: [5, 5], // Dashed line for forecast
-                           borderWidth: 2,
-                           pointBackgroundColor: forecastColor,
-                           showLine: true
-                       }
-                   ]
-               },
-               options: {
-                   responsive: true,
-                   plugins: {
-                       title: {
-                           display: true,
-                           text: `${label} Forecast for ${selectedYear}`
-                       },
-                       legend: {
-                           display: true,
-                           labels: {
-                               usePointStyle: true,
-                               padding: 20
-                           }
-                       }
-                   },
-                   scales: {
-                       x: {
-                           title: { display: true, text: 'Month' }, // Use month labels (or year if applicable)
-                           ticks: { maxRotation: 0, minRotation: 0 } // Keeps labels horizontal
-                       },
-                       y: {
-                           title: { display: true, text: yAxisLabel },
-                           beginAtZero: true
-                       }
-                   }
-               }
-           });
-       }
-
-       // Create charts with initial data
-       const foodWasteChart = createForecastChart(
-           'foodWasteChart',
-           'Food Waste',
-           foodWasteHistoricalData,
-           foodWasteForecastData,
-           labels,
-           'orange',
-           'brown',
-           'GHG Emission (kg CO2)'
-       );
-
-       const lpgChart = createForecastChart(
-           'lpgChart',
-           'LPG Consumption',
-           lpgHistoricalData,
-           lpgForecastData,
-           labels,
-           'darkblue',
-           'gold',
-           'GHG Emission (kg CO2)'
-       );
-
-       // Connect to the Socket.IO server
-       const socket = io();
-
-       // Listen for real-time data updates and update charts
-       socket.on('update_emissions', (data) => {
-           console.log('Real-time emission update:', data);
-
-           // Update the data for each chart with new data received
-           updateChartData(foodWasteChart, data.food_waste);
-           updateChartData(lpgChart, data.lpg);
-       });
-
-       socket.on('update_forecast', (forecastData) => {
-           console.log('Real-time forecast update:', forecastData);
-
-           // Update forecast data dynamically for each chart
-           updateChartData(foodWasteChart, forecastData.food_waste_forecast, 1);
-           updateChartData(lpgChart, forecastData.lpg_forecast, 1);
-       });
-
-       // Function to update chart data and refresh the chart
-       function updateChartData(chart, newData, datasetIndex = 0) {
-           chart.data.datasets[datasetIndex].data = newData;
-           chart.update();
-       }
-   });
-</script>
+  
 
 </body>
 </html>

@@ -323,7 +323,7 @@ button:last-child:hover {
 <body class="sb-nav-fixed">
     <!-- Navbar -->
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">FLIGHT <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">EXTERNAL AFFAIRS <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }} CAMPUS</span></a>
 
         <!-- Sign-out -->
         <ul class="navbar-nav ms-auto">
@@ -403,9 +403,8 @@ button:last-child:hover {
                     <table id="reportTable" class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Campus</th>
-                                <th>Office</th>
                                 <th>Year</th>
+                                <th>Office</th>
                                 <th>Traveller</th>
                                 <th>Purpose</th>
                                 <th>Travel Date</th>
@@ -422,9 +421,8 @@ button:last-child:hover {
                         <tbody>
                             {% for flight in flight_data %}
                             <tr data-id="{{ flight.ID }}"> <!-- Use `ID` here -->
-                                <td>{{ flight.Campus }}</td>
-                                <td>{{ flight.Office }}</td>
                                 <td>{{ flight.Year }}</td>
+                                <td>{{ flight.Office }}</td>
                                 <td>{{ flight.TravellerName }}</td>
                                 <td>{{ flight.TravelPurpose }}</td>
                                 <td>{{ flight.TravelDate }}</td>
@@ -478,21 +476,22 @@ button:last-child:hover {
         <div class="container form-container"> <!-- Use form-container directly inside container -->
             <form method="POST" action="{{ url_for('flight') }}" id="flightForm">
                 <label for="campus">Campus:</label>
-                <select id="campus" name="campus" required>
-                    <option value=""></option>
-                    <option value="Alangilan">Alangilan</option>
-                    <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
-                    <option value="Balayan">Balayan</option>
-                    <option value="Central">Central</option>
-                    <option value="JPLPC-Malvar">JPLPC-Malvar</option>
-                    <option value="Lemery">Lemery</option>
-                    <option value="Lipa">Lipa</option>
-                    <option value="Lobo">Lobo</option>
-                    <option value="Mabini">Mabini</option>
-                    <option value="Pablo Borbon">Pablo Borbon</option>
-                    <option value="Rosario">Rosario</option>
-                    <option value="San Juan">San Juan</option>
+                <select id="campus" name="campus" disabled>
+                    <option value="" {% if not session.get('campus') %}selected{% endif %}></option>
+                    <option value="Alangilan" {% if session.get('campus') == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                    <option value="ARASOF-Nasugbu" {% if session.get('campus') == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                    <option value="Balayan" {% if session.get('campus') == 'Balayan' %}selected{% endif %}>Balayan</option>
+                    <option value="Central" {% if session.get('campus') == 'Central' %}selected{% endif %}>Central</option>
+                    <option value="JPLPC-Malvar" {% if session.get('campus') == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                    <option value="Lemery" {% if session.get('campus') == 'Lemery' %}selected{% endif %}>Lemery</option>
+                    <option value="Lipa" {% if session.get('campus') == 'Lipa' %}selected{% endif %}>Lipa</option>
+                    <option value="Lobo" {% if session.get('campus') == 'Lobo' %}selected{% endif %}>Lobo</option>
+                    <option value="Mabini" {% if session.get('campus') == 'Mabini' %}selected{% endif %}>Mabini</option>
+                    <option value="Pablo Borbon" {% if session.get('campus') == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                    <option value="Rosario" {% if session.get('campus') == 'Rosario' %}selected{% endif %}>Rosario</option>
+                    <option value="San Juan" {% if session.get('campus') == 'San Juan' %}selected{% endif %}>San Juan</option>
                 </select>
+                
 
                 <label for="office">Office/Department:</label>
                 <select id="office" name="office" required>

@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="External Affair Dashboard">
+    <meta name="author" content="Your Name">
+    <title>External Affair Dashboard</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/ea.jpg') }}" type="image/x-icon">
+    <!-- CSS Files -->
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
+    <!-- FontAwesome Icons -->
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <style>
+        .disabled-link {
+            color: grey;
+            cursor: not-allowed;
+            pointer-events: none;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body class="sb-nav-fixed">
+      <!-- Navbar -->
+      <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="navbar-brand ps-3" href="{{ url_for('external_dashboard') }}">EXTERNAL <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+
+        <!-- Sign-out -->
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <div class="sb-sidenav-menu-heading">Core</div>
+                        <a class="nav-link" href="{{ url_for('external_dashboard') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            Dashboard
+                        </a>
+                        <div class="sb-sidenav-menu-heading">OFFICE</div>
+                        
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAnalytics" aria-expanded="false" aria-controls="collapseAnalytics">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
+                            Analytics
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseAnalytics" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                             
+                                <a class="nav-link" href="{{ url_for('ea_analytics') }}">Emission Trends</a>
+
+                                
+                            </nav>
+
+                            
+                        </div>
+
+                        
+
+                        <!-- External Affairs Links -->
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseExternal" aria-expanded="false" aria-controls="collapseExternal">
+                            <div class="sb-nav-link-icon"><i class="fas fa-plane"></i></div>
+                            Consumption Report
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseExternal" aria-labelledby="headingExternal" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                    <a class="nav-link" href="{{ url_for('flight') }}">Flight</a>
+                                    <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Emission Trends</h1>
+                    <ol class="breadcrumb mb-4">
+                   
+                    </ol>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <button id="toggleForecast" class="btn btn-primary">Show Forecast</button>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Flight Emissions Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-plane me-1"></i>
+                                    Flight Emissions
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="flightChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- Accommodation Emissions Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-hotel me-1"></i>
+                                    Accommodation Emissions
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="accommodationChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+   <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js" defer></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectedYear = {{ selected_year }}; // Year selected in Flask
+        const isCurrentYear = selectedYear === new Date().getFullYear();
+ 
+        // Flight data (historical and forecast)
+        const flightHistoricalData = {{ flight_data | tojson }}; // Aggregated yearly flight data (2020-2024)
+        const flightForecastData = {{ forecast_data.flight_forecast.prophet.forecast | tojson }}; // Forecasted flight data (including 2025)
+ 
+        // Accommodation data (historical and forecast)
+        const accommodationHistoricalData = {{ accommodation_data | tojson }}; // Aggregated yearly accommodation data (2020-2024)
+        const accommodationForecastData = {{ forecast_data.accommodation_forecast.prophet.forecast | tojson }}; // Forecasted accommodation data (including 2025)
+ 
+        // Year labels for charts, extended to include the forecast year 2025
+        const yearLabels = ['2020', '2021', '2022', '2023', '2024', '2025'];
+ 
+        /**
+         * Function to create a line chart displaying historical and forecast data.
+         * @param {string} chartId - The HTML ID of the canvas element.
+         * @param {string} label - Chart label, such as "Flight Emissions".
+         * @param {Array} historicalData - Array of historical data values.
+         * @param {Array} forecastData - Array of forecasted data values.
+         * @param {Array} chartLabels - Labels for the x-axis.
+         * @param {string} historicalColor - Color for the historical data line.
+         * @param {string} forecastColor - Color for the forecast data line.
+         * @param {string} yAxisLabel - Label for the Y-axis (e.g., "GHG Emission (kg CO2)").
+         */
+        function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+ 
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: `${label} (Actual)`,
+                            data: historicalData,
+                            borderColor: historicalColor,
+                            backgroundColor: historicalColor,
+                            fill: false,
+                            borderWidth: 2,
+                            pointBackgroundColor: historicalColor,
+                            showLine: true
+                        },
+                        {
+                            label: `${label} (Forecast)`,
+                            data: [], // Initially empty, updated when forecast is toggled
+                            borderColor: forecastColor,
+                            backgroundColor: forecastColor,
+                            fill: false,
+                            borderDash: [5, 5], // Dashed line for forecast
+                            borderWidth: 2,
+                            pointBackgroundColor: forecastColor,
+                            showLine: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${label} Forecast up to 2025`
+                        },
+                        legend: {
+                            display: true,
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Year' },
+                            ticks: { maxRotation: 0, minRotation: 0 }
+                        },
+                        y: {
+                            title: { display: true, text: yAxisLabel },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+ 
+        // Create charts after page load (once external resources have loaded)
+        const flightChart = createForecastChart(
+            'flightChart',
+            'Flight Emissions',
+            flightHistoricalData,
+            flightForecastData,
+            yearLabels,
+            'blue',
+            'green',
+            'GHG Emission (kg CO2)'
+        );
+ 
+        const accommodationChart = createForecastChart(
+            'accommodationChart',
+            'Accommodation Emissions',
+            accommodationHistoricalData,
+            accommodationForecastData,
+            yearLabels,
+            'red',
+            'purple',
+            'GHG Emission (kg CO2)'
+        );
+ 
+        const toggleButton = document.getElementById('toggleForecast');
+        let showForecast = false;
+ 
+        // Handle button click to toggle forecast data
+        toggleButton.addEventListener('click', function () {
+            showForecast = !showForecast;
+ 
+            // Update forecast data in charts
+            flightChart.data.datasets[1].data = showForecast ? flightForecastData : [];
+            accommodationChart.data.datasets[1].data = showForecast ? accommodationForecastData : [];
+ 
+            // Update charts
+            flightChart.update();
+            accommodationChart.update();
+ 
+            // Update button text
+            toggleButton.textContent = showForecast ? 'Hide Forecast' : 'Show Forecast';
+        });
+ 
+        // Connect to the Socket.IO server for real-time data updates
+        const socket = io();
+ 
+        socket.on('update_emissions', (data) => {
+            console.log('Real-time emission update:', data);
+ 
+            // Update chart data with new real-time values
+            updateChartData(flightChart, data.flight);
+            updateChartData(accommodationChart, data.accommodation);
+        });
+ 
+        /**
+         * Function to update chart data and refresh the chart.
+         * @param {Object} chart - Chart instance to update.
+         * @param {Array} newData - New data to update the chart with.
+         * @param {number} [datasetIndex=0] - Index of the dataset to update.
+         */
+        function updateChartData(chart, newData, datasetIndex = 0) {
+            chart.data.datasets[datasetIndex].data = newData;
+            chart.update();
+        }
+    });
+ </script>
+ 
+
+   
+   
+</body>

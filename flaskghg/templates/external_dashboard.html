@@ -49,6 +49,22 @@
                             Dashboard
                         </a>
                         <div class="sb-sidenav-menu-heading">OFFICE</div>
+
+
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAnalytics" aria-expanded="false" aria-controls="collapseAnalytics">
+                            <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
+                            Analytics
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="collapseAnalytics" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                             
+                                <a class="nav-link" href="{{ url_for('ea_analytics') }}">Emission Trends</a>
+
+                                
+                            </nav>
+                        </div>
+
                         
                         <!-- External Affairs Links -->
                         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseExternal" aria-expanded="false" aria-controls="collapseExternal">
@@ -62,6 +78,10 @@
                                     <a class="nav-link" href="{{ url_for('accommodation') }}">Accommodation</a>
                             </nav>
                         </div>
+                        <a class="nav-link" href="{{ url_for('ea') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
+                            User's Guide
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -152,186 +172,10 @@
 
 
 
-                    <!-- Charts for Flight and Accommodation Emissions -->
-                    <div class="row">
-                        <!-- Flight Emissions Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-plane me-1"></i>
-                                    Flight Emissions Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="flightChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Accommodation Emissions Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-hotel me-1"></i>
-                                    Accommodation Emissions Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="accommodationChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <br><br><br><br><br>    <br>
-        </div>
-    </div>
-
    <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js" defer></script>
-
-<script>
-   document.addEventListener('DOMContentLoaded', function () {
-       const selectedYear = {{ selected_year }}; // Year selected in Flask
-       const isCurrentYear = selectedYear === new Date().getFullYear();
-   
-       // Flight data (historical and forecast)
-       const flightHistoricalData = {{ flight_data | tojson }}; // Aggregated yearly flight data (2020-2024)
-       const flightForecastData = {{ forecast_data.flight_forecast.prophet.forecast | tojson }}; // Forecasted flight data (including 2025)
-   
-       // Accommodation data (historical and forecast)
-       const accommodationHistoricalData = {{ accommodation_data | tojson }}; // Aggregated yearly accommodation data (2020-2024)
-       const accommodationForecastData = {{ forecast_data.accommodation_forecast.prophet.forecast | tojson }}; // Forecasted accommodation data (including 2025)
-   
-       // Year labels for charts, extended to include the forecast year 2025
-       const yearLabels = ['2020', '2021', '2022', '2023', '2024', '2025'];
-   
-       /**
-        * Function to create a line chart displaying historical and forecast data.
-        * @param {string} chartId - The HTML ID of the canvas element.
-        * @param {string} label - Chart label, such as "Flight Emissions".
-        * @param {Array} historicalData - Array of historical data values.
-        * @param {Array} forecastData - Array of forecasted data values.
-        * @param {Array} chartLabels - Labels for the x-axis.
-        * @param {string} historicalColor - Color for the historical data line.
-        * @param {string} forecastColor - Color for the forecast data line.
-        * @param {string} yAxisLabel - Label for the Y-axis (e.g., "GHG Emission (kg CO2)").
-        */
-       function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
-           const ctx = document.getElementById(chartId).getContext('2d');
-   
-           return new Chart(ctx, {
-               type: 'line',
-               data: {
-                   labels: chartLabels,
-                   datasets: [
-                       {
-                           label: `${label} (Actual)`,
-                           data: historicalData,
-                           borderColor: historicalColor,
-                           backgroundColor: historicalColor,
-                           fill: false,
-                           borderWidth: 2,
-                           pointBackgroundColor: historicalColor,
-                           showLine: true
-                       },
-                       {
-                           label: `${label} (Forecast)`,
-                           data: forecastData,
-                           borderColor: forecastColor,
-                           backgroundColor: forecastColor,
-                           fill: false,
-                           borderDash: [5, 5], // Dashed line for forecast
-                           borderWidth: 2,
-                           pointBackgroundColor: forecastColor,
-                           showLine: true
-                       }
-                   ]
-               },
-               options: {
-                   responsive: true,
-                   plugins: {
-                       title: {
-                           display: true,
-                           text: `${label} Forecast up to 2025`
-                       },
-                       legend: {
-                           display: true,
-                           labels: {
-                               usePointStyle: true,
-                               padding: 20
-                           }
-                       }
-                   },
-                   scales: {
-                       x: {
-                           title: { display: true, text: 'Year' },
-                           ticks: { maxRotation: 0, minRotation: 0 }
-                       },
-                       y: {
-                           title: { display: true, text: yAxisLabel },
-                           beginAtZero: true
-                       }
-                   }
-               }
-           });
-       }
-   
-       // Create charts after page load (once external resources have loaded)
-       const flightChart = createForecastChart(
-           'flightChart',
-           'Flight Emissions',
-           flightHistoricalData,
-           flightForecastData,
-           yearLabels,
-           'blue',
-           'green',
-           'GHG Emission (kg CO2)'
-       );
-   
-       const accommodationChart = createForecastChart(
-           'accommodationChart',
-           'Accommodation Emissions',
-           accommodationHistoricalData,
-           accommodationForecastData,
-           yearLabels,
-           'red',
-           'purple',
-           'GHG Emission (kg CO2)'
-       );
-   
-       // Connect to the Socket.IO server for real-time data updates
-       const socket = io();
-   
-       // Listen for real-time data updates and update charts
-       socket.on('update_emissions', (data) => {
-           console.log('Real-time emission update:', data);
-   
-           // Update chart data with new real-time values
-           updateChartData(flightChart, data.flight);
-           updateChartData(accommodationChart, data.accommodation);
-       });
-   
-       socket.on('update_forecast', (forecastData) => {
-           console.log('Real-time forecast update:', forecastData);
-   
-           // Update forecast data dynamically for each chart
-           updateChartData(flightChart, forecastData.flight_forecast, 1);
-           updateChartData(accommodationChart, forecastData.accommodation_forecast, 1);
-       });
-   
-       /**
-        * Function to update chart data and refresh the chart.
-        * @param {Object} chart - Chart instance to update.
-        * @param {Array} newData - New data to update the chart with.
-        * @param {number} [datasetIndex=0] - Index of the dataset to update.
-        */
-       function updateChartData(chart, newData, datasetIndex = 0) {
-           chart.data.datasets[datasetIndex].data = newData;
-           chart.update();
-       }
-   });
-</script>
 
    
    

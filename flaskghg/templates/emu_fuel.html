@@ -300,7 +300,7 @@
 </head>
 <body>
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">EMU <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }} CAMPUS</span></a>
        <!-- Spacer to push "Sign-out" to the right -->
        <div class="ms-auto"></div>
     
@@ -387,22 +387,21 @@
                                 <div class="form-container">
                                     <form id="fuelForm" method="POST" action="{{ url_for('emu_fuel') }}">
                                         <label for="campus">Campus:</label>
-                                        <select id="campus" name="campus" required>
-                                            <option value=""></option>
-                                            <option value="Alangilan">Alangilan</option>
-                                            <option value="ARASOF-Nasugbu">ARASOF-Nasugbu</option>
-                                            <option value="Balayan">Balayan</option>
-                                            <option value="Central">Central</option>
-                                            <option value="JPLPC-Malvar">JPLPC-Malvar</option>
-                                            <option value="Lemery">Lemery</option>
-                                            <option value="Lipa">Lipa</option>
-                                            <option value="Lobo">Lobo</option>
-                                            <option value="Mabini">Mabini</option>
-                                            <option value="Pablo Borbon">Pablo Borbon</option>
-                                            <option value="Rosario">Rosario</option>
-                                            <option value="San Juan">San Juan</option>
+                                        <select id="campus" name="campus" disabled>
+                                            <option value="" {% if not session.get('campus') %}selected{% endif %}></option>
+                                            <option value="Alangilan" {% if session.get('campus') == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                                            <option value="ARASOF-Nasugbu" {% if session.get('campus') == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                                            <option value="Balayan" {% if session.get('campus') == 'Balayan' %}selected{% endif %}>Balayan</option>
+                                            <option value="Central" {% if session.get('campus') == 'Central' %}selected{% endif %}>Central</option>
+                                            <option value="JPLPC-Malvar" {% if session.get('campus') == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                                            <option value="Lemery" {% if session.get('campus') == 'Lemery' %}selected{% endif %}>Lemery</option>
+                                            <option value="Lipa" {% if session.get('campus') == 'Lipa' %}selected{% endif %}>Lipa</option>
+                                            <option value="Lobo" {% if session.get('campus') == 'Lobo' %}selected{% endif %}>Lobo</option>
+                                            <option value="Mabini" {% if session.get('campus') == 'Mabini' %}selected{% endif %}>Mabini</option>
+                                            <option value="Pablo Borbon" {% if session.get('campus') == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                                            <option value="Rosario" {% if session.get('campus') == 'Rosario' %}selected{% endif %}>Rosario</option>
+                                            <option value="San Juan" {% if session.get('campus') == 'San Juan' %}selected{% endif %}>San Juan</option>
                                         </select>
-
                                         <label for="date">Date:</label>
                                         <input type="date" id="date" name="date" required>
 
@@ -500,7 +499,6 @@
                         <table id="reportTable">
                             <thead>
     <tr>
-        <th>Campus</th>
         <th>Date</th>
         <th>Driver</th>
         <th>Type</th> <!-- Add this -->
@@ -521,7 +519,6 @@
 <tbody id="reportData">
     {% for report in reports %}
     <tr data-id="{{ report.id }}">
-        <td>{{ report.campus }}</td>
         <td>{{ report.date }}</td>
         <td>{{ report.driver }}</td>
         <td>{{ report.type }}</td>
