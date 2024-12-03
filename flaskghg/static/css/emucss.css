@@ -11033,9 +11033,9 @@ body {
   flex-shrink: 0;
 }
 
-/* Dark Mode Sidebar with New Colors */
+/* Dark Mode Sidebar with Updated Gray */
 .sb-sidenav-dark {
-  background-color: #001f3d; /* Navy Blue - Darker */
+  background-color: #2F3E46; /* Dark Gray from uploaded image */
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -11056,58 +11056,62 @@ body {
 }
 
 .sb-sidenav-dark .sb-sidenav-menu .nav-link:hover {
-  color: #00B5B5; /* Teal or Turquoise */
+  color: #A8D5BA; /* Light Green for hover */
 }
 
 .sb-sidenav-dark .sb-sidenav-menu .nav-link.active {
-  color: #00B5B5; /* Teal or Turquoise */
+  color: #FFB6B9; /* Light Red for active links */
 }
 
 .sb-sidenav-dark .sb-sidenav-menu .nav-link.active .sb-nav-link-icon {
-  color: #00B5B5; /* Teal or Turquoise */
+  color: #FFB6B9; /* Light Red for active icons */
 }
 
 .sb-sidenav-dark .sb-sidenav-footer {
-  background-color: #001f3d; /* Navy Blue - Darker */
+  background-color: #2F3E46; /* Dark Gray from uploaded image */
+  color: rgba(255, 255, 255, 0.8); /* Footer text color */
 }
 
 /* Light Mode Sidebar with New Colors */
 .sb-sidenav-light {
-  background-color: #008080; /* Teal or Turquoise */
-  color: #001f3d; /* Dark Navy Blue for contrast */
+  background-color: #A8D5BA; /* Light Green */
+  color: #2F3E46; /* Dark Gray for contrast */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .sb-sidenav-menu-heading {
-  color: rgba(0, 31, 61, 0.7); /* Darker Navy Blue for text */
+  color: rgba(47, 62, 70, 0.7); /* Gray for text */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .nav-link {
-  color: #001f3d; /* Dark Navy Blue for links */
+  color: #2F3E46; /* Dark Gray for links */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .nav-link .sb-nav-link-icon {
-  color: rgba(0, 31, 61, 0.7); /* Dark Navy Blue for icons */
+  color: rgba(47, 62, 70, 0.7); /* Dark Gray for icons */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .nav-link .sb-sidenav-collapse-arrow {
-  color: rgba(0, 31, 61, 0.7); /* Dark Navy Blue for collapse arrow */
+  color: rgba(47, 62, 70, 0.7); /* Dark Gray for collapse arrow */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .nav-link:hover {
-  color: #00B5B5; /* Teal or Turquoise for hover */
+  color: #FFB6B9; /* Light Red for hover */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .nav-link.active {
-  color: #00B5B5; /* Teal or Turquoise for active links */
+  color: #FFB6B9; /* Light Red for active links */
 }
 
 .sb-sidenav-light .sb-sidenav-menu .nav-link.active .sb-nav-link-icon {
-  color: #00B5B5; /* Teal or Turquoise for active icons */
+  color: #FFB6B9; /* Light Red for active icons */
 }
 
 .sb-sidenav-light .sb-sidenav-footer {
-  background-color: #008080; /* Teal or Turquoise */
+  background-color: #A8D5BA; /* Light Green */
+  color: #2F3E46; /* Dark Gray for footer text */
 }
+
+
 
 
 
