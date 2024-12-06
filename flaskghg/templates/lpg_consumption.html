@@ -539,7 +539,7 @@
                             <option value="RGO" {% if selected_office == 'RGO' %}selected{% endif %}>RGO</option>
                         </select>
                     </div>
-
+                <div class="table-wrapper">
                     <table id="reportTable" class="table table-bordered">
                         <thead>
                             <tr>
@@ -570,14 +570,13 @@
                                 <td>{{ record['GHGEmissionKGCO2e'] }}</td> <!-- Match the field name here -->
                                 <td>{{ record['GHGEmissionTCO2e'] }}</td> <!-- Match the field name here -->
                                 <td>
-                                    <button class="delete-btn" onclick="deleteRecord({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
+                                    <button class="delete-btn" onclick="deleteRow({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
-                        
                     </table>
-
+                </div>
 
                         <!-- Pagination controls -->
 <div class="pagination-container">
