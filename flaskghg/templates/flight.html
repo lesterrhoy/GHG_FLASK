@@ -508,6 +508,7 @@ button:last-child:hover {
                         </div>
                     
                     <div class="table-responsive mt-4">
+                    <div class="table-wrapper">
                     <table id="reportTable" class="table table-bordered">
                         <thead>
                             <tr>
@@ -542,14 +543,14 @@ button:last-child:hover {
                                 <td>{{ flight.GHGEmissionKGC02e }}</td>
                                 <td>{{ flight.GHGEmissionTC02e }}</td>
                                 <td>
-                                    <button class="delete-btn" onclick="deleteRecord({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
+                                    <button class="delete-btn" onclick="deleteFlight({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </div>
                     </table>
-
+                     </div>
                      <!-- Pagination controls -->
                      <div class="pagination-container">
                         <nav aria-label="Page navigation example">
