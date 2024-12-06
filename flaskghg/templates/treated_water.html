@@ -532,6 +532,7 @@ button:last-child:hover {
                         </select>
                     
                     <div class="table-responsive mt-4">
+                    <div class="table-wrapper">
                     <table id="reportTable">
                         <thead>
                             <tr>
@@ -556,7 +557,7 @@ button:last-child:hover {
                                 <td>{{ report.FactorKGCO2e }}</td>
                                 <td>{{ report.FactorTCO2e }}</td>
                                 <td>
-                                   <button class="delete-btn" onclick="deleteRecord({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
+                                   <button class="delete-btn" onclick="deleteRow({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
 
                                 </td>
                             </tr>
@@ -564,7 +565,7 @@ button:last-child:hover {
                         </tbody>
                     </div>
                     </table>
-
+                </div>
                     <!-- Pagination controls -->
                     <div class="pagination-container">
                         <nav aria-label="Page navigation example">
