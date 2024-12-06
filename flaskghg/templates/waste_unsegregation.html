@@ -693,6 +693,7 @@
                     </div>
 
                     <div class="table-responsive mt-4">
+                        <div class="table-wrapper">
                         <table id="reportTable">
                             <thead>
                                 <tr>
@@ -719,12 +720,13 @@
                                     <td>{{ report.GHGEmissionKGCO2e }}</td>
                                     <td>{{ report.GHGEmissionTCO2e }}</td>
                                     <td>
-                                        <button class="delete-btn" onclick="deleteRecord({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
+                                        <button class="delete-btn" onclick="deleteRow({{ report.id }})"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
                     </div>
                     </div>
                 <!-- Pagination controls -->
