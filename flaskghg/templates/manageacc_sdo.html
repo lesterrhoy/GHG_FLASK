@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -58,7 +59,7 @@
 <body class="sb-nav-fixed">
     <!-- Navbar -->
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-        <a class="navbar-brand ps-3" href="#">SDO</a>
+        <a class="navbar-brand ps-3" href="{{ url_for('emu_dashboard') }}">SDO <span style="text-transform: uppercase; font-style: italic;">{{ session['campus'] }}</span></a>
         <ul class="navbar-nav ms-auto">
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('logout') }}">

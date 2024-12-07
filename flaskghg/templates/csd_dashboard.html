@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -198,6 +200,19 @@
                             <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
                         </nav>
                     </div>
+
+                    <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAnalytics" aria-expanded="false" aria-controls="collapseAnalytics">
+                        <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
+                        Analytics
+                        <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                    </a>
+                    <div class="collapse" id="collapseAnalytics" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                        <nav class="sb-sidenav-menu-nested nav">
+                            <a class="nav-link active" href="{{ url_for('csdanalytics') }}">Emission Trends</a>
+
+                        </nav>
+                    </div>
+
                     <a class="nav-link" href="{{ url_for('manage_account') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
                         Manage Account
@@ -272,21 +287,38 @@
                         </form>
                     </div>
                     
-<!-- Total Emission Card -->
-<div class="row mb-4">
-    <div class="col-xl-12">
-        <div class="card bg-dark text-white h-100">
-            <div class="card-body">
-                <div class="card-title">Total Emission</div>
-                <div><strong>Total CO₂ Emission:</strong> 
-                    <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                        {{ "{:.2f}".format(current_emission_data['electricity'] + current_emission_data['fuel'] + current_emission_data['waste_segregated'] + current_emission_data['waste_unsegregated'] + current_emission_data['water'] + current_emission_data['treated_water'] + current_emission_data['lpg'] + current_emission_data['food_waste'] + current_emission_data['accommodation'] + current_emission_data['flight']) }} CO₂e
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                    <div class="row mb-4">
+                        <!-- Total Emission Card -->
+                        <div class="col-md-6">
+                            <div class="card bg-dark text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Total Emission</div>
+                                    <div><strong>Total CO₂ Emission:</strong> 
+                                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                            {{ "{:.2f}".format(current_emission_data['electricity'] + current_emission_data['fuel'] + current_emission_data['waste_segregated'] + current_emission_data['waste_unsegregated'] + current_emission_data['water'] + current_emission_data['treated_water'] + current_emission_data['lpg'] + current_emission_data['food_waste'] + current_emission_data['accommodation'] + current_emission_data['flight']) }} CO₂e
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- Tree Offset Card -->
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white h-100">
+                                <div class="card-body">
+                                    <div class="card-title">Tree Offset</div>
+                                    <div>
+                                        <strong>Total Tree Offset for {{ selected_year }}:</strong>
+                                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                            {{ current_emission_data['tree_offset'] }} Trees
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
 
 <div class="container">
     <div class="row justify-content-center">
@@ -298,12 +330,13 @@
                 <div class="card-title">Electricity</div>
                 <div><strong>Current Emission:</strong> 
                     <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                        {{ "{:.2f}".format(current_emission_data.electricity) }} CO₂e
+                        {{ "{:.2f}".format(current_emission_data["electricity"]) }} CO₂e
                     </span>
                 </div>
             </div>
         </div>
     </a>
+    
 </div>
 
 
@@ -427,7 +460,7 @@
                     <div class="card-title">Accommodation</div>
                     <div><strong>Current Emission:</strong> 
                         <span style="font-size: 1.5em; font-weight: bold; color: black;">
-                            {{ "{:.2f}".format(forecast_data['accommodation_forecast']['prophet']['forecast'][-1]) }} CO₂e
+                            {{ "{:.2f}".format(current_emission_data['accommodation']) }} CO₂e
                         </span>
                     </div>
                 </div>
@@ -443,7 +476,7 @@
                     <div class="card-title">Flight</div>
                     <div><strong>Current Emission:</strong> 
                         <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(forecast_data['flight_forecast']['prophet']['forecast'][-1]) }} CO₂e
+                            {{ "{:.2f}".format(current_emission_data['flight']) }} CO₂e
                         </span>
                     </div>
                 </div>
@@ -455,142 +488,6 @@
 <br>
 
 
-                    <!-- Charts for Each Consumption -->
-                    <div id="chartsContainer" class="row">
-                        <!-- Electricity Consumption Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-bolt me-1"></i>
-                                    Electricity Consumption Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="electricityChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Fuel Consumption Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-gas-pump me-1"></i>
-                                    Fuel Consumption Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="fuelChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Waste Segregated Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-recycle me-1"></i>
-                                    Waste Segregated Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="wasteSegregatedChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Waste Unsegregated Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-trash-alt me-1"></i>
-                                    Waste Unsegregated Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="wasteUnsegregatedChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Treated Water Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-water me-1"></i>
-                                    Treated Water Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="treatedWaterChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Water Consumption Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-tint me-1"></i>
-                                    Water Consumption Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="waterChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- LPG Consumption Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-gas-pump me-1"></i>
-                                    LPG Consumption Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="lpgChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Food Waste Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-utensils me-1"></i>
-                                    Food Waste Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="foodWasteChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Accommodation Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-hotel me-1"></i>
-                                    Accommodation Emissions Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="accommodationChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Flight Emissions Chart -->
-                        <div class="col-xl-6">
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <i class="fas fa-plane me-1"></i>
-                                    Flight Emissions Forecast
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="flightChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-
-
         </div>
     </div>
 
@@ -598,183 +495,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/socket.io/4.0.1/socket.io.min.js"></script>
-<script>
-    const selectedYear = {{ selected_year }}; // Year selected in Flask
-    const isCurrentYear = selectedYear === new Date().getFullYear();
-    const labels = {{ labels | tojson }}; // Labels for the months (e.g., "Jan/23", "Feb/23", ...)
-    const treatedWaterLabels = {{ month_labels | tojson }}; // Numeric month labels for treated water (1 to 12)
-
-    // Extracting historical and forecast data for all categories from Flask context
-    const electricityForecastData = {{ forecast_data.electricity_forecast.prophet.forecast | tojson }};
-    const electricityHistoricalData = {{ electricity_data | tojson }};
-
-    const fuelForecastData = {{ forecast_data.fuel_forecast.prophet.forecast | tojson }};
-    const fuelHistoricalData = {{ fuel_data | tojson }};
-
-    const wasteSegregatedForecastData = {{ forecast_data.waste_segregated_forecast.prophet.forecast | tojson }};
-    const wasteSegregatedHistoricalData = {{ waste_segregated_data | tojson }};
-
-    const wasteUnsegregatedForecastData = {{ forecast_data.waste_unsegregated_forecast.prophet.forecast | tojson }};
-    const wasteUnsegregatedHistoricalData = {{ waste_unsegregated_data | tojson }};
-
-    const waterForecastData = {{ forecast_data.water_forecast.prophet.forecast | tojson }};
-    const waterHistoricalData = {{ water_data | tojson }};
-
-    const treatedWaterForecastData = {{ forecast_data.treated_water_forecast.prophet.forecast | tojson }};
-    const treatedWaterHistoricalData = {{ treated_water_data | tojson }};
-
-    const foodWasteForecastData = {{ forecast_data.food_waste_forecast.prophet.forecast | tojson }};
-    const foodWasteHistoricalData = {{ food_waste_data | tojson }};
-
-    const lpgForecastData = {{ forecast_data.lpg_forecast.prophet.forecast | tojson }};
-    const lpgHistoricalData = {{ lpg_data | tojson }};
-
-    const flightForecastData = {{ forecast_data.flight_forecast.prophet.forecast | tojson }};
-    const flightHistoricalData = {{ flight_data | tojson }};
-
-    const accommodationForecastData = {{ forecast_data.accommodation_forecast.prophet.forecast | tojson }};
-    const accommodationHistoricalData = {{ accommodation_data | tojson }};
-
-    function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
-        const ctx = document.getElementById(chartId).getContext('2d');
-
-        return new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: chartLabels,
-                datasets: [
-                    {
-                        label: `${label} (Actual)`,
-                        data: historicalData,
-                        borderColor: historicalColor,
-                        backgroundColor: historicalColor,
-                        fill: false,
-                        borderWidth: 2,
-                        pointBackgroundColor: historicalColor,
-                        showLine: true
-                    },
-                    {
-                        label: `${label} (Forecast)`,
-                        data: forecastData,
-                        borderColor: forecastColor,
-                        backgroundColor: forecastColor,
-                        fill: false,
-                        borderDash: [5, 5], // Dashed line for forecast
-                        borderWidth: 2,
-                        pointBackgroundColor: forecastColor,
-                        showLine: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                title: {
-                    display: true,
-                    text: `${label} Forecast for ${selectedYear}`
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Month' },
-                        ticks: { maxRotation: 0, minRotation: 0 }
-                    },
-                    y: {
-                        title: { display: true, text: yAxisLabel },
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Initialize charts for each data series
-    createForecastChart('electricityChart', 'Electricity Consumption', electricityHistoricalData, electricityForecastData, labels, 'blue', 'red', 'kg CO2/kWh');
-    createForecastChart('fuelChart', 'Fuel Consumption', fuelHistoricalData, fuelForecastData, labels, 'green', 'orange', 'Total Emission (kg CO2)');
-    createForecastChart('wasteSegregatedChart', 'Waste Segregation', wasteSegregatedHistoricalData, wasteSegregatedForecastData, labels, 'purple', 'brown', 'GHG Emission (kg CO2)');
-    createForecastChart('wasteUnsegregatedChart', 'Waste Unsegregation', wasteUnsegregatedHistoricalData, wasteUnsegregatedForecastData, labels, 'teal', 'gray', 'GHG Emission (kg CO2)');
-    createForecastChart('waterChart', 'Water Consumption', waterHistoricalData, waterForecastData, labels, 'blue', 'lightblue', 'kg CO2/Liter');
-    createForecastChart('treatedWaterChart', 'Treated Water Consumption', treatedWaterHistoricalData, treatedWaterForecastData, treatedWaterLabels, 'green', 'lime', 'kg CO2/m³');
-    createForecastChart('foodWasteChart', 'Food Waste', foodWasteHistoricalData, foodWasteForecastData, labels, 'orange', 'brown', 'GHG Emission (kg CO2)');
-    createForecastChart('lpgChart', 'LPG Consumption', lpgHistoricalData, lpgForecastData, labels, 'darkblue', 'gold', 'GHG Emission (kg CO2)');
-    createForecastChart('flightChart', 'Flight Emissions', flightHistoricalData, flightForecastData, ['2020', '2021', '2022', '2023', '2024', '2025'], 'blue', 'green', 'GHG Emission (kg CO2)');
-    createForecastChart('accommodationChart', 'Accommodation Emissions', accommodationHistoricalData, accommodationForecastData, ['2020', '2021', '2022', '2023', '2024', '2025'], 'red', 'purple', 'GHG Emission (kg CO2)');
-
-    // Connect to Socket.IO for real-time updates
-    const socket = io();
-
-    socket.on('update_emissions', (data) => {
-        console.log('Real-time emission update:', data);
-
-        // Update chart data with new real-time values
-        updateChartData(electricityChart, data.electricity);
-        updateChartData(fuelChart, data.fuel);
-        updateChartData(wasteSegregatedChart, data.waste_segregated);
-        updateChartData(wasteUnsegregatedChart, data.waste_unsegregated);
-        updateChartData(waterChart, data.water);
-        updateChartData(treatedWaterChart, data.treated_water);
-        updateChartData(foodWasteChart, data.food_waste);
-        updateChartData(lpgChart, data.lpg);
-        updateChartData(flightChart, data.flight);
-        updateChartData(accommodationChart, data.accommodation);
-    });
-
-    socket.on('update_forecast', (forecastData) => {
-        console.log('Real-time forecast update:', forecastData);
-
-        // Update forecast data dynamically for each chart
-        updateChartData(electricityChart, forecastData.electricity_forecast, 1);
-        updateChartData(fuelChart, forecastData.fuel_forecast, 1);
-        updateChartData(wasteSegregatedChart, forecastData.waste_segregated_forecast, 1);
-        updateChartData(wasteUnsegregatedChart, forecastData.waste_unsegregated_forecast, 1);
-        updateChartData(waterChart, forecastData.water_forecast, 1);
-        updateChartData(treatedWaterChart, forecastData.treated_water_forecast, 1);
-        updateChartData(foodWasteChart, forecastData.food_waste_forecast, 1);
-        updateChartData(lpgChart, forecastData.lpg_forecast, 1);
-        updateChartData(flightChart, forecastData.flight_forecast, 1);
-        updateChartData(accommodationChart, forecastData.accommodation_forecast, 1);
-    });
-
-    function updateChartData(chart, newData, datasetIndex = 0) {
-        chart.data.datasets[datasetIndex].data = newData;
-        chart.update();
-    }
-</script>
-
-<script>
-    function handleCampusChange() {
-        const campusFilter = document.getElementById('campusFilter');
-        const chartsContainer = document.getElementById('chartsContainer');
-
-        // Check if "All Campuses" is selected
-        if (campusFilter.value === 'all') {
-            chartsContainer.style.display = 'none'; // Hide charts when "All Campuses" is selected
-        } else {
-            chartsContainer.style.display = 'flex'; // Show charts for a specific campus
-        }
-    }
-
-    // Attach event listeners and initialize
-    document.addEventListener('DOMContentLoaded', () => {
-        const campusFilter = document.getElementById('campusFilter');
-
-        // Initial visibility check
-        handleCampusChange();
-
-        // Add change event listener to the dropdown
-        campusFilter.addEventListener('change', () => {
-            handleCampusChange();
-            campusFilter.form.submit(); // Submit form only when dropdown changes
-        });
-    });
-</script>
 
 
 </html>

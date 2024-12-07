@@ -1,0 +1,577 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Center For Sustainable Development</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet">
+    <!-- Add Bootstrap JS and Popper.js at the end of your HTML before closing </body> tag -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include jQuery (for Bootstrap 4) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    
+
+    <style>
+        /* Layout Styling */
+        #layoutSidenav {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+    
+        #layoutSidenav_nav {
+            width: 250px;
+            background-color: #495057;
+            flex-shrink: 0;
+        }
+    
+        #layoutSidenav_content {
+            flex-grow: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        #layoutSidenav_nav .nav-link {
+            color: #fff;
+            font-weight: 500;
+        }
+    
+        #layoutSidenav_nav .nav-link:hover {
+            color: #fff;
+            background-color: #6c757d;
+        }
+    
+        .header {
+            background-color: #495057;
+            color: #ffffff;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+    
+        .header img {
+            height: 60px;
+        }
+    
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+    
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+    
+        th {
+            background-color: #f2f2f2;
+            color: #000;
+        }
+        .content-area {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; /* Enable scrolling */
+}
+.text-center {
+    margin-bottom: 50px; /* Add margin to avoid clipping at the bottom */
+}
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .scrollable-menu {
+        max-height: 300px; /* Set a max height for the scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+    }
+    .pagination .page-link {
+    background-color: white;
+    color: #d50000;
+    border-color: #d50000;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.pagination .page-link:hover {
+    background-color: #a30000; /* Darker red on hover */
+    color: white;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #d50000;
+    color: white;
+    border-color: #d50000;
+}
+
+    
+        /* Sidebar and Table Side-by-Side */
+        #mainContent {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+        }
+    
+        .content-area {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-x: auto;
+        }
+    
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body class="sb-nav-fixed">
+    <!-- Navbar at the top -->
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar brand -->
+        <a class="navbar-brand ps-3" href="{{ url_for('csd_dashboard') }}">CSD Dashboard</a>
+    
+        <!-- Spacer to push "Sign-out" to the right -->
+        <div class="ms-auto"></div>
+    
+        <!-- Sign-out Icon and Link -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-power-off fa-fw"></i> Sign-out
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+       <!-- Sidebar and Main Content -->
+    <div id="layoutSidenav">
+        <!-- Sidebar -->
+       <!-- Sidebar -->
+<div id="layoutSidenav_nav">
+    <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+        <div class="sb-sidenav-menu" style="overflow-y: auto; max-height: 90vh;">
+            <div class="sb-sidenav-menu">
+                <div class="nav">
+                    <div class="sb-sidenav-menu-heading">Core</div>
+                    <a class="nav-link" href="{{ url_for('csd_dashboard') }}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                        Dashboard
+                    </a>
+                    <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages">
+                        <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                        Report
+                        <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                    </a>
+                    <div class="collapse" id="collapsePages">
+                        <nav class="sb-sidenav-menu-nested nav">
+                            <a class="nav-link" href="{{ url_for('electricity_report') }}">Electricity Report</a>
+                            <a class="nav-link" href="{{ url_for('fuel_emissions_report') }}">Fuel Emissions Report</a>
+                            <a class="nav-link" href="{{ url_for('water_report') }}">Water Consumption Report</a>
+                            <a class="nav-link" href="{{ url_for('treated_water_report') }}">Treated Water Report</a>
+                            <a class="nav-link" href="{{ url_for('waste_segregation_report') }}">Waste Segregation Report</a>
+                            <a class="nav-link" href="{{ url_for('waste_unseg_report') }}">Waste Unsegregation Report</a>
+                            <a class="nav-link" href="{{ url_for('food_consumption_report') }}">Food Consumption Report</a>
+                            <a class="nav-link" href="{{ url_for('lpg_consumption_report') }}">LPG Consumption Report</a>
+                            <a class="nav-link" href="{{ url_for('flight_emissions_report') }}">Flight Emissions Report</a>
+                            <a class="nav-link" href="{{ url_for('accommodation_emissions_report') }}">Accommodation Emissions Report</a>
+                        </nav>
+                    </div>
+                    <a class="nav-link" href="{{ url_for('manage_account') }}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-user-cog"></i></div>
+                        Manage Account
+                    </a>
+                    
+                    <!-- User's Guide -->
+                    <a class="nav-link" href="{{ url_for('csd') }}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
+                        User's Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Center for Sustainable Development Dashboard</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item active">Consumption Trends</li>
+                    </ol>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <p style="margin-bottom: 0; line-height: 1.5; text-align: justify;">
+                                The Center for Sustainable Development Dashboard offers an overview of historical and forecasted consumption and emission trends across all campuses of Batangas State University TNEU. It highlights variability in resource use, showcasing distinct fluctuations in various metrics. This analysis enables a comprehensive understanding of consumption patterns, supporting strategic decisions for improved sustainability.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="container mt-3">
+                        <!-- Combined Year and Campus Filter Form -->
+                        <form method="get" action="{{ url_for('csdanalytics') }}">
+                            <div class="row">
+                                <!-- Campus Filter -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="campusFilter">Select Campus:</label>
+                                        <select name="campus" id="campusFilter" class="form-control" onchange="this.form.submit()">
+                                            <option value="all" {% if selected_campus == 'all' %}selected{% endif %}>All Campuses</option>
+                                            <option value="Alangilan" {% if selected_campus == 'Alangilan' %}selected{% endif %}>Alangilan</option>
+                                            <option value="ARASOF-Nasugbu" {% if selected_campus == 'ARASOF-Nasugbu' %}selected{% endif %}>ARASOF-Nasugbu</option>
+                                            <option value="Balayan" {% if selected_campus == 'Balayan' %}selected{% endif %}>Balayan</option>
+                                            <option value="Central" {% if selected_campus == 'Central' %}selected{% endif %}>Central</option>
+                                            <option value="JPLPC-Malvar" {% if selected_campus == 'JPLPC-Malvar' %}selected{% endif %}>JPLPC-Malvar</option>
+                                            <option value="Lemery" {% if selected_campus == 'Lemery' %}selected{% endif %}>Lemery</option>
+                                            <option value="Lipa" {% if selected_campus == 'Lipa' %}selected{% endif %}>Lipa</option>
+                                            <option value="Lobo" {% if selected_campus == 'Lobo' %}selected{% endif %}>Lobo</option>
+                                            <option value="Mabini" {% if selected_campus == 'Mabini' %}selected{% endif %}>Mabini</option>
+                                            <option value="Pablo Borbon" {% if selected_campus == 'Pablo Borbon' %}selected{% endif %}>Pablo Borbon</option>
+                                            <option value="Rosario" {% if selected_campus == 'Rosario' %}selected{% endif %}>Rosario</option>
+                                            <option value="San Juan" {% if selected_campus == 'San Juan' %}selected{% endif %}>San Juan</option>
+                                        </select>
+                                    </div>
+                                </div>
+                    
+                                <!-- Year Filter -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="yearFilter">Select Year:</label>
+                                        <select name="year" id="yearFilter" class="form-control" onchange="this.form.submit()">
+                                            {% for year in range(current_year, current_year - 10, -1) %}
+                                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Charts for Each Consumption -->
+                    <div id="chartsContainer" class="row">
+                        <!-- Electricity Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-bolt me-1"></i>
+                                    Electricity Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="electricityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fuel Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-gas-pump me-1"></i>
+                                    Fuel Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="fuelChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Waste Segregated Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-recycle me-1"></i>
+                                    Waste Segregated Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="wasteSegregatedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Waste Unsegregated Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-trash-alt me-1"></i>
+                                    Waste Unsegregated Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="wasteUnsegregatedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Treated Water Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-water me-1"></i>
+                                    Treated Water Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="treatedWaterChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Water Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-tint me-1"></i>
+                                    Water Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="waterChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LPG Consumption Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-gas-pump me-1"></i>
+                                    LPG Consumption Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="lpgChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Food Waste Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-utensils me-1"></i>
+                                    Food Waste Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="foodWasteChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accommodation Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-hotel me-1"></i>
+                                    Accommodation Emissions Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="accommodationChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flight Emissions Chart -->
+                        <div class="col-xl-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-plane me-1"></i>
+                                    Flight Emissions Forecast
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="flightChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+
+        </div>
+    </div>
+
+   <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    // Dynamic data from Flask
+    const selectedYear = {{ selected_year | default(2024) }};
+    const labels = {{ labels | default(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']) | tojson }};
+    
+    // Historical and Forecast Data
+    const electricityHistoricalData = {{ electricity_data | default([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]) | tojson }};
+    const electricityForecastData = {{ forecast_data.electricity_forecast_values | default([15, 25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125]) | tojson }};
+    const fuelHistoricalData = {{ fuel_data | default([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]) | tojson }};
+    const fuelForecastData = {{ forecast_data.fuel_forecast_values | default([6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72]) | tojson }};
+    const wasteSegregatedHistoricalData = {{ waste_segregated_data | default([2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]) | tojson }};
+    const wasteSegregatedForecastData = {{ forecast_data.waste_segregated_forecast_values | default([3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]) | tojson }};
+    const waterHistoricalData = {{ water_data | default([100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200]) | tojson }};
+    const waterForecastData = {{ forecast_data.water_forecast_values | default([120, 220, 320, 420, 520, 620, 720, 820, 920, 1020, 1120, 1220]) | tojson }};
+    
+    // New: Data for additional charts
+    const wasteUnsegregatedHistoricalData = {{ waste_unsegregated_data | default([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) | tojson }};
+    const wasteUnsegregatedForecastData = {{ forecast_data.waste_unsegregated_forecast_values | default([2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]) | tojson }};
+    const treatedWaterHistoricalData = {{ treated_water_data | default([50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600]) | tojson }};
+    const treatedWaterForecastData = {{ forecast_data.treated_water_forecast_values | default([60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720]) | tojson }};
+    const lpgHistoricalData = {{ lpg_data | default([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]) | tojson }};
+    const lpgForecastData = {{ forecast_data.lpg_forecast_values | default([6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72]) | tojson }};
+    const foodWasteHistoricalData = {{ food_waste_data | default([3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]) | tojson }};
+    const foodWasteForecastData = {{ forecast_data.food_waste_forecast_values | default([4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48]) | tojson }};
+    const accommodationHistoricalData = {{ accommodation_data | default([100, 200, 300, 400, 500, 600]) | tojson }};
+    const accommodationForecastData = {{ forecast_data.accommodation_forecast_values | default([120, 240, 360, 480, 600, 720]) | tojson }};
+    const flightHistoricalData = {{ flight_data | default([150, 300, 450, 600, 750, 900]) | tojson }};
+    const flightForecastData = {{ forecast_data.flight_forecast_values | default([200, 400, 600, 800, 1000, 1200]) | tojson }};
+    const yearlyLabels = ["2020", "2021", "2022", "2023", "2024", "2025"];
+
+    // Chart Instances
+    let electricityChart, fuelChart, wasteSegregatedChart, waterChart;
+    let wasteUnsegregatedChart, treatedWaterChart, lpgChart, foodWasteChart, accommodationChart, flightChart;
+
+    // Function to Create a Chart
+    function createForecastChart(chartId, label, historicalData, forecastData, chartLabels, historicalColor, forecastColor, yAxisLabel) {
+        const canvas = document.getElementById(chartId);
+        if (!canvas) {
+            console.error(`Canvas with ID ${chartId} not found.`);
+            return null;
+        }
+        const ctx = canvas.getContext("2d");
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: `${label} (Actual)`,
+                        data: historicalData,
+                        borderColor: historicalColor,
+                        backgroundColor: historicalColor,
+                        fill: false,
+                        borderWidth: 2,
+                        pointBackgroundColor: historicalColor,
+                    },
+                    {
+                        label: `${label} (Forecast)`,
+                        data: forecastData,
+                        borderColor: forecastColor,
+                        backgroundColor: forecastColor,
+                        fill: false,
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointBackgroundColor: forecastColor,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            usePointStyle: true,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Month' },
+                    },
+                    y: {
+                        title: { display: true, text: yAxisLabel },
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+
+    // Initialize Charts
+    function initializeCharts() {
+        electricityChart = createForecastChart("electricityChart", "Electricity Consumption", electricityHistoricalData, electricityForecastData, labels, "blue", "red", "kg CO2/kWh");
+        fuelChart = createForecastChart("fuelChart", "Fuel Consumption", fuelHistoricalData, fuelForecastData, labels, "green", "orange", "Total Emission (kg CO2)");
+        wasteSegregatedChart = createForecastChart("wasteSegregatedChart", "Waste Segregation", wasteSegregatedHistoricalData, wasteSegregatedForecastData, labels, "purple", "brown", "GHG Emission (kg CO2)");
+        waterChart = createForecastChart("waterChart", "Water Consumption", waterHistoricalData, waterForecastData, labels, "blue", "lightblue", "kg CO2/Liter");
+
+        // Initialize new charts
+        wasteUnsegregatedChart = createForecastChart("wasteUnsegregatedChart", "Waste Unsegregation", wasteUnsegregatedHistoricalData, wasteUnsegregatedForecastData, labels, "teal", "gray", "GHG Emission (kg CO2)");
+        treatedWaterChart = createForecastChart("treatedWaterChart", "Treated Water", treatedWaterHistoricalData, treatedWaterForecastData, labels, "green", "lime", "kg CO2/m³");
+        lpgChart = createForecastChart("lpgChart", "LPG Consumption", lpgHistoricalData, lpgForecastData, labels, "darkblue", "gold", "GHG Emission (kg CO2)");
+        foodWasteChart = createForecastChart("foodWasteChart", "Food Waste", foodWasteHistoricalData, foodWasteForecastData, labels, "orange", "brown", "GHG Emission (kg CO2)");
+        accommodationChart = createForecastChart("accommodationChart", "Accommodation Emissions", accommodationHistoricalData, accommodationForecastData, yearlyLabels, "red", "purple", "GHG Emission (kg CO2)");
+        flightChart = createForecastChart("flightChart", "Flight Emissions", flightHistoricalData, flightForecastData, yearlyLabels, "blue", "green", "GHG Emission (kg CO2)");
+    }
+
+    // Update Chart Data
+    function updateChartData(chart, newData, datasetIndex = 0) {
+        if (chart) {
+            chart.data.datasets[datasetIndex].data = newData;
+            chart.update();
+        } else {
+            console.error("Chart not initialized.");
+        }
+    }
+
+    // Real-Time Updates via Socket.IO
+    document.addEventListener("DOMContentLoaded", () => {
+        initializeCharts();
+
+        const socket = io();
+
+        socket.on("update_emissions", (data) => {
+            console.log("Real-time emission update:", data);
+            if (data.electricity) updateChartData(electricityChart, data.electricity);
+            if (data.fuel) updateChartData(fuelChart, data.fuel);
+            if (data.waste_segregated) updateChartData(wasteSegregatedChart, data.waste_segregated);
+            if (data.water) updateChartData(waterChart, data.water);
+            if (data.waste_unsegregated) updateChartData(wasteUnsegregatedChart, data.waste_unsegregated);
+            if (data.treated_water) updateChartData(treatedWaterChart, data.treated_water);
+            if (data.lpg) updateChartData(lpgChart, data.lpg);
+            if (data.food_waste) updateChartData(foodWasteChart, data.food_waste);
+            if (data.accommodation) updateChartData(accommodationChart, data.accommodation);
+            if (data.flight) updateChartData(flightChart, data.flight);
+        });
+
+        socket.on("update_forecast", (forecastData) => {
+            console.log("Real-time forecast update:", forecastData);
+            if (forecastData.electricity_forecast) updateChartData(electricityChart, forecastData.electricity_forecast, 1);
+            if (forecastData.fuel_forecast) updateChartData(fuelChart, forecastData.fuel_forecast, 1);
+            if (forecastData.waste_segregated_forecast) updateChartData(wasteSegregatedChart, forecastData.waste_segregated_forecast, 1);
+            if (forecastData.water_forecast) updateChartData(waterChart, forecastData.water_forecast, 1);
+            if (forecastData.waste_unsegregated_forecast) updateChartData(wasteUnsegregatedChart, forecastData.waste_unsegregated_forecast, 1);
+            if (forecastData.treated_water_forecast) updateChartData(treatedWaterChart, forecastData.treated_water_forecast, 1);
+            if (forecastData.lpg_forecast) updateChartData(lpgChart, forecastData.lpg_forecast, 1);
+            if (forecastData.food_waste_forecast) updateChartData(foodWasteChart, forecastData.food_waste_forecast, 1);
+            if (forecastData.accommodation_forecast) updateChartData(accommodationChart, forecastData.accommodation_forecast, 1);
+            if (forecastData.flight_forecast) updateChartData(flightChart, forecastData.flight_forecast, 1);
+        });
+    });
+</script>
+
+
+
+
+</html>
+

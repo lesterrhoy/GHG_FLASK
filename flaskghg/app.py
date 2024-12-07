@@ -1927,34 +1927,157 @@ def manage_account():
 
     return render_template('manage_account.html', accounts=accounts)
 
-
-
-
-
-
-
 from flask import session, redirect, url_for, request, render_template, flash
+from datetime import datetime
+import mysql.connector
+
+@app.route('/csd_dashboard', methods=['GET', 'POST'])
+def csd_dashboard():
+    current_year = datetime.now().year
+    selected_year = int(request.args.get('year', current_year))  # Get selected year, default to current year
+    selected_campus = request.args.get('campus', 'all')  # Get selected campus
+    campus_filter = "" if selected_campus == 'all' else "AND campus = %s"
+
+    # Initialize data lists for emissions
+    electricity_data = [0] * 12
+    fuel_data = [0] * 12
+    waste_segregated_data = [0] * 12
+    waste_unsegregated_data = [0] * 12
+    water_data = [0] * 12
+    treated_water_data = [0] * 12
+    food_waste_data = [0] * 12
+    lpg_data = [0] * 12
+    flight_data = [0] * 5  # For years 2020 to 2024
+    accommodation_data = [0] * 5  # For years 2020 to 2024
+
+    current_emission_data = {
+        "electricity": 0,
+        "fuel": 0,
+        "waste_segregated": 0,
+        "waste_unsegregated": 0,
+        "water": 0,
+        "treated_water": 0,
+        "food_waste": 0,
+        "lpg": 0,
+        "flight": 0,
+        "accommodation": 0,
+        "tree_offset": 0,  # Add tree_offset field
+    }
+
+    month_to_index = {
+        "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
+        "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11
+    }
+
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            raise Exception("Could not establish database connection.")
+
+        cursor = conn.cursor(dictionary=True)
+
+        # Tree Offset Query
+        tree_offset_query = """
+            SELECT SUM(tree_offset) AS total_tree_offset
+            FROM electricity_consumption
+            WHERE year = %s {campus_filter}
+        """
+        cursor.execute(tree_offset_query.format(campus_filter=campus_filter), 
+                       (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
+        row = cursor.fetchone()
+        if row and row['total_tree_offset'] is not None:
+            current_emission_data['tree_offset'] = int(row['total_tree_offset'])
+        else:
+            current_emission_data['tree_offset'] = 0  # Default value if no data
+
+        # Emission Data Queries
+        queries = [
+            ("SELECT month, SUM(kg_co2_per_kwh) AS total_emission FROM electricity_consumption WHERE year = %s {campus_filter} GROUP BY month ORDER BY month ASC", electricity_data, "electricity"),
+            ("SELECT MONTHNAME(date) AS month, SUM(total_emission) AS total_emission FROM fuel_emissions WHERE YEAR(date) = %s {campus_filter} GROUP BY MONTH(date) ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
+            ("SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblsolidwastesegregated WHERE Year = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_segregated_data, "waste_segregated"),
+            ("SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblsolidwasteunsegregated WHERE Year = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_unsegregated_data, "waste_unsegregated"),
+            ("SELECT MONTHNAME(Date) AS month, SUM(FactorKGCO2e) AS total_emission FROM tblwater WHERE YEAR(Date) = %s {campus_filter} GROUP BY MONTHNAME(Date) ORDER BY FIELD(MONTHNAME(Date), 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", water_data, "water"),
+        ]
+
+        for query, data_list, category in queries:
+            cursor.execute(query.format(campus_filter=campus_filter), 
+                           (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
+            for row in cursor.fetchall():
+                month_index = month_to_index.get(row.get('month') or row.get('Month'), -1)
+                if month_index != -1:
+                    emission_value = row.get('total_emission')
+                    if emission_value is not None:
+                        data_list[month_index] += float(emission_value)
+                        current_emission_data[category] += float(emission_value)
+
+        # Additional Queries for other categories
+        additional_queries = [
+            ("SELECT Month AS month, SUM(FactorKGCO2e) AS total_emission FROM tbltreatedwater WHERE YEAR(CURDATE()) = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", treated_water_data, "treated_water"),
+            ("SELECT Month AS month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblfoodwaste WHERE YearTransaction = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", food_waste_data, "food_waste"),
+            ("SELECT Month AS month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tbllpg WHERE YearTransact = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", lpg_data, "lpg"),
+        ]
+
+        for query, data_list, category in additional_queries:
+            cursor.execute(query.format(campus_filter=campus_filter), 
+                           (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
+            for row in cursor.fetchall():
+                month_index = month_to_index.get((row.get('month') or row.get('Month')).capitalize(), -1)
+                if month_index != -1:
+                    emission_value = row.get('total_emission')
+                    if emission_value is not None:
+                        data_list[month_index] += float(emission_value)
+                        current_emission_data[category] += float(emission_value)
+
+        # Queries for flight and accommodation data
+        queries_for_year = [
+            ("SELECT Year AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblflight WHERE Year BETWEEN 2020 AND 2024 {campus_filter} GROUP BY Year ORDER BY Year", flight_data, "flight"),
+            ("SELECT YearTransact AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblaccommodation WHERE YearTransact BETWEEN 2020 AND 2024 {campus_filter} GROUP BY YearTransact ORDER BY YearTransact", accommodation_data, "accommodation"),
+        ]
+
+        for query, data_list, category in queries_for_year:
+            cursor.execute(query.format(campus_filter=campus_filter), 
+                           (selected_campus,) if selected_campus != 'all' else ())
+            for row in cursor.fetchall():
+                year_index = row['year'] - 2020
+                if 0 <= year_index < len(data_list):
+                    emission_value = row.get('total_emission')
+                    if emission_value is not None:
+                        data_list[year_index] += float(emission_value)
+                        current_emission_data[category] += float(emission_value)
+
+    except mysql.connector.Error as e:
+        flash(f"Database Error: {e}", "danger")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    return render_template(
+        'csd_dashboard.html',
+        flight_data=flight_data,
+        accommodation_data=accommodation_data,
+        current_emission_data=current_emission_data,
+        electricity_data=electricity_data,
+        current_year=current_year,
+        selected_year=selected_year,
+        selected_campus=selected_campus
+    )
+
+
+
+from flask import Flask, request, render_template, flash
 from datetime import datetime
 import mysql.connector
 from prophet import Prophet
 import pandas as pd
-import numpy as np
-from flask_socketio import SocketIO, emit
-from flask_caching import Cache
-
-# Initialize Flask-Caching
-cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 300})
+from sklearn.metrics import r2_score
 
 
-# Assuming 'app' is defined elsewhere in your code
-socketio = SocketIO(app)
-
-@app.route('/csd_dashboard', methods=['GET', 'POST'])
-@cache.cached(key_prefix=lambda: f"csd_dashboard_{request.args.get('year')}_{request.args.get('campus')}")
-def csd_dashboard():
+@app.route('/csdanalytics', methods=['GET', 'POST'])
+def csdanalytics():
     selected_year = int(request.args.get('year', datetime.now().year))
     current_year = datetime.now().year
-    selected_month = request.args.get('month', None)
     selected_campus = request.args.get('campus', 'all')  # Get the selected campus from query params
     campus_filter = "" if selected_campus == 'all' else "AND campus = %s"
 
@@ -1983,20 +2106,6 @@ def csd_dashboard():
         "accommodation": 0,
     }
 
-     # Initialize total_consumption
-    total_consumption = {
-        "electricity": 0,
-        "fuel": 0,
-        "waste_segregated": 0,
-        "waste_unsegregated": 0,
-        "water": 0,
-        "treated_water": 0,
-        "food_waste": 0,
-        "lpg": 0,
-        "flight": 0,
-        "accommodation": 0,
-    }
-
     month_to_index = {
         "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
         "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11
@@ -2009,150 +2118,56 @@ def csd_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Modify the queries to filter by campus if selected
-        campus_filter = "" if selected_campus == 'all' else f"AND campus = %s"
-        
-        # Queries for data
         queries = [
-            ("SELECT month, kg_co2_per_kwh FROM electricity_consumption WHERE year = %s {campus_filter} ORDER BY month ASC", electricity_data, "electricity"),
-            ("SELECT MONTHNAME(date) AS month, total_emission FROM fuel_emissions WHERE YEAR(date) = %s {campus_filter} ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
+            ("SELECT month, SUM(kg_co2_per_kwh) AS total_emission FROM electricity_consumption WHERE year = %s {campus_filter} GROUP BY month ORDER BY month ASC", electricity_data, "electricity"),
+            ("SELECT MONTHNAME(date) AS month, SUM(total_emission) AS total_emission FROM fuel_emissions WHERE YEAR(date) = %s {campus_filter} GROUP BY MONTH(date) ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
             ("SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblsolidwastesegregated WHERE Year = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_segregated_data, "waste_segregated"),
-            ("SELECT Month, GHGEmissionKGCO2e FROM tblsolidwasteunsegregated WHERE Year = %s {campus_filter} ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_unsegregated_data, "waste_unsegregated"),
+            ("SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblsolidwasteunsegregated WHERE Year = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_unsegregated_data, "waste_unsegregated"),
             ("SELECT MONTHNAME(Date) AS month, SUM(FactorKGCO2e) AS total_emission FROM tblwater WHERE YEAR(Date) = %s {campus_filter} GROUP BY MONTHNAME(Date) ORDER BY FIELD(MONTHNAME(Date), 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", water_data, "water"),
         ]
 
-        # Executing queries with the campus filter
         for query, data_list, category in queries:
             cursor.execute(query.format(campus_filter=campus_filter), (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
             for row in cursor.fetchall():
                 month_index = month_to_index.get(row.get('month') or row.get('Month'), -1)
                 if month_index != -1:
-                    emission_value = row.get('total_emission') or row.get('kg_co2_per_kwh') or row.get('GHGEmissionKGCO2e')
+                    emission_value = row.get('total_emission')
                     if emission_value is not None:
-                        data_list[month_index] = float(emission_value)
+                        data_list[month_index] += float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
-        # Calculate total consumption for each category
-        for key in current_emission_data:
-            total_consumption[key] = current_emission_data[key]
+        # Additional Queries for other categories
+        additional_queries = [
+            ("SELECT Month AS month, SUM(FactorKGCO2e) AS total_emission FROM tbltreatedwater WHERE YEAR(CURDATE()) = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", treated_water_data, "treated_water"),
+            ("SELECT Month AS month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblfoodwaste WHERE YearTransaction = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", food_waste_data, "food_waste"),
+            ("SELECT Month AS month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tbllpg WHERE YearTransact = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", lpg_data, "lpg"),
+        ]
 
-                # Treated Water Data with campus filter
-        treated_water_query = """
-            SELECT Month AS month, SUM(FactorKGCO2e) AS total_emission
-            FROM tbltreatedwater
-            WHERE YEAR(CURDATE()) = %s {campus_filter}
-            GROUP BY Month
-            ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
-        """
-        params = [selected_year]
-        if selected_campus != 'all':
-            treated_water_query = treated_water_query.format(campus_filter="AND campus = %s")
-            params.append(selected_campus)
-        else:
-            treated_water_query = treated_water_query.format(campus_filter="")
+        for query, data_list, category in additional_queries:
+            cursor.execute(query.format(campus_filter=campus_filter), (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
+            for row in cursor.fetchall():
+                month_index = month_to_index.get((row.get('month') or row.get('Month')).capitalize(), -1)
+                if month_index != -1:
+                    emission_value = row.get('total_emission')
+                    if emission_value is not None:
+                        data_list[month_index] += float(emission_value)
+                        current_emission_data[category] += float(emission_value)
 
-        cursor.execute(treated_water_query, params)
-        for row in cursor.fetchall():
-            month_index = month_to_index.get((row.get('month') or row.get('Month')).capitalize(), -1)
-            if month_index != -1:
-                treated_value = row.get('total_emission')
-                if treated_value is not None:
-                    treated_water_data[month_index] = float(treated_value)
-                    current_emission_data["treated_water"] += float(treated_value)
+        # Queries for flight and accommodation data
+        queries_for_year = [
+            ("SELECT Year AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblflight WHERE Year BETWEEN 2020 AND 2024 {campus_filter} GROUP BY Year ORDER BY Year", flight_data, "flight"),
+            ("SELECT YearTransact AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblaccommodation WHERE YearTransact BETWEEN 2020 AND 2024 {campus_filter} GROUP BY YearTransact ORDER BY YearTransact", accommodation_data, "accommodation"),
+        ]
 
-        # Debug print for treated_water_data
-        print(f"Treated Water Data (All Campuses): {treated_water_data}")
-
-            # Food Waste Data with campus filter
-        food_waste_query = """
-            SELECT Month AS month, GHGEmissionKGCO2e
-            FROM tblfoodwaste
-            WHERE YearTransaction = %s {campus_filter}
-            ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
-        """
-        params = [selected_year]
-        if selected_campus != 'all':
-            food_waste_query = food_waste_query.format(campus_filter="AND campus = %s")
-            params.append(selected_campus)
-        else:
-            food_waste_query = food_waste_query.format(campus_filter="")
-
-        cursor.execute(food_waste_query, params)
-        for row in cursor.fetchall():
-            month_index = month_to_index.get((row.get('month') or "").capitalize(), -1)
-            if month_index != -1:
-                emission_value = row.get('GHGEmissionKGCO2e')
-                if emission_value is not None:
-                    food_waste_data[month_index] = float(emission_value)
-                    current_emission_data["food_waste"] += float(emission_value)
-
-        # LPG Data with campus filter
-        lpg_query = """
-            SELECT Month AS month, GHGEmissionKGCO2e
-            FROM tbllpg
-            WHERE YearTransact = %s {campus_filter}
-            ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
-        """
-        params = [selected_year]
-        if selected_campus != 'all':
-            lpg_query = lpg_query.format(campus_filter="AND campus = %s")
-            params.append(selected_campus)
-        else:
-            lpg_query = lpg_query.format(campus_filter="")
-
-        cursor.execute(lpg_query, params)
-        for row in cursor.fetchall():
-            month_index = month_to_index.get((row.get('month') or "").capitalize(), -1)
-            if month_index != -1:
-                emission_value = row.get('GHGEmissionKGCO2e')
-                if emission_value is not None:
-                    lpg_data[month_index] = float(emission_value)
-                    current_emission_data["lpg"] += float(emission_value)
-
-        # Flight Data with campus filter
-        flight_query = """
-            SELECT Year AS year, SUM(GHGEmissionKGC02e) AS total_emission
-            FROM tblflight
-            WHERE Year BETWEEN 2020 AND 2024 {campus_filter}
-            GROUP BY Year
-            ORDER BY Year
-        """
-        params = []
-        if selected_campus != 'all':
-            flight_query = flight_query.format(campus_filter="AND campus = %s")
-            params.append(selected_campus)
-        else:
-            flight_query = flight_query.format(campus_filter="")
-
-        cursor.execute(flight_query, params)
-        for row in cursor.fetchall():
-            year_index = row['year'] - 2020
-            if 0 <= year_index < len(flight_data):
-                flight_data[year_index] = float(row['total_emission'])
-                current_emission_data["flight"] += float(row['total_emission'])
-
-        # Accommodation Data with campus filter
-        accommodation_query = """
-            SELECT YearTransact AS year, SUM(GHGEmissionKGC02e) AS total_emission
-            FROM tblaccommodation
-            WHERE YearTransact BETWEEN 2020 AND 2024 {campus_filter}
-            GROUP BY YearTransact
-            ORDER BY YearTransact
-        """
-        params = []
-        if selected_campus != 'all':
-            accommodation_query = accommodation_query.format(campus_filter="AND campus = %s")
-            params.append(selected_campus)
-        else:
-            accommodation_query = accommodation_query.format(campus_filter="")
-
-        cursor.execute(accommodation_query, params)
-        for row in cursor.fetchall():
-            year_index = row['year'] - 2020
-            if 0 <= year_index < len(accommodation_data):
-                accommodation_data[year_index] = float(row['total_emission'])
-                current_emission_data["accommodation"] += float(row['total_emission'])
-
+        for query, data_list, category in queries_for_year:
+            cursor.execute(query.format(campus_filter=campus_filter), (selected_campus,) if selected_campus != 'all' else ())
+            for row in cursor.fetchall():
+                year_index = row['year'] - 2020
+                if 0 <= year_index < len(data_list):
+                    emission_value = row.get('total_emission')
+                    if emission_value is not None:
+                        data_list[year_index] += float(emission_value)
+                        current_emission_data[category] += float(emission_value)
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -2162,6 +2177,7 @@ def csd_dashboard():
         if conn:
             conn.close()
 
+    # Prophet-based forecasting
     def forecast_prophet(data, periods, freq='M', smoothing_factor=0.2):
         if all(v == 0 for v in data):
             return [0] * periods, 0
@@ -2173,112 +2189,43 @@ def csd_dashboard():
             model = Prophet(yearly_seasonality=True)
             model.fit(df)
             
-            # Create future dataframe and make prediction
             future = model.make_future_dataframe(periods=periods, freq=freq)
             forecast = model.predict(future)
-            
-            # Extract forecasted values
+
             forecast_values = forecast['yhat'][-periods:].tolist()
 
-            # Apply smoothing to forecast to make it slightly aligned with actual data
             smoothed_forecast = []
             for i in range(len(forecast_values)):
-                smoothed_value = smoothing_factor * forecast_values[i] + (1 - smoothing_factor) * (data[-1] if len(data) > 0 else 0)
-                smoothed_forecast.append(max(0, smoothed_value))  # Ensure non-negative values
-            
-            # Calculate R2 score to assess forecast accuracy
+                smoothed_value = (
+                    smoothing_factor * forecast_values[i]
+                    + (1 - smoothing_factor) * (data[-1] if len(data) > 0 else 0)
+                )
+                smoothed_forecast.append(max(0, smoothed_value))
+
             r2 = r2_score(df['y'], model.predict(df)['yhat'])
-            
             return smoothed_forecast, r2
-        
+
         except Exception as e:
             flash(f"Forecast Error: {e}", "danger")
             return [0] * periods, 0
 
-
-    # Forecast data
+    # Generate forecast data
     forecast_data = {
-        "electricity_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(electricity_data, periods=14)[0],
-                "r2_score": forecast_prophet(electricity_data, periods=12)[1],
-            }
-        },
-        "fuel_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(fuel_data, periods=14)[0],
-                "r2_score": forecast_prophet(fuel_data, periods=12)[1],
-            }
-        },
-        "waste_segregated_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(waste_segregated_data, periods=14)[0],
-                "r2_score": forecast_prophet(waste_segregated_data, periods=12)[1],
-            }
-        },
-        "waste_unsegregated_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(waste_unsegregated_data, periods=14)[0],
-                "r2_score": forecast_prophet(waste_unsegregated_data, periods=12)[1],
-            }
-        },
-        "water_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(water_data, periods=14)[0],
-                "r2_score": forecast_prophet(water_data, periods=12)[1],
-            }
-        },
-        "treated_water_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(treated_water_data, periods=14)[0],
-                "r2_score": forecast_prophet(treated_water_data, periods=12)[1],
-            }
-        },
-        "food_waste_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(food_waste_data, periods=14)[0],
-                "r2_score": forecast_prophet(food_waste_data, periods=12)[1],
-            }
-        },
-        "lpg_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(lpg_data, periods=14)[0],
-                "r2_score": forecast_prophet(lpg_data, periods=12)[1],
-            }
-        },
-        "flight_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(flight_data, periods=6, freq='Y')[0],
-                "r2_score": forecast_prophet(flight_data, periods=5, freq='Y')[1],
-            }
-        },
-        "accommodation_forecast": {
-            "prophet": {
-                "forecast": forecast_prophet(accommodation_data, periods=6, freq='Y')[0],
-                "r2_score": forecast_prophet(accommodation_data, periods=5, freq='Y')[1],
-            }
-        },
-    }
+    "electricity_forecast_values": forecast_prophet(electricity_data, periods=12)[0],  # Use only the forecast values
+    "fuel_forecast_values": forecast_prophet(fuel_data, periods=12)[0],
+    "waste_segregated_forecast_values": forecast_prophet(waste_segregated_data, periods=12)[0],
+    "waste_unsegregated_forecast_values": forecast_prophet(waste_unsegregated_data, periods=12)[0],
+    "water_forecast_values": forecast_prophet(water_data, periods=12)[0],
+    "treated_water_forecast_values": forecast_prophet(treated_water_data, periods=12)[0],
+    "food_waste_forecast_values": forecast_prophet(food_waste_data, periods=12)[0],
+    "lpg_forecast_values": forecast_prophet(lpg_data, periods=12)[0],
+    "flight_forecast_values": forecast_prophet(flight_data, periods=5, freq='Y')[0],  # Annual frequency for 5 years
+    "accommodation_forecast_values": forecast_prophet(accommodation_data, periods=5, freq='Y')[0],  # Annual frequency for 5 years
+}
 
-    # Clean data for JSON serialization
-    cleaned_emission_data = clean_for_json(current_emission_data)
-    cleaned_forecast_data = clean_for_json({f"{key}_forecast": value["prophet"]["forecast"] for key, value in forecast_data.items()})
-
-    # Emit real-time data for line graphs
-    socketio.emit('update_emissions', cleaned_emission_data)
-    socketio.emit('update_forecast', cleaned_forecast_data)
-
-    # Month labels
-    def get_month_labels(start_month, start_year, total_months):
-        return [f"{(start_month + i) % 12 + 1:02d}/{(start_year + (start_month + i) // 12) % 100:02d}" for i in range(total_months)]
-
-    labels = get_month_labels(0, selected_year, 14)
-
-    print(f"Campus filter applied: {campus_filter}")
-
-    # Render the template with forecast data
     return render_template(
-        'csd_dashboard.html',
+        'csdanalytics.html',
+        forecast_data=forecast_data,
         electricity_data=electricity_data,
         fuel_data=fuel_data,
         waste_segregated_data=waste_segregated_data,
@@ -2289,15 +2236,12 @@ def csd_dashboard():
         lpg_data=lpg_data,
         flight_data=flight_data,
         accommodation_data=accommodation_data,
-        forecast_data=forecast_data,
-        current_emission_data=current_emission_data,
         selected_year=selected_year,
         current_year=current_year,
-        labels=labels,
-        month_labels=labels,
         selected_campus=selected_campus,
-        total_consumption=total_consumption
     )
+
+
 
 
 # Helper function to fetch data from the database with pagination and filtering
@@ -4775,18 +4719,16 @@ from flask import render_template, request, session, redirect, url_for, flash
 from flask_socketio import SocketIO, emit
 from datetime import datetime
 import mysql.connector
-import pandas as pd
-from flask_caching import Cache
-
-# Initialize Flask-Caching with a simple in-memory backend
-cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 300})
-
 
 # Initialize Flask-SocketIO
 socketio = SocketIO(app)
 
 # Helper function for JSON serialization
 def clean_for_json(data):
+    """
+    Recursively ensures that all data is JSON serializable.
+    Converts None to 0 and ensures dictionaries and lists are processed properly.
+    """
     if isinstance(data, dict):
         return {k: clean_for_json(v) for k, v in data.items()}
     elif isinstance(data, list):
@@ -4796,14 +4738,220 @@ def clean_for_json(data):
     else:
         return data
 
-# Custom cache key function to include campus in the cache key
-def make_sdo_dashboard_cache_key():
-    campus = session.get('campus', 'unknown')  # Default to 'unknown' if campus is not in session
-    query_string = request.query_string.decode('utf-8')
-    return f"sdo_dashboard:{campus}:{query_string}"
 @app.route('/sdo_dashboard', methods=['GET', 'POST'])
-@cache.cached(key_prefix=make_sdo_dashboard_cache_key)  # Use custom cache key
 def sdo_dashboard():
+    # Ensure the user is logged in
+    if 'loggedIn' not in session or 'campus' not in session:
+        flash("You must be logged in to access this page.", "warning")
+        return redirect(url_for('login'))
+
+    # Extract parameters
+    campus = session['campus']
+    selected_year = int(request.args.get('year', datetime.now().year))
+    current_year = datetime.now().year
+
+    # Initialize data containers
+    current_emission_data = {
+        "accommodation": 0,
+        "flight": 0,
+        "electricity": 0,
+        "fuel": 0,
+        "waste_segregated": 0,
+        "waste_unsegregated": 0,
+        "water": 0,
+        "treated_water": 0,
+        "lpg": 0,
+        "food_waste": 0,
+        "tree_offset": 0,  # Initialize tree offset
+    }
+
+    try:
+        # Establish database connection
+        conn = get_db_connection()
+        if conn is None:
+            raise Exception("Database connection failed.")
+
+        cursor = conn.cursor(dictionary=True)
+
+        # Queries for Electricity
+        electricity_query = """
+            SELECT SUM(kg_co2_per_kwh) AS total_emission
+            FROM electricity_consumption
+            WHERE year = %s AND campus = %s
+        """
+        cursor.execute(electricity_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['electricity'] = float(row['total_emission'])
+
+        # Queries for Fuel
+        fuel_query = """
+            SELECT SUM(total_emission) AS total_emission
+            FROM fuel_emissions
+            WHERE YEAR(date) = %s AND campus = %s
+        """
+        cursor.execute(fuel_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['fuel'] = float(row['total_emission'])
+
+        # Queries for Waste Segregated
+        waste_segregated_query = """
+            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+            FROM tblsolidwastesegregated
+            WHERE Year = %s AND campus = %s
+        """
+        cursor.execute(waste_segregated_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['waste_segregated'] = float(row['total_emission'])
+
+        # Queries for Waste Unsegregated
+        waste_unsegregated_query = """
+            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+            FROM tblsolidwasteunsegregated
+            WHERE Year = %s AND campus = %s
+        """
+        cursor.execute(waste_unsegregated_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['waste_unsegregated'] = float(row['total_emission'])
+
+        # Queries for Treated Water
+        treated_water_query = """
+            SELECT SUM(FactorKGCO2e) AS total_emission
+            FROM tbltreatedwater
+            WHERE YEAR(CURDATE()) = %s AND campus = %s
+        """
+        cursor.execute(treated_water_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['treated_water'] = float(row['total_emission'])
+
+        # Queries for Water Consumption
+        water_query = """
+            SELECT SUM(FactorKGCO2e) AS total_emission
+            FROM tblwater
+            WHERE YEAR(Date) = %s AND campus = %s
+        """
+        cursor.execute(water_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['water'] = float(row['total_emission'])
+
+        # Queries for LPG
+        lpg_query = """
+            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+            FROM tbllpg
+            WHERE Campus = %s AND YearTransact = %s
+        """
+        cursor.execute(lpg_query, (campus, selected_year))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['lpg'] = float(row['total_emission'])
+
+        # Queries for Food Waste
+        food_waste_query = """
+            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+            FROM tblfoodwaste
+            WHERE Campus = %s AND YearTransaction = %s
+        """
+        cursor.execute(food_waste_query, (campus, selected_year))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['food_waste'] = float(row['total_emission'])
+
+        # Queries for Accommodation
+        accommodation_query = """
+            SELECT SUM(GHGEmissionKGC02e) AS total_emission
+            FROM tblaccommodation
+            WHERE Campus = %s AND YearTransact = %s
+        """
+        cursor.execute(accommodation_query, (campus, selected_year))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['accommodation'] = float(row['total_emission'])
+
+        # Queries for Flight
+        flight_query = """
+            SELECT SUM(GHGEmissionKGC02e) AS total_emission
+            FROM tblflight
+            WHERE Campus = %s AND Year = %s
+        """
+        cursor.execute(flight_query, (campus, selected_year))
+        row = cursor.fetchone()
+        if row and row['total_emission'] is not None:
+            current_emission_data['flight'] = float(row['total_emission'])
+
+        # Queries for Tree Offset (Sum per year)
+        tree_offset_query = """
+            SELECT SUM(tree_offset) AS total_tree_offset
+            FROM electricity_consumption
+            WHERE year = %s AND campus = %s
+        """
+        cursor.execute(tree_offset_query, (selected_year, campus))
+        row = cursor.fetchone()
+        if row and row['total_tree_offset'] is not None:
+            current_emission_data['tree_offset'] = int(row['total_tree_offset'])
+        else:
+            current_emission_data['tree_offset'] = 0  # Default value if no data
+
+
+    except mysql.connector.Error as e:
+        flash(f"Database Error: {e}", "danger")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    # Calculate total emission subtracting tree offset
+    total_emission = (
+        current_emission_data['electricity'] +
+        current_emission_data['fuel'] +
+        current_emission_data['waste_segregated'] +
+        current_emission_data['waste_unsegregated'] +
+        current_emission_data['water'] +
+        current_emission_data['treated_water'] +
+        current_emission_data['lpg'] +
+        current_emission_data['food_waste'] +
+        current_emission_data['accommodation'] +
+        current_emission_data['flight']
+    ) - current_emission_data['tree_offset']
+
+    # Emit real-time data
+    socketio.emit(
+        'update_emissions',
+        clean_for_json({
+            "current_emissions": current_emission_data,
+            "total_emission": total_emission
+        })
+    )
+
+    # Render the template with the new data
+    return render_template(
+        'sdo_dashboard.html',
+        current_emission_data=current_emission_data,
+        total_emission=total_emission,
+        current_year=current_year,
+        selected_year=selected_year,
+        campus=campus
+    )
+
+
+
+from flask import render_template, request, session, redirect, url_for, flash
+from datetime import datetime
+import mysql.connector
+from prophet import Prophet
+import pandas as pd
+import logging
+
+# Initialize logging
+logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
+
+@app.route('/sdoanalytics', methods=['GET', 'POST'])
+def sdoanalytics():
     # Ensure the user is logged in
     if 'loggedIn' not in session or 'campus' not in session:
         flash("You must be logged in to access this page.", "warning")
@@ -4852,7 +5000,7 @@ def sdo_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Queries for emission data by month
+        # Fetch data for categories
         queries = [
             ("SELECT month, kg_co2_per_kwh FROM electricity_consumption WHERE year = %s AND campus = %s ORDER BY month ASC", electricity_data, "electricity"),
             ("SELECT MONTHNAME(date) AS month, total_emission FROM fuel_emissions WHERE YEAR(date) = %s AND campus = %s ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
@@ -4861,7 +5009,6 @@ def sdo_dashboard():
             ("SELECT MONTHNAME(Date) AS month, SUM(FactorKGCO2e) AS total_emission FROM tblwater WHERE YEAR(Date) = %s AND campus = %s GROUP BY MONTHNAME(Date) ORDER BY FIELD(MONTHNAME(Date), 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", water_data, "water"),
         ]
 
-        # Execute queries
         for query, data_list, category in queries:
             cursor.execute(query, (selected_year, campus))
             for row in cursor.fetchall():
@@ -4889,17 +5036,14 @@ def sdo_dashboard():
                     treated_water_data[month_index] = float(treated_value)
                     current_emission_data["treated_water"] += float(treated_value)
 
-        # Query for LPG Data
+        # Query for LPG data
         lpg_query = """
-            SELECT Month, GHGEmissionKGCO2e
-            FROM tbllpg
-            WHERE Campus = %s AND YearTransact = %s
+        SELECT Month, GHGEmissionKGCO2e
+        FROM tbllpg
+        WHERE Campus = %s AND YearTransact = %s
         """
         cursor.execute(lpg_query, (campus, selected_year))
-        lpg_rows = cursor.fetchall()
-
-        # Populate LPG data into list
-        for row in lpg_rows:
+        for row in cursor.fetchall():
             month_index = month_to_index.get(row.get('Month'), -1)
             if month_index != -1:
                 emission_value = row.get('GHGEmissionKGCO2e')
@@ -4907,23 +5051,14 @@ def sdo_dashboard():
                     lpg_data[month_index] = float(emission_value)
                     current_emission_data["lpg"] += float(emission_value)
 
-        # Convert LPG data into a DataFrame
-        lpg_df = pd.DataFrame(lpg_rows)
-        if not lpg_df.empty:
-            lpg_df['GHGEmissionKGCO2e'] = lpg_df['GHGEmissionKGCO2e'].astype(float)
-            lpg_df['MonthIndex'] = lpg_df['Month'].map(month_to_index)
-
-        # Query for Food Waste Data
+        # Query for food waste data
         food_waste_query = """
-            SELECT Month, GHGEmissionKGCO2e
-            FROM tblfoodwaste
-            WHERE Campus = %s AND YearTransaction = %s
+        SELECT Month, GHGEmissionKGCO2e
+        FROM tblfoodwaste
+        WHERE Campus = %s AND YearTransaction = %s
         """
         cursor.execute(food_waste_query, (campus, selected_year))
-        food_waste_rows = cursor.fetchall()
-
-        # Populate Food Waste data into list
-        for row in food_waste_rows:
+        for row in cursor.fetchall():
             month_index = month_to_index.get(row.get('Month'), -1)
             if month_index != -1:
                 emission_value = row.get('GHGEmissionKGCO2e')
@@ -4931,24 +5066,15 @@ def sdo_dashboard():
                     food_waste_data[month_index] = float(emission_value)
                     current_emission_data["food_waste"] += float(emission_value)
 
-        # Convert Food Waste data into a DataFrame
-        food_waste_df = pd.DataFrame(food_waste_rows)
-        if not food_waste_df.empty:
-            food_waste_df['GHGEmissionKGCO2e'] = food_waste_df['GHGEmissionKGCO2e'].astype(float)
-            food_waste_df['MonthIndex'] = food_waste_df['Month'].map(month_to_index)
-
-        # Query for Accommodation Data
+        # Query for accommodation data
         accommodation_query = """
-            SELECT YearTransact AS Year, SUM(GHGEmissionKGC02e) AS total_emission
-            FROM tblaccommodation
-            WHERE Campus = %s AND YearTransact BETWEEN 2020 AND 2024
-            GROUP BY YearTransact
+        SELECT YearTransact AS Year, SUM(GHGEmissionKGC02e) AS total_emission
+        FROM tblaccommodation
+        WHERE Campus = %s AND YearTransact BETWEEN 2020 AND 2024
+        GROUP BY YearTransact
         """
         cursor.execute(accommodation_query, (campus,))
-        accommodation_rows = cursor.fetchall()
-
-        # Populate Accommodation data into list
-        for row in accommodation_rows:
+        for row in cursor.fetchall():
             year_index = row['Year'] - 2020
             if 0 <= year_index < 5:
                 emission_value = row.get('total_emission')
@@ -4956,34 +5082,21 @@ def sdo_dashboard():
                     accommodation_data[year_index] = float(emission_value)
                     current_emission_data["accommodation"] += float(emission_value)
 
-        # Convert Accommodation data into a DataFrame
-        accommodation_df = pd.DataFrame(accommodation_rows)
-        if not accommodation_df.empty:
-            accommodation_df['total_emission'] = accommodation_df['total_emission'].astype(float)
-
-        # Query for Flight Data
+        # Query for flight data
         flight_query = """
-            SELECT Year, SUM(GHGEmissionKGC02e) AS total_emission
-            FROM tblflight
-            WHERE Campus = %s AND Year BETWEEN 2020 AND 2024
-            GROUP BY Year
+        SELECT Year, SUM(GHGEmissionKGC02e) AS total_emission
+        FROM tblflight
+        WHERE Campus = %s AND Year BETWEEN 2020 AND 2024
+        GROUP BY Year
         """
         cursor.execute(flight_query, (campus,))
-        flight_rows = cursor.fetchall()
-
-        # Populate Flight data into list
-        for row in flight_rows:
+        for row in cursor.fetchall():
             year_index = row['Year'] - 2020
             if 0 <= year_index < 5:
                 emission_value = row.get('total_emission')
                 if emission_value is not None:
                     flight_data[year_index] = float(emission_value)
                     current_emission_data["flight"] += float(emission_value)
-
-        # Convert Flight data into a DataFrame
-        flight_df = pd.DataFrame(flight_rows)
-        if not flight_df.empty:
-            flight_df['total_emission'] = flight_df['total_emission'].astype(float)
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -4993,241 +5106,80 @@ def sdo_dashboard():
         if conn:
             conn.close()
 
-    # Forecast function using Prophet
-
-    def forecast_prophet(data, periods, freq='M', min_r2=0.7, max_r2=0.8, smoothing_factor=0.2, selected_year='2023'):
-        if all(v == 0 for v in data):  # If all data is zero, return zeros
-            return [0] * periods, min_r2, 0, 0
+    def forecast_prophet(data, periods, freq='M', smoothing_factor=0.2, selected_year='2023'):
+        if all(v == 0 for v in data):  # Handle all-zero input data
+            return [0] * periods
 
         try:
             # Prepare data for Prophet
             df = pd.DataFrame({
-                'ds': pd.date_range(start=f'{selected_year}-01-01', periods=len(data), freq=freq),  # Date column
-                'y': data  # Target column
+                'ds': pd.date_range(start=f'{selected_year}-01-01', periods=len(data), freq=freq),
+                'y': data
             })
-            df = df[df['y'] > 0]  # Filter non-zero values
+
+            # Ensure no negative or zero values in the data
+            df = df[df['y'] > 0]
 
             # Initialize and train Prophet model
             model = Prophet(yearly_seasonality=True)
             model.fit(df)
 
-            # Predict future values
+            # Generate future dates and forecast
             future = model.make_future_dataframe(periods=periods, freq=freq)
             forecast = model.predict(future)
 
-            # Replace negative values in the forecast with zero
-            forecast['yhat'] = forecast['yhat'].apply(lambda x: max(0, x))
+            # Align forecast values with actual data and remove negatives
+            forecast['yhat'] = forecast['yhat'].apply(lambda x: max(0, x))  # Ensure non-negative values
 
-            # Extract forecasted values
+            # Extract the forecasted values
             forecast_values = forecast['yhat'][-periods:].tolist()
 
-            # Apply smoothing to forecast
+            # Apply smoothing to align with the trend of actual data
             smoothed_forecast = []
             for i in range(len(forecast_values)):
                 smoothed_value = smoothing_factor * forecast_values[i] + (1 - smoothing_factor) * (data[-1] if len(data) > 0 else 0)
                 smoothed_forecast.append(max(0, smoothed_value))  # Ensure non-negative values
 
-            # Evaluate metrics
-            y_true = df['y']
-            y_pred = forecast['yhat'][:len(y_true)]
-            r2 = r2_score(y_true, y_pred)
-            mse = mean_squared_error(y_true, y_pred)
-            mae = mean_absolute_error(y_true, y_pred)
-
-            # Adjust R² within the specified range
-            r2 = max(min(r2, max_r2), min_r2)
-
-            return smoothed_forecast, r2, mse, mae
+            return smoothed_forecast
 
         except Exception as e:
-            flash(f"Prophet Forecast Error: {e}", "danger")
-            return [0] * periods, min_r2, 0, 0
+            flash(f"Forecast Error: {e}", "danger")
+            return [0] * periods
 
-    # Forecast for LPG, Food Waste, Accommodation, and Flight
-    forecast_periods_monthly = 14  # 12 months + 2 future months
-    forecast_periods_yearly = 1  # 1 future year for yearly data
-    # Forecast for electricity, fuel, waste, water, and treated water
-    electricity_forecast, electricity_r2, electricity_mse, electricity_mae = forecast_prophet(
-        electricity_data, periods=forecast_periods_monthly
+
+    # Generate forecasts
+    forecasts = {f"{category}_forecast": forecast_prophet(data, 14) for category, data in [
+        ("electricity", electricity_data),
+        ("fuel", fuel_data),
+        ("waste_segregated", waste_segregated_data),
+        ("waste_unsegregated", waste_unsegregated_data),
+        ("water", water_data),
+        ("treated_water", treated_water_data),
+        ("lpg", lpg_data),
+        ("food_waste", food_waste_data),
+        ("flight", flight_data),
+        ("accommodation", accommodation_data),
+    ]}
+
+    # Render the template
+    return render_template(
+        'sdoanalytics.html',
+        electricity_data=electricity_data,
+        fuel_data=fuel_data,
+        waste_segregated_data=waste_segregated_data,
+        waste_unsegregated_data=waste_unsegregated_data,
+        water_data=water_data,
+        treated_water_data=treated_water_data,
+        lpg_data=lpg_data,
+        food_waste_data=food_waste_data,
+        accommodation_data=accommodation_data,
+        flight_data=flight_data,
+        forecast_data=forecasts,
+        selected_year=selected_year,
+        current_year=current_year,
+        labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        yearly_labels=["2020", "2021", "2022", "2023", "2024", "2025"],
     )
-    fuel_forecast, fuel_r2, fuel_mse, fuel_mae = forecast_prophet(
-        fuel_data, periods=forecast_periods_monthly
-    )
-    waste_segregated_forecast, waste_segregated_r2, waste_segregated_mse, waste_segregated_mae = forecast_prophet(
-        waste_segregated_data, periods=forecast_periods_monthly
-    )
-    waste_unsegregated_forecast, waste_unsegregated_r2, waste_unsegregated_mse, waste_unsegregated_mae = forecast_prophet(
-        waste_unsegregated_data, periods=forecast_periods_monthly
-    )
-    water_forecast, water_r2, water_mse, water_mae = forecast_prophet(
-        water_data, periods=forecast_periods_monthly
-    )
-    treated_water_forecast, treated_water_r2, treated_water_mse, treated_water_mae = forecast_prophet(
-        treated_water_data, periods=forecast_periods_monthly
-    )
-    lpg_forecast, lpg_r2, lpg_mse, lpg_mae = forecast_prophet(
-        lpg_data, periods=forecast_periods_monthly
-    )
-    food_waste_forecast, food_waste_r2, food_waste_mse, food_waste_mae = forecast_prophet(
-        food_waste_data, periods=forecast_periods_monthly
-    )
-    accommodation_forecast, accommodation_r2, accommodation_mse, accommodation_mae = forecast_prophet(
-        accommodation_data, periods=6, freq='Y'
-    )
-    flight_forecast, flight_r2, flight_mse, flight_mae = forecast_prophet(
-        flight_data, periods=6, freq='Y'
-    )
-
-    # Print R², MSE, and MAE metrics to terminal
-    print("\nLPG Forecast Metrics:")
-    print(f"  R² Score: {lpg_r2:.2f}")
-    print(f"  MSE: {lpg_mse:.2f}")
-    print(f"  MAE: {lpg_mae:.2f}")
-
-    print("\nFood Waste Forecast Metrics:")
-    print(f"  R² Score: {food_waste_r2:.2f}")
-    print(f"  MSE: {food_waste_mse:.2f}")
-    print(f"  MAE: {food_waste_mae:.2f}")
-
-    print("\nAccommodation Forecast Metrics:")
-    print(f"  R² Score: {accommodation_r2:.2f}")
-
-    print("\nFlight Forecast Metrics:")
-    print(f"  R² Score: {flight_r2:.2f}")
-    print(f"  MSE: {flight_mse:.2f}")
-    print(f"  MAE: {flight_mae:.2f}")
-
-    # Prepare forecast data
-    forecast_data = {
-        "electricity_forecast": {
-        "prophet": {
-            "forecast": electricity_forecast,
-            "r2_score": electricity_r2,
-            "mse": electricity_mse,
-            "mae": electricity_mae,
-        }
-        },
-        "fuel_forecast": {
-            "prophet": {
-                "forecast": fuel_forecast,
-                "r2_score": fuel_r2,
-                "mse": fuel_mse,
-                "mae": fuel_mae,
-            }
-        },
-        "waste_segregated_forecast": {
-            "prophet": {
-                "forecast": waste_segregated_forecast,
-                "r2_score": waste_segregated_r2,
-                "mse": waste_segregated_mse,
-                "mae": waste_segregated_mae,
-            }
-        },
-        "waste_unsegregated_forecast": {
-            "prophet": {
-                "forecast": waste_unsegregated_forecast,
-                "r2_score": waste_unsegregated_r2,
-                "mse": waste_unsegregated_mse,
-                "mae": waste_unsegregated_mae,
-            }
-        },
-        "water_forecast": {
-            "prophet": {
-                "forecast": water_forecast,
-                "r2_score": water_r2,
-                "mse": water_mse,
-                "mae": water_mae,
-            }
-        },
-        "treated_water_forecast": {
-            "prophet": {
-                "forecast": treated_water_forecast,
-                "r2_score": treated_water_r2,
-                "mse": treated_water_mse,
-                "mae": treated_water_mae,
-            }
-        },
-        "lpg_forecast": {
-            "prophet": {
-                "forecast": lpg_forecast,
-                "r2_score": lpg_r2,
-                "mse": lpg_mse,
-                "mae": lpg_mae,
-            }
-        },
-        "food_waste_forecast": {
-            "prophet": {
-                "forecast": food_waste_forecast,
-                "r2_score": food_waste_r2,
-                "mse": food_waste_mse,
-                "mae": food_waste_mae,
-            }
-        },
-        "accommodation_forecast": {
-            "prophet": {
-                "forecast": accommodation_forecast,
-                "r2_score": accommodation_r2,
-                "mse": accommodation_mse,
-                "mae": accommodation_mae,
-            }
-        },
-        "flight_forecast": {
-            "prophet": {
-                "forecast": flight_forecast,
-                "r2_score": flight_r2,
-                "mse": flight_mse,
-                "mae": flight_mae,
-            }
-        },
-    }
-
-    # Clean data for JSON serialization
-    cleaned_emission_data = clean_for_json(current_emission_data)
-    cleaned_forecast_data = clean_for_json(forecast_data)
-
-    # Emit real-time data
-    socketio.emit('update_emissions', cleaned_emission_data)
-    socketio.emit('update_forecast', cleaned_forecast_data)
-
-    # Month labels
-    labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] + ['January', 'February']
-
-    try:
-        # Render the template with the new data
-        return render_template(
-            'sdo_dashboard.html',
-            lpg_data=lpg_data,
-            food_waste_data=food_waste_data,
-            accommodation_data=accommodation_data,
-            flight_data=flight_data,
-            electricity_data=electricity_data,  # Add electricity data
-            fuel_data=fuel_data,  # Add fuel data
-            waste_segregated_data=waste_segregated_data,  # Add waste segregated data
-            waste_unsegregated_data=waste_unsegregated_data,  # Add waste unsegregated data
-            water_data=water_data,  # Add water data
-            treated_water_data=treated_water_data,  # Add treated water data
-            lpg_df=lpg_df.to_dict(orient='records'),  # Pass LPG DataFrame as JSON-compatible object
-            food_waste_df=food_waste_df.to_dict(orient='records'),  # Pass Food Waste DataFrame as JSON-compatible object
-            accommodation_df=accommodation_df.to_dict(orient='records'),  # Pass Accommodation DataFrame as JSON-compatible object
-            flight_df=flight_df.to_dict(orient='records'),  # Pass Flight DataFrame as JSON-compatible object
-            electricity_df=pd.DataFrame(electricity_data).to_dict(orient='records'),  # Convert electricity data to DataFrame
-            fuel_df=pd.DataFrame(fuel_data).to_dict(orient='records'),  # Convert fuel data to DataFrame
-            waste_segregated_df=pd.DataFrame(waste_segregated_data).to_dict(orient='records'),  # Convert waste segregated data to DataFrame
-            waste_unsegregated_df=pd.DataFrame(waste_unsegregated_data).to_dict(orient='records'),  # Convert waste unsegregated data to DataFrame
-            water_df=pd.DataFrame(water_data).to_dict(orient='records'),  # Convert water data to DataFrame
-            treated_water_df=pd.DataFrame(treated_water_data).to_dict(orient='records'),  # Convert treated water data to DataFrame
-            forecast_data=forecast_data,
-            current_emission_data=current_emission_data,
-            labels=labels,
-            current_year=current_year,
-            selected_year=selected_year,
-            campus=campus 
-        )
-    except Exception as e:
-        logging.error(f"Error in dashboard: {e}")
-        flash(f"An error occurred: {e}", 'danger')
-        return redirect(url_for('home'))
-
 
 
 @app.route('/sdo_electricity_report', methods=['GET'])
@@ -5263,32 +5215,12 @@ def sdo_electricity_report():
     cursor = conn.cursor(dictionary=True)  # Use dictionary cursor to fetch rows as dicts
 
     # Base query
-    query = """
+    base_query = """
         SELECT campus, category, month, quarter, year, prev_reading, current_reading, multiplier, 
-               total_amount, consumption, price_per_kwh, kg_co2_per_kwh, t_co2_per_kwh, 
+               total_amount, consumption, price_per_kwh, kg_co2_per_kwh, t_co2_per_kwh, tree_offset
         FROM electricity_consumption
         WHERE campus IN ({})
     """.format(",".join(["%s"] * len(related_campuses)))
-
-    # Initialize filter parameters for cursor execution
-    params = related_campuses
-
-    # Add filters to query if they are provided
-    if campus_filter:
-        query += " AND campus = %s"
-        params.append(campus_filter)
-    if category_filter:
-        query += " AND category = %s"
-        params.append(category_filter)
-    if month_filter:
-        query += " AND month = %s"
-        params.append(month_filter)
-    if quarter_filter:
-        query += " AND quarter = %s"
-        params.append(quarter_filter)
-    if year_filter:
-        query += " AND year = %s"
-        params.append(year_filter)
 
     # Count query for total records (to calculate pages), using the same filters
     count_query = """
@@ -5296,39 +5228,50 @@ def sdo_electricity_report():
         FROM electricity_consumption
         WHERE campus IN ({})
     """.format(",".join(["%s"] * len(related_campuses)))
-    
-    # Add the same filters to the count query
-    count_params = related_campuses
+
+    # Initialize filter parameters for cursor execution
+    params = related_campuses[:]
+    count_params = related_campuses[:]
+
+    # Add filters to query if they are provided
+    filters = []  # Store filter conditions
     if campus_filter:
-        count_query += " AND campus = %s"
+        filters.append("campus = %s")
+        params.append(campus_filter)
         count_params.append(campus_filter)
     if category_filter:
-        count_query += " AND category = %s"
+        filters.append("category = %s")
+        params.append(category_filter)
         count_params.append(category_filter)
     if month_filter:
-        count_query += " AND month = %s"
+        filters.append("month = %s")
+        params.append(month_filter)
         count_params.append(month_filter)
     if quarter_filter:
-        count_query += " AND quarter = %s"
+        filters.append("quarter = %s")
+        params.append(quarter_filter)
         count_params.append(quarter_filter)
     if year_filter:
-        count_query += " AND year = %s"
+        filters.append("year = %s")
+        params.append(year_filter)
         count_params.append(year_filter)
+
+    # Add filters to the queries
+    if filters:
+        filter_conditions = " AND " + " AND ".join(filters)
+        base_query += filter_conditions
+        count_query += filter_conditions
+
+    # Add LIMIT and OFFSET to the main query for pagination
+    base_query += " LIMIT %s OFFSET %s"
+    params.extend([per_page, (current_page - 1) * per_page])
 
     # Execute the count query
     cursor.execute(count_query, tuple(count_params))
     total_records = cursor.fetchone()['total']
-    
-    # Calculate offset for pagination
-    offset = (current_page - 1) * per_page
-    
-    # Add LIMIT and OFFSET to the main query for pagination
-    query += " LIMIT %s OFFSET %s"
-    params.append(per_page)
-    params.append(offset)
-    
+
     # Execute the main query
-    cursor.execute(query, tuple(params))
+    cursor.execute(base_query, tuple(params))
     electricity_data = cursor.fetchall()
 
     cursor.close()
@@ -5349,6 +5292,8 @@ def sdo_electricity_report():
         quarter=quarter_filter,
         year=year_filter
     )
+
+
 
 from flask import Response
 
@@ -5412,18 +5357,25 @@ def export_electricity_report_csv():
 
 @app.route('/export_electricity_report_pdf')
 def export_electricity_report_pdf():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
+    # Base query with WHERE 1=1 for easy appending of filters
+    query = "SELECT * FROM electricity_consumption WHERE campus = %s"
+    params = [user_campus]  # Restrict data to the user's campus
+
+    # Get filter parameters from the request
     campus = request.args.get("campus", None)
     category = request.args.get("category", None)
     month = request.args.get("month", None)
     quarter = request.args.get("quarter", None)
     year = request.args.get("year", None)
 
-    # Base query with WHERE 1=1 for easy appending of filters
-    query = "SELECT * FROM electricity_consumption WHERE 1=1"
-    params = []
-
-    # Add filters dynamically to the query
-    if campus:
+    # Dynamically add additional filters to the query
+    if campus:  # Allow filtering by campus if explicitly provided
         query += " AND campus = %s"
         params.append(campus)
     if category:
@@ -5453,15 +5405,15 @@ def export_electricity_report_pdf():
         if 'db_connection' in locals() and db_connection.is_connected():
             db_connection.close()
 
-    # If no data is returned, handle the empty case
+    # Handle empty result case
     if not data:
         return "No data available to generate PDF", 404
 
-    # Convert data to DataFrame for easier handling
+    # Convert data to a DataFrame for easier handling
     df = pd.DataFrame(data)
     
-    # Calculate the column width for the PDF (based on the number of columns)
-    page_width = landscape(A4)[0] - 20  # 20 for margins
+    # Calculate column width for the PDF based on the number of columns
+    page_width = landscape(A4)[0] - 20  # Subtract margins
     num_columns = len(df.columns)
     col_width = page_width / num_columns
 
@@ -5472,7 +5424,7 @@ def export_electricity_report_pdf():
     # Convert DataFrame to a list of lists (header + data rows)
     data_list = [df.columns.tolist()] + df.values.tolist()
 
-    # Define table style (including grid and background color)
+    # Define table style
     table = Table(data_list, colWidths=[col_width] * num_columns)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -5496,18 +5448,25 @@ def export_electricity_report_pdf():
 
 @app.route('/export_electricity_report_excel')
 def export_electricity_report_excel():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
+    # Base query with WHERE 1=1 for easy appending of filters
+    query = "SELECT * FROM electricity_consumption WHERE campus = %s"
+    params = [user_campus]  # Restrict data to the user's campus
+
+    # Get filter parameters from the request
     campus = request.args.get("campus", None)
     category = request.args.get("category", None)
     month = request.args.get("month", None)
     quarter = request.args.get("quarter", None)
     year = request.args.get("year", None)
 
-    # Base query with WHERE 1=1 for easy appending of filters
-    query = "SELECT * FROM electricity_consumption WHERE 1=1"
-    params = []
-
-    # Add filters dynamically to the query
-    if campus:
+    # Add additional filters dynamically to the query
+    if campus:  # Allow filtering by campus if explicitly provided
         query += " AND campus = %s"
         params.append(campus)
     if category:
@@ -5639,24 +5598,24 @@ def sdo_fuel_emissions_report():
 
 @app.route('/export_fuel_report_pdf')
 def export_fuel_report_pdf():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Get filter parameters from the request (query parameters)
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus if not provided
     category = request.args.get("category", None)
     month = request.args.get("month", None)
     quarter = request.args.get("quarter", None)
     year = request.args.get("year", None)
 
-    # Debugging: Print the filter parameters to check if they are passed
-    print("Filter Parameters:", campus, category, month, quarter, year)
-
     # Start building the query (with WHERE 1=1 to facilitate dynamic filtering)
-    query = "SELECT * FROM fuel_emissions WHERE 1=1"
-    params = []
+    query = "SELECT * FROM fuel_emissions WHERE campus = %s"
+    params = [user_campus]  # Restrict data to the user's campus
 
     # Dynamically add filters to the query if they are provided
-    if campus:
-        query += " AND campus = %s"
-        params.append(campus)
     if category:
         query += " AND category = %s"
         params.append(category)
@@ -5669,10 +5628,6 @@ def export_fuel_report_pdf():
     if year:
         query += " AND year = %s"
         params.append(year)
-
-    # Debugging: Print the final query and parameters to check if the filters are being applied
-    print("Final Query:", query)
-    print("Parameters:", params)
 
     # Execute the query
     try:
@@ -5690,18 +5645,10 @@ def export_fuel_report_pdf():
 
     # If no data is returned, handle the empty case
     if not data:
-        print("No data returned from the query!")
         return "No data available to generate PDF", 404
-
-    # Debugging: Print the fetched data
-    print("Fetched Data:", data)
 
     # Convert data to DataFrame for easier handling
     df = pd.DataFrame(data)
-
-    # Check if DataFrame is correctly populated
-    print("DataFrame Data:")
-    print(df.head())  # Display the first few rows of the DataFrame
 
     # Calculate the column width for the PDF (based on the number of columns)
     page_width = landscape(A4)[0] - 20  # 20 for margins
@@ -5717,7 +5664,7 @@ def export_fuel_report_pdf():
 
     # Define table style (including grid and background color)
     table = Table(data_list, colWidths=[col_width] * num_columns)
-    table.setStyle(TableStyle([ 
+    table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -5737,23 +5684,27 @@ def export_fuel_report_pdf():
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="fuel_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
 
+
 @app.route('/export_fuel_report_excel')
 def export_fuel_report_excel():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Get filter parameters from the request (query parameters)
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus if not provided
     category = request.args.get("category", None)
     month = request.args.get("month", None)
     quarter = request.args.get("quarter", None)
     year = request.args.get("year", None)
 
     # Start building the query (with WHERE 1=1 to facilitate dynamic filtering)
-    query = "SELECT * FROM fuel_emissions WHERE 1=1"
-    params = []
+    query = "SELECT * FROM fuel_emissions WHERE campus = %s"
+    params = [user_campus]  # Restrict data to the user's campus
 
     # Dynamically add filters to the query if they are provided
-    if campus:
-        query += " AND campus = %s"
-        params.append(campus)
     if category:
         query += " AND category = %s"
         params.append(category)
@@ -5764,7 +5715,7 @@ def export_fuel_report_excel():
         query += " AND quarter = %s"
         params.append(quarter)
     if year:
-        query += " AND YEAR(date_column) = %s"  # Use correct column name if it's a date field
+        query += " AND year = %s"
         params.append(year)
 
     # Execute the query
@@ -5790,11 +5741,9 @@ def export_fuel_report_excel():
 
     # Create an in-memory Excel file (using BytesIO) and save the dataframe to it
     output = BytesIO()
-    
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Write the DataFrame to the Excel file
         df.to_excel(writer, index=False, sheet_name='Fuel Emissions Report')
-        
+
     # Seek to the beginning of the in-memory file
     output.seek(0)
 
@@ -5961,8 +5910,14 @@ def sdo_water_report():
 
 @app.route('/export_water_report_pdf')
 def export_water_report_pdf():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Get filter parameters from request
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus if not provided
     category = request.args.get("category", None)
     year = request.args.get("year", None)
 
@@ -5971,14 +5926,11 @@ def export_water_report_pdf():
         SELECT Campus, Date, Category, PreviousReading, CurrentReading, Consumption, 
                TotalAmount, PricePerLiter, FactorKGCO2e, FactorTCO2e
         FROM tblwater
-        WHERE 1=1
+        WHERE Campus = %s
     """
-    params = []
+    params = [user_campus]  # Restrict data to the user's campus
 
     # Add filters dynamically to the query
-    if campus:
-        query += " AND Campus = %s"
-        params.append(campus)
     if category:
         query += " AND Category = %s"
         params.append(category)
@@ -6041,10 +5993,17 @@ def export_water_report_pdf():
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="sdo_water_report.pdf", as_attachment=True, mimetype='application/pdf')
 
+
 @app.route('/export_water_report_excel')
 def export_water_report_excel():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Get filter parameters
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus if not provided
     category = request.args.get("category", None)
     year = request.args.get("year", None)
 
@@ -6053,14 +6012,11 @@ def export_water_report_excel():
         SELECT Campus, Date, Category, PreviousReading, CurrentReading, Consumption, 
                TotalAmount, PricePerLiter, FactorKGCO2e, FactorTCO2e
         FROM tblwater
-        WHERE 1=1
+        WHERE Campus = %s
     """
-    params = []
+    params = [user_campus]  # Restrict data to the user's campus
 
     # Add filters dynamically to the query
-    if campus:
-        query += " AND Campus = %s"
-        params.append(campus)
     if category:
         query += " AND Category = %s"
         params.append(category)
@@ -6204,12 +6160,42 @@ def sdo_treated_water_report():
 
 @app.route('/generate_treated_water_pdf')
 def generate_treated_water_pdf():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Retrieve filter parameters from request arguments
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     month = request.args.get("month", None)
 
-    # Fetch all data based on the filters
-    data, _ = fetch_treated_water_data(page=None, per_page=None, campus=campus, month=month)
+    # Fetch data based on filters
+    query = """
+        SELECT Campus, Month, TreatedWaterVolume, ReusedTreatedWaterVolume, EffluentVolume, 
+               PricePerLiter, FactorKGCO2e, FactorTCO2e
+        FROM tbltreatedwater
+        WHERE Campus = %s
+    """
+    params = [user_campus]  # Start with the user's campus filter
+
+    if month:
+        query += " AND Month = %s"
+        params.append(month)
+
+    # Execute query and fetch data
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        cursor = db_connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals() and db_connection.is_connected():
+            db_connection.close()
 
     # Convert data into a pandas DataFrame
     df = pd.DataFrame(data)
@@ -6246,10 +6232,17 @@ def generate_treated_water_pdf():
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="treated_water_report.pdf", as_attachment=True, mimetype='application/pdf')
 
+
 @app.route('/export_treated_water_report_excel')
 def export_treated_water_report_excel():
+    # Ensure that the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Get filter parameters from the request
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     month = request.args.get("month", None)
 
     # Base query for fetching treated water data
@@ -6257,14 +6250,10 @@ def export_treated_water_report_excel():
         SELECT Campus, Month, TreatedWaterVolume, ReusedTreatedWaterVolume, EffluentVolume, 
                PricePerLiter, FactorKGCO2e, FactorTCO2e
         FROM tbltreatedwater
-        WHERE 1=1
+        WHERE Campus = %s
     """
-    params = []
+    params = [user_campus]  # Restrict data to the user's campus
 
-    # Add filters dynamically to the query
-    if campus:
-        query += " AND Campus = %s"
-        params.append(campus)
     if month:
         query += " AND Month = %s"
         params.append(month)
@@ -6328,6 +6317,7 @@ def export_treated_water_report_excel():
 
     # Send the Excel file as a downloadable response
     return send_file(output, as_attachment=True, download_name="treated_water_report.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 
 
 @app.route('/sdo_waste_segregation_report')
@@ -6456,8 +6446,14 @@ def sdo_waste_segregation_report():
 
 @app.route('/sdo_waste_segregation_pdf')
 def sdo_waste_segregation_pdf():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Retrieve filter parameters from request arguments
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     year = request.args.get("year", None)
     quarter = request.args.get("quarter", None)
     main_category = request.args.get("main_category", None)
@@ -6466,11 +6462,18 @@ def sdo_waste_segregation_pdf():
     print(f"Filters: campus={campus}, year={year}, quarter={quarter}, main_category={main_category}")
 
     # Fetch all data based on the filters
-    data, _ = fetch_waste_segre_data(page=None, per_page=None, campus=campus, year=year, quarter=quarter, main_category=main_category)
+    data, _ = fetch_waste_segre_data(
+        page=None, 
+        per_page=None, 
+        campus=campus, 
+        year=year, 
+        quarter=quarter, 
+        main_category=main_category
+    )
 
     # Check if the data is empty
     if not data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data into a pandas DataFrame
     df = pd.DataFrame(data)
@@ -6501,20 +6504,53 @@ def sdo_waste_segregation_pdf():
     buffer.seek(0)
 
     # Send the PDF as a downloadable file
-    return send_file(buffer, download_name="waste_segregation_report.pdf", as_attachment=True, mimetype='application/pdf')
+    return send_file(
+        buffer, 
+        download_name="waste_segregation_report.pdf", 
+        as_attachment=True, 
+        mimetype='application/pdf'
+    )
 
 def fetch_waste_segre_data(page=1, per_page=20, campus=None, year=None, quarter=None, main_category=None):
+    """
+    Fetch waste segregation data from the database with applied filters and pagination.
+    Session-based campus restrictions are applied.
+
+    Args:
+        page (int): The current page number for pagination.
+        per_page (int): The number of records per page.
+        campus (str): Campus filter.
+        year (str): Year filter.
+        quarter (str): Quarter filter.
+        main_category (str): Main category filter.
+
+    Returns:
+        tuple: A list of filtered data and the total number of records.
+    """
+    # Ensure that the user's session is valid for campus restrictions
+    if 'campus' not in session:
+        raise ValueError("Session does not contain a valid campus. User is not logged in.")
+
+    user_campus = session['campus']  # Get the user's campus from the session
+
     # Start the base query with a condition that always matches
     base_query = "SELECT * FROM tblsolidwastesegregated WHERE 1=1"
     total_query = "SELECT COUNT(*) AS total FROM tblsolidwastesegregated WHERE 1=1"
     params = []
 
-    # Apply filters based on the parameters provided
-    if campus and campus != 'All':  # Handle 'All' campus case
+    # Restrict data to the user's campus unless 'All' is explicitly passed
+    if campus and campus != 'All':  
+        if campus != user_campus:
+            raise ValueError("Access denied: User can only access their campus data.")
         base_query += " AND campus = %s"
         total_query += " AND campus = %s"
         params.append(campus)
+    else:  # If no campus is specified, default to user's campus
+        base_query += " AND campus = %s"
+        total_query += " AND campus = %s"
+        params.append(user_campus)
 
+    # Apply additional filters
     if year:
         base_query += " AND year = %s"
         total_query += " AND year = %s"
@@ -6565,6 +6601,7 @@ def fetch_waste_segre_data(page=1, per_page=20, campus=None, year=None, quarter=
 
     return data, total_records
 
+
 @app.route('/sdo_waste_segregation_excel')
 def sdo_waste_segregation_excel():
     # Retrieve filter parameters from request arguments
@@ -6595,7 +6632,6 @@ def sdo_waste_segregation_excel():
 
     # Send the Excel file as a downloadable response
     return send_file(buffer, download_name="waste_segregation_report.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
 
 
 @app.route('/sdo_waste_unseg_report')
@@ -6705,17 +6741,28 @@ def sdo_waste_unseg_report():
 
 @app.route('/sdo_waste_unseg_excel')
 def sdo_waste_unseg_excel():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Retrieve filter parameters from request arguments
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     year = request.args.get("year", None)
     month = request.args.get("month", None)
 
-    # Fetch all data based on the filters (ignore pagination)
-    data, _ = fetch_waste_unseg_data(page=None, per_page=None, campus=campus, year=year, month=month, fetch_all=True)
+    # Enforce session filtering for campus
+    if campus != user_campus and campus != "All":
+        return "Access denied: You can only access reports for your campus.", 403
+
+    # Fetch all data based on the filters (ignoring pagination)
+    data, _ = fetch_waste_unseg_data(page=None, per_page=None, campus=user_campus, year=year, month=month, fetch_all=True)
 
     # Check if the data is empty
     if not data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data into a pandas DataFrame
     df = pd.DataFrame(data)
@@ -6735,17 +6782,28 @@ def sdo_waste_unseg_excel():
 
 @app.route('/sdo_waste_unseg_pdf')
 def sdo_waste_unseg_pdf():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Retrieve filter parameters from request arguments
-    campus = request.args.get("campus", None)
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     year = request.args.get("year", None)
     month = request.args.get("month", None)
 
+    # Enforce session filtering for campus
+    if campus != user_campus and campus != "All":
+        return "Access denied: You can only access reports for your campus.", 403
+
     # Fetch all data based on the filters (ignoring pagination)
-    data, _ = fetch_waste_unseg_data(page=None, per_page=None, campus=campus, year=year, month=month, fetch_all=True)
+    data, _ = fetch_waste_unseg_data(page=None, per_page=None, campus=user_campus, year=year, month=month, fetch_all=True)
 
     # Check if the data is empty
     if not data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data into a list of lists (for the PDF Table)
     table_data = [["Campus", "Year", "Month", "Waste Type", "Quantity (KG)", 
@@ -6783,6 +6841,26 @@ def sdo_waste_unseg_pdf():
     return send_file(buffer, download_name="waste_unsegregated_report.pdf", as_attachment=True, mimetype='application/pdf')
 
 def fetch_waste_unseg_data(page=1, per_page=20, campus=None, year=None, month=None, fetch_all=False):
+    """
+    Fetch waste unsegregated data with session-based restrictions and dynamic filters.
+
+    Args:
+        page (int): Current page number for pagination.
+        per_page (int): Number of records per page.
+        campus (str): Campus filter.
+        year (str): Year filter.
+        month (str): Month filter.
+        fetch_all (bool): If True, ignore pagination.
+
+    Returns:
+        tuple: A list of filtered data and the total record count.
+    """
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        raise ValueError("Session does not contain a valid campus. User is not logged in.")
+
+    user_campus = session['campus']
+
     # If `fetch_all` is True, ignore pagination
     if fetch_all:
         page = None
@@ -6790,16 +6868,24 @@ def fetch_waste_unseg_data(page=1, per_page=20, campus=None, year=None, month=No
 
     # Calculate the offset based on page and per_page (only if pagination is applied)
     offset = (page - 1) * per_page if page and per_page else 0
-    
+
     base_query = "SELECT * FROM tblsolidwasteunsegregated WHERE 1=1"
     total_query = "SELECT COUNT(*) AS total FROM tblsolidwasteunsegregated WHERE 1=1"
     params = []
 
-    # Apply campus filter if provided and not "All"
-    if campus and campus != "All":
+    # Apply campus filter: default to user's campus if not explicitly provided
+    if campus:
+        if campus != user_campus and campus != "All":
+            raise ValueError("Access denied: User can only access data for their campus.")
+        if campus != "All":
+            base_query += " AND Campus = %s"
+            total_query += " AND Campus = %s"
+            params.append(campus)
+    else:
+        # Default to session's campus
         base_query += " AND Campus = %s"
         total_query += " AND Campus = %s"
-        params.append(campus)
+        params.append(user_campus)
 
     # Apply year filter if provided
     if year:
@@ -6827,7 +6913,7 @@ def fetch_waste_unseg_data(page=1, per_page=20, campus=None, year=None, month=No
     try:
         db_connection = mysql.connector.connect(**db_config)
         cursor = db_connection.cursor(dictionary=True)
-        
+
         # Fetch records with applied filters (and pagination, if not `fetch_all`)
         cursor.execute(base_query, params)
         data = cursor.fetchall()
@@ -6950,11 +7036,22 @@ def sdo_food_consumption_report():
 
 @app.route('/sdo_food_consumption_pdf')
 def sdo_food_consumption_pdf():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter parameters
-    campus = request.args.get("campus", "All")
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     year = request.args.get("year", None)
     month = request.args.get("month", None)
     office = request.args.get("office", None)
+
+    # Ensure campus matches the user's session
+    if campus != user_campus and campus != "All":
+        return "Access denied: You can only access reports for your campus.", 403
 
     # Database connection
     conn = get_db_connection()
@@ -6998,7 +7095,7 @@ def sdo_food_consumption_pdf():
 
     # Check if data exists
     if not food_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Create a PDF file in memory
     buffer = BytesIO()
@@ -7031,13 +7128,25 @@ def sdo_food_consumption_pdf():
     # Send the PDF as a downloadable file
     return send_file(buffer, download_name="food_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
 
+
 @app.route('/sdo_food_consumption_excel')
 def sdo_food_consumption_excel():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter parameters
-    campus = request.args.get("campus", "All")
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     year = request.args.get("year", None)
     month = request.args.get("month", None)
     office = request.args.get("office", None)
+
+    # Ensure campus matches the user's session
+    if campus != user_campus and campus != "All":
+        return "Access denied: You can only access reports for your campus.", 403
 
     # Database connection
     conn = get_db_connection()
@@ -7081,7 +7190,7 @@ def sdo_food_consumption_excel():
 
     # Check if data exists
     if not food_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data into a pandas DataFrame
     df = pd.DataFrame(food_data)
@@ -7196,57 +7305,76 @@ def sdo_lpg_consumption_report():
 
 @app.route('/sdo_lpg_consumption_pdf')
 def sdo_lpg_consumption_pdf():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter values from request arguments
-    campus = request.args.get('campus', 'All')
-    year = request.args.get('year', '')
-    month = request.args.get('month', '')
-    office = request.args.get('office', '')
+    campus = request.args.get('campus', user_campus)  # Default to user's campus
+    year = request.args.get('year', None)
+    month = request.args.get('month', None)
+    office = request.args.get('office', None)
+
+    # Enforce session filtering for campus
+    if campus != user_campus and campus != "All":
+        return "Access denied: You can only access reports for your campus.", 403
 
     # Database connection
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    # Build the WHERE clause dynamically based on filters
-    filter_conditions = []
-    params = []
+        # Build the WHERE clause dynamically based on filters
+        filter_conditions = []
+        params = []
 
-    if campus != 'All':
+        # Enforce campus filtering using the session value
         filter_conditions.append("Campus = %s")
-        params.append(campus)
+        params.append(user_campus)
 
-    if year:
-        filter_conditions.append("YearTransact = %s")
-        params.append(year)
+        if year:
+            filter_conditions.append("YearTransact = %s")
+            params.append(year)
 
-    if month:
-        filter_conditions.append("Month = %s")
-        params.append(month)
+        if month:
+            filter_conditions.append("Month = %s")
+            params.append(month)
 
-    if office:
-        filter_conditions.append("Office = %s")
-        params.append(office)
+        if office:
+            filter_conditions.append("Office = %s")
+            params.append(office)
 
-    # If no filter is applied, show all data
-    where_clause = ""
-    if filter_conditions:
         where_clause = "WHERE " + " AND ".join(filter_conditions)
 
-    # Query for all data matching the filters (no pagination)
-    query = f"""
-        SELECT Campus, YearTransact, Month, Office, ConcessionariesType, TankQuantity, 
-               TankWeight, TankVolume, TotalTankVolume, GHGEmissionKGCO2e, GHGEmissionTCO2e
-        FROM tbllpg {where_clause}
-        ORDER BY YearTransact DESC, Month ASC
-    """
-    cursor.execute(query, tuple(params))
-    lpg_data = cursor.fetchall()
+        # Query for all data matching the filters
+        query = f"""
+            SELECT Campus, YearTransact, Month, Office, ConcessionariesType, TankQuantity, 
+                   TankWeight, TankVolume, TotalTankVolume, GHGEmissionKGCO2e, GHGEmissionTCO2e
+            FROM tbllpg {where_clause}
+            ORDER BY YearTransact DESC, Month ASC
+        """
+        
+        # Debugging: Print query and parameters
+        print(f"Executing query: {query}")
+        print(f"With parameters: {params}")
 
-    cursor.close()
-    conn.close()
+        cursor.execute(query, tuple(params))
+        lpg_data = cursor.fetchall()
+
+    except mysql.connector.Error as e:
+        return f"Database error: {e}", 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn.is_connected():
+            conn.close()
 
     # Check if data is empty
     if not lpg_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Prepare table data for the PDF
     table_data = [["Campus", "Year", "Month", "Office", "Concessionaire Type", "Qty (no. of tanks)",
@@ -7281,59 +7409,66 @@ def sdo_lpg_consumption_pdf():
     buffer.seek(0)
     return send_file(buffer, download_name="lpg_consumption_report.pdf", as_attachment=True, mimetype='application/pdf')
 
+
+
 @app.route('/sdo_lpg_consumption_excel')
 def sdo_lpg_consumption_excel():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter values from request arguments
-    campus = request.args.get('campus', 'All')
-    year = request.args.get('year', '')
-    month = request.args.get('month', '')
-    office = request.args.get('office', '')
+    year = request.args.get('year', None)
+    month = request.args.get('month', None)
+    office = request.args.get('office', None)
 
     # Database connection
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    # Build the WHERE clause dynamically based on filters
-    filter_conditions = []
-    params = []
+        # Build the WHERE clause with enforced campus restriction
+        filter_conditions = ["Campus = %s"]  # Enforce campus from session
+        params = [user_campus]
 
-    if campus != 'All':
-        filter_conditions.append("Campus = %s")
-        params.append(campus)
+        if year:
+            filter_conditions.append("YearTransact = %s")
+            params.append(year)
 
-    if year:
-        filter_conditions.append("YearTransact = %s")
-        params.append(year)
+        if month:
+            filter_conditions.append("Month = %s")
+            params.append(month)
 
-    if month:
-        filter_conditions.append("Month = %s")
-        params.append(month)
+        if office:
+            filter_conditions.append("Office = %s")
+            params.append(office)
 
-    if office:
-        filter_conditions.append("Office = %s")
-        params.append(office)
-
-    # If no filter is applied, show all data
-    where_clause = ""
-    if filter_conditions:
         where_clause = "WHERE " + " AND ".join(filter_conditions)
 
-    # Query to fetch all data matching the filters
-    query = f"""
-        SELECT Campus, YearTransact, Month, Office, ConcessionariesType, TankQuantity, 
-               TankWeight, TankVolume, TotalTankVolume, GHGEmissionKGCO2e, GHGEmissionTCO2e
-        FROM tbllpg {where_clause}
-        ORDER BY YearTransact DESC, Month ASC
-    """
-    cursor.execute(query, tuple(params))
-    lpg_data = cursor.fetchall()
+        # Query to fetch all data matching the filters
+        query = f"""
+            SELECT Campus, YearTransact, Month, Office, ConcessionariesType, TankQuantity, 
+                   TankWeight, TankVolume, TotalTankVolume, GHGEmissionKGCO2e, GHGEmissionTCO2e
+            FROM tbllpg {where_clause}
+            ORDER BY YearTransact DESC, Month ASC
+        """
+        cursor.execute(query, tuple(params))
+        lpg_data = cursor.fetchall()
 
-    cursor.close()
-    conn.close()
+    except mysql.connector.Error as e:
+        return f"Database error: {e}", 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn.is_connected():
+            conn.close()
 
     # Check if data is empty
     if not lpg_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data into a pandas DataFrame
     df = pd.DataFrame(lpg_data)
@@ -7355,6 +7490,10 @@ def sdo_lpg_consumption_excel():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+
+
+
 
 @app.route('/sdo_flight_emissions_report')
 def sdo_flight_emissions_report():
@@ -7436,11 +7575,17 @@ def sdo_flight_emissions_report():
         year_filter=year_filter
     )
 
-
 @app.route('/sdo_flight_emissions_pdf')
 def sdo_flight_emissions_pdf():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter parameters
-    campus = request.args.get("campus", "")
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     office = request.args.get("office", "")
     year = request.args.get("year", "")
 
@@ -7452,9 +7597,10 @@ def sdo_flight_emissions_pdf():
     filter_conditions = []
     params = []
 
-    if campus:
+    # Apply campus filter based on session or "All"
+    if campus != "All":
         filter_conditions.append("Campus = %s")
-        params.append(campus)
+        params.append(user_campus)
 
     if office:
         filter_conditions.append("Office = %s")
@@ -7483,7 +7629,7 @@ def sdo_flight_emissions_pdf():
 
     # Check if data exists
     if not flight_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Create a PDF file in memory
     buffer = BytesIO()
@@ -7500,14 +7646,14 @@ def sdo_flight_emissions_pdf():
         60,  # Campus
         60,  # Office
         40,  # Year
-        80, # TravellerName
-        80, # TravelPurpose
+        80,  # TravellerName
+        80,  # TravelPurpose
         60,  # TravelDate
         60,  # Domestic/International
         60,  # Origin
         60,  # Destination
         50,  # Class
-        60,  # OneWay/RoundTrip
+        60,  # OnewayRoundTrip
         80,  # GHGEmissionKGC02e
         80   # GHGEmissionTC02e
     ]
@@ -7536,8 +7682,15 @@ def sdo_flight_emissions_pdf():
 
 @app.route('/sdo_flight_emissions_excel')
 def sdo_flight_emissions_excel():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter parameters
-    campus = request.args.get("campus", "")
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     office = request.args.get("office", "")
     year = request.args.get("year", "")
 
@@ -7549,9 +7702,10 @@ def sdo_flight_emissions_excel():
     filter_conditions = []
     params = []
 
-    if campus:
+    # Apply campus filter based on session or "All"
+    if campus != "All":
         filter_conditions.append("Campus = %s")
-        params.append(campus)
+        params.append(user_campus)
 
     if office:
         filter_conditions.append("Office = %s")
@@ -7580,7 +7734,7 @@ def sdo_flight_emissions_excel():
 
     # Check if data exists
     if not flight_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data into a pandas DataFrame
     df = pd.DataFrame(flight_data)
@@ -7601,7 +7755,6 @@ def sdo_flight_emissions_excel():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
 
 @app.route('/sdo_accommodation_emissions_report')
 def sdo_accommodation_emissions_report():
@@ -7737,8 +7890,15 @@ def export_accommodation_emissions_csv():
 
 @app.route('/sdo_accommodation_emissions_pdf')
 def sdo_accommodation_emissions_pdf():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter parameters
-    campus = request.args.get("campus", "")
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     office = request.args.get("office", "")
     year = request.args.get("year", "")
 
@@ -7750,9 +7910,10 @@ def sdo_accommodation_emissions_pdf():
     filter_conditions = []
     params = []
 
-    if campus:
+    # Apply campus filter based on session or "All"
+    if campus != "All":
         filter_conditions.append("Campus = %s")
-        params.append(campus)
+        params.append(user_campus)
 
     if office:
         filter_conditions.append("Office = %s")
@@ -7782,7 +7943,7 @@ def sdo_accommodation_emissions_pdf():
 
     # Check if data exists
     if not accommodation_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Create a PDF in memory
     buffer = BytesIO()
@@ -7799,8 +7960,8 @@ def sdo_accommodation_emissions_pdf():
         40,  # Campus
         50,  # Office
         50,  # YearTransact
-        80, # TravellerName
-        80, # TravelPurpose
+        80,  # TravellerName
+        80,  # TravelPurpose
         70,  # TravelDateFrom
         70,  # TravelDateTo
         60,  # Country
@@ -7836,8 +7997,15 @@ def sdo_accommodation_emissions_pdf():
 
 @app.route('/sdo_accommodation_emissions_excel')
 def sdo_accommodation_emissions_excel():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
     # Get filter parameters
-    campus = request.args.get("campus", "")
+    campus = request.args.get("campus", user_campus)  # Default to user's campus
     office = request.args.get("office", "")
     year = request.args.get("year", "")
 
@@ -7849,9 +8017,10 @@ def sdo_accommodation_emissions_excel():
     filter_conditions = []
     params = []
 
-    if campus:
+    # Apply campus filter based on session or "All"
+    if campus != "All":
         filter_conditions.append("Campus = %s")
-        params.append(campus)
+        params.append(user_campus)
 
     if office:
         filter_conditions.append("Office = %s")
@@ -7881,7 +8050,7 @@ def sdo_accommodation_emissions_excel():
 
     # Check if data exists
     if not accommodation_data:
-        return "No data available for the selected filters."
+        return "No data available for the selected filters.", 404
 
     # Convert data to pandas DataFrame
     df = pd.DataFrame(accommodation_data)
@@ -7905,15 +8074,15 @@ def sdo_accommodation_emissions_excel():
 
 @app.route('/manageacc_sdo', methods=['GET', 'POST'])
 def manageacc_sdo():
-    # Check if the user is logged in
-    if 'logged_in' not in session or 'campus' not in session:
-        flash("You must log in to access this page.", "danger")
+    # Ensure the user is logged in and has a campus in the session
+    if 'loggedIn' not in session or 'campus' not in session:
+        flash("You must be logged in to access this page.", "warning")
         return redirect(url_for('login'))
 
     user_campus = session['campus']  # Get the user's campus from the session
 
     if request.method == 'POST':
-        # Add new or handle updates/deletes
+        # Handle Add, Update, or Delete
         if 'update_id' in request.form:
             # Handle update
             account_id = request.form['update_id']
@@ -8002,7 +8171,6 @@ def manageacc_sdo():
         conn.close()
 
     return render_template('manageacc_sdo.html', accounts=accounts)
-
 
 @app.route('/sdo_report')
 def sdo_report():
