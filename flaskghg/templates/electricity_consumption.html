@@ -396,7 +396,7 @@
     text-decoration: none;
     cursor: pointer;
 }
-
+/* start modal */
 .container {
     background: #f44336; /* Solid red color matching the delete icon */
     padding: 15px;
@@ -413,6 +413,7 @@
 .container:hover {
     background: #e53935; /* Slightly darker red for hover */
 }
+/* end */
 
 .form-container {
     width: 100%;
@@ -456,6 +457,7 @@ button {
     transition: background-color 0.3s ease;
 }
 
+/* start button */
 button.btn-primary {
     background-color: #f44336; /* Matching red background color */
     color: #fff; /* White text for readability */
@@ -469,6 +471,7 @@ button.btn-primary {
 button.btn-primary:hover {
     background-color: #e53935; /* Slightly darker red for hover effect */
 }
+/* end*/
 
 button.btn-secondary {
     background-color: #666;
@@ -498,13 +501,13 @@ button.btn-danger:hover {
      }
      
      .pagination .page-item.active .page-link {
-         background-color: #d50000; /* Active page with the same red color */
-         border-color: #d50000;
+         background-color: #f44336; /* Active page with the same red color */
+         border-color: #f44336;
          color: white; /* White text for the active page */
      }
      
      .pagination .page-link:hover {
-         background-color: #b71c1c; /* Darker red on hover */
+         background-color: #f44336; /* Darker red on hover */
          color: white; /* White text on hover */
      }
 
@@ -588,8 +591,8 @@ button.btn-danger:hover {
                     <div class="buttons-container mt-3 d-flex justify-content-start align-items-center gap-2">
                         <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate</button>
                         <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadExcel()">Download Excel</button>
-                        <button style="background-color: #d50000; color: white; border: none;" onclick="downloadCSV()">Download CSV</button>
+                        <button class="btn btn-primary" onclick="downloadExcel()">Download Excel</button>
+                        <button class="btn btn-primary" onclick="downloadCSV()">Download CSV</button>
                     </div>
                     
                     <div class="mb-4">
