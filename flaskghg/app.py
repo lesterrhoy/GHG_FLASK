@@ -369,7 +369,7 @@ def emu_dashboard():
                         data_list[month_index] = float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
-        # Treated water query (with campus filter)
+               # Treated water query (with campus filter)
         treated_water_query = """
             SELECT Month, SUM(FactorKGCO2e) AS total_emission
             FROM tbltreatedwater
@@ -378,13 +378,63 @@ def emu_dashboard():
             ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
         """
         cursor.execute(treated_water_query, (selected_year, campus))
-        for row in cursor.fetchall():
+        for row in cursor.fetchall():  # Ensure all rows are fetched
             month_index = month_to_index.get(row.get('Month'), -1)
             if month_index != -1:
                 treated_value = row.get('total_emission')
                 if treated_value is not None:
                     treated_water_data[month_index] = float(treated_value)
                     current_emission_data["treated_water"] += float(treated_value)
+
+        # Count total records for electricity consumption filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.electricity_consumption WHERE campus = %s AND year = %s;",
+            (session['campus'], selected_year)
+        )
+        total_electricity_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for fuel emissions filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.fuel_emissions WHERE campus = %s AND YEAR(date) = %s;",
+            (session['campus'], selected_year)
+        )
+        total_fuel_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for water data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblwater WHERE campus = %s AND YEAR(Date) = %s;",
+            (session['campus'], selected_year)
+        )
+        total_water_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for treated water data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tbltreatedwater WHERE campus = %s AND YEAR(CURDATE()) = %s;",
+            (session['campus'], selected_year)
+        )
+        total_treated_water_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for waste segregated data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwastesegregated WHERE campus = %s AND Year = %s;",
+            (session['campus'], selected_year)
+        )
+        total_waste_segregated_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for waste unsegregated data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwasteunsegregated WHERE campus = %s AND Year = %s;",
+            (session['campus'], selected_year)
+        )
+        total_waste_unsegregated_records = cursor.fetchone().get('total_records', 0)
+
+        # Store in session
+        session['total_electricity_records'] = total_electricity_records
+        session['total_fuel_records'] = total_fuel_records
+        session['total_water_records'] = total_water_records
+        session['total_treated_water_records'] = total_treated_water_records
+        session['total_waste_segregated_records'] = total_waste_segregated_records
+        session['total_waste_unsegregated_records'] = total_waste_unsegregated_records
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -412,7 +462,13 @@ def emu_dashboard():
         current_emission_data=current_emission_data,
         selected_year=selected_year,
         current_year=current_year,
-        campus=campus
+        campus=campus,
+        total_electricity_records=session['total_electricity_records'],  # Total records for electricity
+        total_fuel_records=session['total_fuel_records'],                # Total records for fuel
+        total_water_records=session['total_water_records'],              # Total records for water
+        total_treated_water_records=session['total_treated_water_records'],  # Total records for treated water
+        total_waste_segregated_records=session['total_waste_segregated_records'],  # Total records for segregated waste
+        total_waste_unsegregated_records=session['total_waste_unsegregated_records']  # Total records for unsegregated waste
     )
 
 @app.route('/analytics')
@@ -422,13 +478,13 @@ def analytics():
     selected_year = int(request.args.get('year', datetime.now().year))
     current_year = datetime.now().year  # Get the current year
 
-    # Initialize data containers
-    electricity_data = [0] * 12
-    fuel_data = [0] * 12
-    waste_segregated_data = [0] * 12
-    waste_unsegregated_data = [0] * 12
-    water_data = [0] * 12
-    treated_water_data = [0] * 12
+    # Initialize data containers for 14 months
+    electricity_data = [0] * 14
+    fuel_data = [0] * 14
+    waste_segregated_data = [0] * 14
+    waste_unsegregated_data = [0] * 14
+    water_data = [0] * 14
+    treated_water_data = [0] * 14
 
     current_emission_data = {
         "electricity": 0,
@@ -444,8 +500,9 @@ def analytics():
         "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11
     }
 
-    # Create month labels for the selected year
+    # Create month labels for the selected year and two additional months
     labels = [f"{month}/{str(selected_year)[-2:]}" for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]]
+    labels.extend([f"Jan/{str(selected_year + 1)[-2:]}", f"Feb/{str(selected_year + 1)[-2:]}"])  # Add two extra months
 
     try:
         conn = get_db_connection()
@@ -486,6 +543,25 @@ def analytics():
                 if treated_value is not None:
                     treated_water_data[month_index] = float(treated_value)
                     current_emission_data["treated_water"] += float(treated_value)
+
+        # Forecast future emissions for the next two months
+        def simple_forecast(data):
+            last_two_values = [val for val in data[-2:] if val > 0]  # Get the last two non-zero values
+            if len(last_two_values) < 2:
+                avg_growth = 0
+            else:
+                avg_growth = (last_two_values[1] - last_two_values[0]) / last_two_values[0] if last_two_values[0] != 0 else 0
+            next_value_1 = last_two_values[-1] * (1 + avg_growth)
+            next_value_2 = next_value_1 * (1 + avg_growth)
+            return [round(next_value_1, 2), round(next_value_2, 2)]
+
+        # Apply forecasting to all data sets
+        electricity_data[-2:] = simple_forecast(electricity_data[:12])
+        fuel_data[-2:] = simple_forecast(fuel_data[:12])
+        waste_segregated_data[-2:] = simple_forecast(waste_segregated_data[:12])
+        waste_unsegregated_data[-2:] = simple_forecast(waste_unsegregated_data[:12])
+        water_data[-2:] = simple_forecast(water_data[:12])
+        treated_water_data[-2:] = simple_forecast(treated_water_data[:12])
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -1964,6 +2040,19 @@ def csd_dashboard():
         "tree_offset": 0,  # Add tree_offset field
     }
 
+    total_records = {
+        "electricity": 0,
+        "fuel": 0,
+        "waste_segregated": 0,
+        "waste_unsegregated": 0,
+        "water": 0,
+        "treated_water": 0,
+        "food_waste": 0,
+        "lpg": 0,
+        "flight": 0,
+        "accommodation": 0,
+    }
+
     month_to_index = {
         "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
         "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11
@@ -2045,6 +2134,81 @@ def csd_dashboard():
                         data_list[year_index] += float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
+        # Total Records Queries
+        count_queries = [
+            # Electricity Consumption
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.electricity_consumption WHERE {} year = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "electricity",
+            ),
+            # Fuel Emissions
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.fuel_emissions WHERE {} YEAR(date) = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "fuel",
+            ),
+            # Water Consumption
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tblwater WHERE {} YEAR(Date) = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "water",
+            ),
+            # Treated Water
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tbltreatedwater WHERE {} YEAR(CURDATE()) = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "treated_water",
+            ),
+            # Waste Segregated
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwastesegregated WHERE {} Year = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "waste_segregated",
+            ),
+            # Waste Unsegregated
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwasteunsegregated WHERE {} Year = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "waste_unsegregated",
+            ),
+            # Food Waste
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tblfoodwaste WHERE {} YearTransaction = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "food_waste",
+            ),
+            # LPG
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tbllpg WHERE {} YearTransact = %s;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "lpg",
+            ),
+            # Flight
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tblflight WHERE {} Year BETWEEN 2020 AND 2024;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "flight",
+            ),
+            # Accommodation
+            (
+                "SELECT COUNT(*) AS total_records FROM ghg_database.tblaccommodation WHERE {} YearTransact BETWEEN 2020 AND 2024;"
+                .format("" if selected_campus == 'all' else "campus = %s AND"),
+                "accommodation",
+            ),
+        ]
+
+        # Execute Count Queries
+        for query, category in count_queries:
+            if selected_campus == 'all':
+                cursor.execute(query, (selected_year,))
+            else:
+                cursor.execute(query, (selected_campus, selected_year))
+            total_records[category] = cursor.fetchone().get('total_records', 0)
+
+        # Debugging Output
+        print(f"Total Records: {total_records}")  # Check all total records
+
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
     finally:
@@ -2061,7 +2225,8 @@ def csd_dashboard():
         electricity_data=electricity_data,
         current_year=current_year,
         selected_year=selected_year,
-        selected_campus=selected_campus
+        selected_campus=selected_campus,
+        total_records=total_records,
     )
 
 
@@ -2072,6 +2237,11 @@ import mysql.connector
 from prophet import Prophet
 import pandas as pd
 from sklearn.metrics import r2_score
+from flask_socketio import SocketIO, emit
+
+
+# Initialize Socket.IO
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 @app.route('/csdanalytics', methods=['GET', 'POST'])
@@ -2118,6 +2288,7 @@ def csdanalytics():
 
         cursor = conn.cursor(dictionary=True)
 
+        # Your existing database queries
         queries = [
             ("SELECT month, SUM(kg_co2_per_kwh) AS total_emission FROM electricity_consumption WHERE year = %s {campus_filter} GROUP BY month ORDER BY month ASC", electricity_data, "electricity"),
             ("SELECT MONTHNAME(date) AS month, SUM(total_emission) AS total_emission FROM fuel_emissions WHERE YEAR(date) = %s {campus_filter} GROUP BY MONTH(date) ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
@@ -2153,22 +2324,6 @@ def csdanalytics():
                         data_list[month_index] += float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
-        # Queries for flight and accommodation data
-        queries_for_year = [
-            ("SELECT Year AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblflight WHERE Year BETWEEN 2020 AND 2024 {campus_filter} GROUP BY Year ORDER BY Year", flight_data, "flight"),
-            ("SELECT YearTransact AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblaccommodation WHERE YearTransact BETWEEN 2020 AND 2024 {campus_filter} GROUP BY YearTransact ORDER BY YearTransact", accommodation_data, "accommodation"),
-        ]
-
-        for query, data_list, category in queries_for_year:
-            cursor.execute(query.format(campus_filter=campus_filter), (selected_campus,) if selected_campus != 'all' else ())
-            for row in cursor.fetchall():
-                year_index = row['year'] - 2020
-                if 0 <= year_index < len(data_list):
-                    emission_value = row.get('total_emission')
-                    if emission_value is not None:
-                        data_list[year_index] += float(emission_value)
-                        current_emission_data[category] += float(emission_value)
-
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
     finally:
@@ -2176,6 +2331,20 @@ def csdanalytics():
             cursor.close()
         if conn:
             conn.close()
+
+    # Real-time update via Socket.IO
+    socketio.emit('update_emissions', {
+        "electricity": electricity_data,
+        "fuel": fuel_data,
+        "waste_segregated": waste_segregated_data,
+        "waste_unsegregated": waste_unsegregated_data,
+        "water": water_data,
+        "treated_water": treated_water_data,
+        "food_waste": food_waste_data,
+        "lpg": lpg_data,
+        "flight": flight_data,
+        "accommodation": accommodation_data,
+    })
 
     # Prophet-based forecasting
     def forecast_prophet(data, periods, freq='M', smoothing_factor=0.2):
@@ -2211,17 +2380,21 @@ def csdanalytics():
 
     # Generate forecast data
     forecast_data = {
-    "electricity_forecast_values": forecast_prophet(electricity_data, periods=12)[0],  # Use only the forecast values
-    "fuel_forecast_values": forecast_prophet(fuel_data, periods=12)[0],
-    "waste_segregated_forecast_values": forecast_prophet(waste_segregated_data, periods=12)[0],
-    "waste_unsegregated_forecast_values": forecast_prophet(waste_unsegregated_data, periods=12)[0],
-    "water_forecast_values": forecast_prophet(water_data, periods=12)[0],
-    "treated_water_forecast_values": forecast_prophet(treated_water_data, periods=12)[0],
-    "food_waste_forecast_values": forecast_prophet(food_waste_data, periods=12)[0],
-    "lpg_forecast_values": forecast_prophet(lpg_data, periods=12)[0],
-    "flight_forecast_values": forecast_prophet(flight_data, periods=5, freq='Y')[0],  # Annual frequency for 5 years
-    "accommodation_forecast_values": forecast_prophet(accommodation_data, periods=5, freq='Y')[0],  # Annual frequency for 5 years
-}
+        "electricity_forecast_values": forecast_prophet(electricity_data, periods=14)[0],
+        "fuel_forecast_values": forecast_prophet(fuel_data, periods=14)[0],
+        "waste_segregated_forecast_values": forecast_prophet(waste_segregated_data, periods=14)[0],
+        "waste_unsegregated_forecast_values": forecast_prophet(waste_unsegregated_data, periods=14)[0],
+        "water_forecast_values": forecast_prophet(water_data, periods=14)[0],
+        "treated_water_forecast_values": forecast_prophet(treated_water_data, periods=14)[0],
+        "food_waste_forecast_values": forecast_prophet(food_waste_data, periods=14)[0],
+        "lpg_forecast_values": forecast_prophet(lpg_data, periods=14)[0],
+        "flight_forecast_values": forecast_prophet(flight_data, periods=4, freq='Y')[0],  # Changed periods to 4
+        "accommodation_forecast_values": forecast_prophet(accommodation_data, periods=4, freq='Y')[0],  # Changed periods to 4
+    }
+
+
+    # Real-time update via Socket.IO for forecasts
+    socketio.emit('update_forecast', forecast_data)
 
     return render_template(
         'csdanalytics.html',
@@ -4896,6 +5069,87 @@ def sdo_dashboard():
         else:
             current_emission_data['tree_offset'] = 0  # Default value if no data
 
+                # Count total records for electricity consumption filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.electricity_consumption WHERE campus = %s AND year = %s;",
+            (session['campus'], selected_year)
+        )
+        total_electricity_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for fuel emissions filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.fuel_emissions WHERE campus = %s AND YEAR(date) = %s;",
+            (session['campus'], selected_year)
+        )
+        total_fuel_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for water data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblwater WHERE campus = %s AND YEAR(Date) = %s;",
+            (session['campus'], selected_year)
+        )
+        total_water_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for treated water data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tbltreatedwater WHERE campus = %s AND YEAR(CURDATE()) = %s;",
+            (session['campus'], selected_year)
+        )
+        total_treated_water_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for waste segregated data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwastesegregated WHERE campus = %s AND Year = %s;",
+            (session['campus'], selected_year)
+        )
+        total_waste_segregated_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for waste unsegregated data filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwasteunsegregated WHERE campus = %s AND Year = %s;",
+            (session['campus'], selected_year)
+        )
+        total_waste_unsegregated_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for food waste filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblfoodwaste WHERE campus = %s AND YearTransaction = %s;",
+            (session['campus'], selected_year)
+        )
+        total_food_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for LPG filtered by campus and year
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tbllpg WHERE campus = %s AND YearTransact = %s;",
+            (session['campus'], selected_year)
+        )
+        total_lpg_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for flight emissions filtered by campus
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblflight WHERE campus = %s;",
+            (session['campus'],)
+        )
+        total_flight_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for accommodation emissions filtered by campus
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblaccommodation WHERE campus = %s;",
+            (session['campus'],)
+        )
+        total_accommodation_records = cursor.fetchone().get('total_records', 0)
+
+        # Store in session
+        session['total_electricity_records'] = total_electricity_records
+        session['total_fuel_records'] = total_fuel_records
+        session['total_water_records'] = total_water_records
+        session['total_treated_water_records'] = total_treated_water_records
+        session['total_waste_segregated_records'] = total_waste_segregated_records
+        session['total_waste_unsegregated_records'] = total_waste_unsegregated_records
+        session['total_food_records'] = total_food_records
+        session['total_lpg_records'] = total_lpg_records
+        session['total_flight_records'] = total_flight_records
+        session['total_accommodation_records'] = total_accommodation_records
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -4935,7 +5189,17 @@ def sdo_dashboard():
         total_emission=total_emission,
         current_year=current_year,
         selected_year=selected_year,
-        campus=campus
+        campus=campus,
+        total_electricity_records=session['total_electricity_records'],
+        total_fuel_records=session['total_fuel_records'],
+        total_water_records=session['total_water_records'],
+        total_treated_water_records=session['total_treated_water_records'],
+        total_waste_segregated_records=session['total_waste_segregated_records'],
+        total_waste_unsegregated_records=session['total_waste_unsegregated_records'],
+        total_food_records=session['total_food_records'],
+        total_lpg_records=session['total_lpg_records'],
+        total_flight_records=session['total_flight_records'],
+        total_accommodation_records=session['total_accommodation_records']
     )
 
 
@@ -4946,7 +5210,10 @@ import mysql.connector
 from prophet import Prophet
 import pandas as pd
 import logging
+from flask_socketio import SocketIO
 
+# Initialize Socket.IO (ensure this is included in your app initialization)
+socketio = SocketIO(app)
 # Initialize logging
 logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -4993,14 +5260,15 @@ def sdoanalytics():
     }
 
     try:
-        # Establish database connection
+        # Database connection and queries (unchanged from the original code)
+
         conn = get_db_connection()
         if conn is None:
             raise Exception("Database connection failed.")
 
         cursor = conn.cursor(dictionary=True)
 
-        # Fetch data for categories
+        # Execute queries (fetch data for categories)
         queries = [
             ("SELECT month, kg_co2_per_kwh FROM electricity_consumption WHERE year = %s AND campus = %s ORDER BY month ASC", electricity_data, "electricity"),
             ("SELECT MONTHNAME(date) AS month, total_emission FROM fuel_emissions WHERE YEAR(date) = %s AND campus = %s ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
@@ -5128,13 +5396,10 @@ def sdoanalytics():
             future = model.make_future_dataframe(periods=periods, freq=freq)
             forecast = model.predict(future)
 
-            # Align forecast values with actual data and remove negatives
-            forecast['yhat'] = forecast['yhat'].apply(lambda x: max(0, x))  # Ensure non-negative values
+            # Extract forecasted values and apply smoothing
+            forecast_values = forecast['yhat'][-periods:].apply(lambda x: max(0, x)).tolist()
 
-            # Extract the forecasted values
-            forecast_values = forecast['yhat'][-periods:].tolist()
-
-            # Apply smoothing to align with the trend of actual data
+            # Apply smoothing
             smoothed_forecast = []
             for i in range(len(forecast_values)):
                 smoothed_value = smoothing_factor * forecast_values[i] + (1 - smoothing_factor) * (data[-1] if len(data) > 0 else 0)
@@ -5146,8 +5411,7 @@ def sdoanalytics():
             flash(f"Forecast Error: {e}", "danger")
             return [0] * periods
 
-
-    # Generate forecasts
+    # Generate forecasts for categories with monthly data (14 months for future)
     forecasts = {f"{category}_forecast": forecast_prophet(data, 14) for category, data in [
         ("electricity", electricity_data),
         ("fuel", fuel_data),
@@ -5157,9 +5421,27 @@ def sdoanalytics():
         ("treated_water", treated_water_data),
         ("lpg", lpg_data),
         ("food_waste", food_waste_data),
-        ("flight", flight_data),
-        ("accommodation", accommodation_data),
     ]}
+
+    # Accommodation and flight data remain unchanged
+    forecasts["accommodation_forecast"] = accommodation_data
+    forecasts["flight_forecast"] = flight_data
+
+      # Emit real-time updates for data and forecasts
+    socketio.emit('update_emissions', {
+        "electricity": electricity_data,
+        "fuel": fuel_data,
+        "waste_segregated": waste_segregated_data,
+        "waste_unsegregated": waste_unsegregated_data,
+        "water": water_data,
+        "treated_water": treated_water_data,
+        "lpg": lpg_data,
+        "food_waste": food_waste_data,
+        "accommodation": accommodation_data,
+        "flight": flight_data,
+    })
+
+    socketio.emit('update_forecast', forecasts)
 
     # Render the template
     return render_template(
@@ -5177,9 +5459,10 @@ def sdoanalytics():
         forecast_data=forecasts,
         selected_year=selected_year,
         current_year=current_year,
-        labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan (Next)', 'Feb (Next)'],
         yearly_labels=["2020", "2021", "2022", "2023", "2024", "2025"],
     )
+
 
 
 @app.route('/sdo_electricity_report', methods=['GET'])
@@ -7491,10 +7774,6 @@ def sdo_lpg_consumption_excel():
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-
-
-
-
 @app.route('/sdo_flight_emissions_report')
 def sdo_flight_emissions_report():
     # Ensure the user is logged in
@@ -8310,6 +8589,10 @@ def external_dashboard():
     accommodation_data = [0] * 5  # Data for 2020-2024
     current_emission_data = {"flight": 0, "accommodation": 0}
 
+    # Initialize total records
+    total_flight_records = 0
+    total_accommodation_records = 0
+
     try:
         # Establish database connection
         conn = get_db_connection()
@@ -8346,6 +8629,20 @@ def external_dashboard():
                 if 0 <= year_index < len(data_list):
                     data_list[year_index] = float(row['total_emission'])
                     current_emission_data[category] += float(row['total_emission'])
+
+        # Count total records for flight
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblflight WHERE campus = %s;",
+            (campus,)
+        )
+        total_flight_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for accommodation
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblaccommodation WHERE campus = %s;",
+            (campus,)
+        )
+        total_accommodation_records = cursor.fetchone().get('total_records', 0)
 
     except mysql.connector.Error as e:
         app.logger.error(f"Database error for campus {campus}: {e}")
@@ -8416,6 +8713,8 @@ def external_dashboard():
         current_emission_data=current_emission_data,
         selected_year=selected_year,
         current_year=current_year,
+        total_flight_records=total_flight_records,          # Total flight records
+        total_accommodation_records=total_accommodation_records  # Total accommodation records
     )
 
 @app.route('/ea_analytics')
@@ -9049,7 +9348,6 @@ def delete_accommodation(id):
             conn.close()
 
     return jsonify(response)
-    
 from datetime import datetime
 from flask import session, redirect, url_for, request, render_template, flash
 import mysql.connector
@@ -9084,6 +9382,10 @@ def procurement_dashboard():
         "food_waste": 0,
         "lpg": 0,
     }
+
+    # Initialize total records
+    total_food_waste_records = 0
+    total_lpg_records = 0
 
     # Map months to indices
     month_to_index = {
@@ -9130,6 +9432,20 @@ def procurement_dashboard():
                         data_list[month_index] = float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
+        # Count total records for food waste
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tblfoodwaste WHERE campus = %s;",
+            (campus,)
+        )
+        total_food_waste_records = cursor.fetchone().get('total_records', 0)
+
+        # Count total records for LPG
+        cursor.execute(
+            "SELECT COUNT(*) AS total_records FROM ghg_database.tbllpg WHERE campus = %s;",
+            (campus,)
+        )
+        total_lpg_records = cursor.fetchone().get('total_records', 0)
+
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
     finally:
@@ -9156,8 +9472,11 @@ def procurement_dashboard():
         selected_year=selected_year,
         current_year=current_year,
         campus=campus,
-        labels=labels
+        labels=labels,
+        total_food_waste_records=total_food_waste_records,  # Total food waste records
+        total_lpg_records=total_lpg_records                 # Total LPG records
     )
+
 
 
 @app.route('/poanalytics', methods=['GET'])

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -460,6 +461,45 @@
         accommodationChart: createForecastChart('accommodationChart', 'Accommodation Emissions', dataSeries.accommodation.historical, dataSeries.accommodation.forecast, yearlyLabels, 'red', 'purple', 'GHG Emission (kg CO2)')
     };
 
+    // Real-time updates via Socket.IO
+    const socket = io();
+
+    socket.on('update_emissions', (data) => {
+        console.log('Real-time emission update:', data);
+
+        charts.electricityChart.data.datasets[0].data = data.electricity;
+        charts.fuelChart.data.datasets[0].data = data.fuel;
+        charts.wasteSegregatedChart.data.datasets[0].data = data.waste_segregated;
+        charts.wasteUnsegregatedChart.data.datasets[0].data = data.waste_unsegregated;
+        charts.waterChart.data.datasets[0].data = data.water;
+        charts.treatedWaterChart.data.datasets[0].data = data.treated_water;
+        charts.foodWasteChart.data.datasets[0].data = data.food_waste;
+        charts.lpgChart.data.datasets[0].data = data.lpg;
+
+        // Update charts
+        for (const chart in charts) {
+            charts[chart].update();
+        }
+    });
+
+    socket.on('update_forecast', (data) => {
+        console.log('Real-time forecast update:', data);
+
+        charts.electricityChart.data.datasets[1].data = data.electricity_forecast;
+        charts.fuelChart.data.datasets[1].data = data.fuel_forecast;
+        charts.wasteSegregatedChart.data.datasets[1].data = data.waste_segregated_forecast;
+        charts.wasteUnsegregatedChart.data.datasets[1].data = data.waste_unsegregated_forecast;
+        charts.waterChart.data.datasets[1].data = data.water_forecast;
+        charts.treatedWaterChart.data.datasets[1].data = data.treated_water_forecast;
+        charts.foodWasteChart.data.datasets[1].data = data.food_waste_forecast;
+        charts.lpgChart.data.datasets[1].data = data.lpg_forecast;
+
+        // Update charts
+        for (const chart in charts) {
+            charts[chart].update();
+        }
+    });
+
     // Toggle forecast visibility
     document.getElementById('toggleForecast').addEventListener('click', () => {
         const showForecast = document.getElementById('toggleForecast').innerText === 'Show Forecast';
@@ -470,6 +510,7 @@
         document.getElementById('toggleForecast').innerText = showForecast ? 'Hide Forecast' : 'Show Forecast';
     });
 </script>
+
 
 
 
