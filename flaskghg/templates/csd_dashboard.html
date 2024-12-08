@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -293,7 +294,8 @@
                             <div class="card bg-dark text-white h-100">
                                 <div class="card-body">
                                     <div class="card-title">Total Emission</div>
-                                    <div><strong>Total CO₂ Emission:</strong> 
+                                    <div>
+                                        <strong>Total CO₂ Emission:</strong> 
                                         <span style="font-size: 1.5em; font-weight: bold; color: white;">
                                             {{ "{:.2f}".format(current_emission_data['electricity'] + current_emission_data['fuel'] + current_emission_data['waste_segregated'] + current_emission_data['waste_unsegregated'] + current_emission_data['water'] + current_emission_data['treated_water'] + current_emission_data['lpg'] + current_emission_data['food_waste'] + current_emission_data['accommodation'] + current_emission_data['flight']) }} CO₂e
                                         </span>
@@ -311,6 +313,15 @@
                                         <strong>Total Tree Offset for {{ selected_year }}:</strong>
                                         <span style="font-size: 1.5em; font-weight: bold; color: white;">
                                             {{ current_emission_data['tree_offset'] }} Trees
+                                            <span class="indicator">
+                                                {% if current_emission_data['tree_offset'] > previous_emission_data['tree_offset'] %}
+                                                    <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                {% elif current_emission_data['tree_offset'] < previous_emission_data['tree_offset'] %}
+                                                    <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                {% else %}
+                                                    <i class="fa fa-minus" style="color: gray;"></i>
+                                                {% endif %}
+                                            </span>
                                         </span>
                                     </div>
                                 </div>
@@ -319,232 +330,345 @@
                     </div>
                     
 
-
-<div class="container">
-    <div class="row justify-content-center">
-       <!-- Electricity Card -->
-<div class="col-xl-2 col-md-4 mb-4">
-    <a href="{{ url_for('electricity_report') }}" class="text-decoration-none">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="card-title">Electricity</div>
-                <div><strong>Current Emission:</strong> 
-                    <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                        {{ "{:.2f}".format(current_emission_data["electricity"]) }} CO₂e
-                    </span>
-                </div>
-            </div>
-            <div class="mt-3">
-                <strong>Electricity Records:</strong>
-                <span style="font-size: 1rem; font-weight: bold; color: white;">
-                    {{ total_records.electricity }}
-                </span>
-            </div>
-        </div>
-    </a>
-    
-</div>
-
-
-        <!-- Fuel Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('fuel_emissions_report') }}" class="text-decoration-none">
-            <div class="card bg-warning text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">Fuel</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(current_emission_data.fuel) }} CO₂e
-                        </span>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <!-- Electricity Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('electricity_report') }}" class="text-decoration-none">
+                                    <div class="card bg-primary text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Electricity</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data["electricity"]) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['electricity'] > previous_emission_data['electricity'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['electricity'] < previous_emission_data['electricity'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Electricity Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.electricity }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Fuel Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('fuel_emissions_report') }}" class="text-decoration-none">
+                                    <div class="card bg-warning text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Fuel</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data.fuel) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['fuel'] > previous_emission_data['fuel'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['fuel'] < previous_emission_data['fuel'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Fuel Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.fuel }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Waste Segregated Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('waste_segregation_report') }}" class="text-decoration-none">
+                                    <div class="card bg-success text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Waste Segregated</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data.waste_segregated) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['waste_segregated'] > previous_emission_data['waste_segregated'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['waste_segregated'] < previous_emission_data['waste_segregated'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Waste Segregated Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.waste_segregated }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Waste Unsegregated Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('waste_unseg_report') }}" class="text-decoration-none">
+                                    <div class="card bg-danger text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Waste Unsegregated</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data.waste_unsegregated) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['waste_unsegregated'] > previous_emission_data['waste_unsegregated'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['waste_unsegregated'] < previous_emission_data['waste_unsegregated'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Waste Unsegregated Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.waste_unsegregated }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Treated Water Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('treated_water_report') }}" class="text-decoration-none">
+                                    <div class="card bg-info text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Treated Water</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data["treated_water"]) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['treated_water'] > previous_emission_data['treated_water'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['treated_water'] < previous_emission_data['treated_water'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Treated Water Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.treated_water }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Water Consumption Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('water_report') }}" class="text-decoration-none">
+                                    <div class="card bg-secondary text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Water Consumption</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data["water"]) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['water'] > previous_emission_data['water'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['water'] < previous_emission_data['water'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Water Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.water }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- LPG Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('lpg_consumption_report') }}" class="text-decoration-none">
+                                    <div class="card bg-dark text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">LPG</div>
+                                            <div>
+                                                    <strong>Current Emission:</strong>
+                                                    <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                        {{ "{:.2f}".format(current_emission_data.lpg) }} CO₂e
+                                                        <span class="indicator">
+                                                            {% if current_emission_data['lpg'] > previous_emission_data['lpg'] %}
+                                                                <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                            {% elif current_emission_data['lpg'] < previous_emission_data['lpg'] %}
+                                                                <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                            {% else %}
+                                                                <i class="fa fa-minus" style="color: gray;"></i>
+                                                            {% endif %}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <strong>LPG Records:</strong>
+                                                <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                    {{ total_records.lpg }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        </a>
+                                    </div>
+                    
+                            <!-- Food Waste Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('food_consumption_report') }}" class="text-decoration-none">
+                                    <div class="card bg-light text-dark h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Food Waste</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: black;">
+                                                    {{ "{:.2f}".format(current_emission_data["food_waste"]) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['food_waste'] > previous_emission_data['food_waste'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['food_waste'] < previous_emission_data['food_waste'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Food Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: black;">
+                                                {{ total_records.food_waste }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Accommodation Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('accommodation_emissions_report') }}" class="text-decoration-none">
+                                    <div class="card bg-light text-dark h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Accommodation</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: black;">
+                                                    {{ "{:.2f}".format(current_emission_data["accommodation"]) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['accommodation'] > previous_emission_data['accommodation'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['accommodation'] < previous_emission_data['accommodation'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Accommodation Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: black;">
+                                                {{ total_records.accommodation }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                    
+                            <!-- Flight Card -->
+                            <div class="col-xl-2 col-md-4 mb-4">
+                                <a href="{{ url_for('flight_emissions_report') }}" class="text-decoration-none">
+                                    <div class="card bg-dark text-white h-100">
+                                        <div class="card-body">
+                                            <div class="card-title">Flight</div>
+                                            <div>
+                                                <strong>Current Emission:</strong>
+                                                <span style="font-size: 1.5em; font-weight: bold; color: white;">
+                                                    {{ "{:.2f}".format(current_emission_data["flight"]) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% if current_emission_data['flight'] > previous_emission_data['flight'] %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_emission_data['flight'] < previous_emission_data['flight'] %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <strong>Flight Records:</strong>
+                                            <span style="font-size: 1rem; font-weight: bold; color: white;">
+                                                {{ total_records.flight }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Fuel Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.fuel }}
-                    </span>
-                </div>
-            </div>
-        </a>
-        </div>
+                    
 
-        <!-- Waste Segregated Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('waste_segregation_report') }}" class="text-decoration-none">
-            <div class="card bg-success text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">Waste Segregated</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(current_emission_data.waste_segregated) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Waste Segregated Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.waste_segregated }}
-                    </span>
-                </div>
-            </div>
-        </a>
-        </div>
-
-        <!-- Waste Unsegregated Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('waste_unseg_report') }}" class="text-decoration-none">
-            <div class="card bg-danger text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">Waste Unsegregated</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(current_emission_data.waste_unsegregated) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Waste Unsegregated Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.waste_unsegregated }}
-                    </span>
-                </div>
-            </div>
-        </a>
-        </div>
-
-        <!-- Treated Water Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('treated_water_report') }}" class="text-decoration-none">
-            <div class="card bg-info text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">Treated Water</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(treated_water_data[-1] if treated_water_data else 0) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Treated Water Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.treated_water }}
-                    </span>
-                </div>
-            </div>
-            </a>
-        </div>
-
-        <!-- Water Consumption Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('water_report') }}" class="text-decoration-none">
-            <div class="card bg-secondary text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">Water Consumption</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(current_emission_data.water) }} lCO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Water Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.water }}
-                    </span>
-                </div>
-            </div>
-            </a>
-        </div>
-
-        <!-- LPG Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('lpg_consumption_report') }}" class="text-decoration-none">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">LPG</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(current_emission_data.lpg) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>LPG Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.lpg }}
-                    </span>
-                </div>
-            </div>
-            </a>
-        </div>
-
-        <!-- Food Waste Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('food_consumption_report') }}" class="text-decoration-none">
-            <div class="card bg-light text-dark h-100">
-                <div class="card-body">
-                    <div class="card-title">Food Waste</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: black;">
-                            {{ "{:.2f}".format(current_emission_data.food_waste) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Food Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.food }}
-                    </span>
-                </div>
-            </div>
-            </a>
-        </div>
-
-        <!-- Accommodation Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('accommodation_emissions_report') }}" class="text-decoration-none">
-            <div class="card bg-light text-dark h-100">
-                <div class="card-body">
-                    <div class="card-title">Accommodation</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: black;">
-                            {{ "{:.2f}".format(current_emission_data['accommodation']) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong>Accommodation Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.accommodation }}
-                    </span>
-                </div>
-            </div>
-            </a>
-        </div>
-
-        <!-- Flight Card -->
-        <div class="col-xl-2 col-md-4 mb-4">
-            <a href="{{ url_for('flight_emissions_report') }}" class="text-decoration-none">
-            <div class="card bg-dark text-white h-100">
-                <div class="card-body">
-                    <div class="card-title">Flight</div>
-                    <div><strong>Current Emission:</strong> 
-                        <span style="font-size: 1.5em; font-weight: bold; color: white;">
-                            {{ "{:.2f}".format(current_emission_data['flight']) }} CO₂e
-                        </span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <strong> Flight Records:</strong>
-                    <span style="font-size: 1rem; font-weight: bold; color: white;">
-                        {{ total_records.flight }}
-                    </span>
-                </div>
-            </div>
-            </a>
-        </div>
-    </div>
-</div>
+<style>
+/* Animation for bounce effect */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+</style>
 <br>
 
 

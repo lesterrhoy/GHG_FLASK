@@ -5,170 +5,202 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Manage Account</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/CSD.png') }}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <style>
-        /* Overall color scheme */
         body {
-            background-color: white; /* Cream background */
-            color: #333; /* Dark gray text */
-            font-family: Arial, sans-serif;
-        }
-
-        /* Form and Card Container */
-        .form-container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #fff; /* White background for forms */
-            color: #333; /* Dark gray text */
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-        }
-
-        .form-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .form-header h2 {
-            font-size: 28px;
-            font-weight: 600;
-            color: #d32f2f; /* Red for headers */
-        }
-
-        /* Input field styling */
-        .form-control {
-            background-color: #fafafa; /* Light background for input fields */
-            border: 1px solid #ccc; /* Light gray border */
-            color: #333; /* Dark gray text inside inputs */
-        }
-
-        .form-control:focus {
-            border-color: #d32f2f; /* Red focus for inputs */
-            box-shadow: 0 0 8px rgba(211, 47, 47, 0.2);
-        }
-
-        /* Dropdown Styling */
-        .dropdown-icon-wrapper {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .dropdown-icon-wrapper select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            width: 100%;
-            padding-right: 30px;
-            box-sizing: border-box;
-            background-color: #fafafa; /* Same as input background */
-            border: 1px solid #ccc;
-            color: #333;
-        }
-
-        .dropdown-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-            font-size: 16px;
-            color: #d32f2f; /* Red icon */
-        }
-
-        /* Button Styling */
-        .btn-primary {
-            background-color: #d32f2f; /* Red background for buttons */
-            border: none;
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            width: 100%;
-            color: #fff; /* White text on buttons */
-            margin-top: 20px;
-        }
-
-        .btn-primary:hover {
-            background-color: #b71c1c; /* Darker red on hover */
-        }
-
-        /* Footer Styling */
-        footer {
-            background-color: #fff; /* White footer background */
-            color: #333; /* Dark gray text */
-            padding: 20px;
-            text-align: center;
-        }
-
-        footer a {
-            color: #d32f2f; /* Red links */
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-        .table-container {
-        background-color: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .table th, .table td {
-        vertical-align: middle; /* Align text and inputs vertically */
-    }
-
-    .table th {
-        background-color: #f8f9fa; /* Light gray header */
-    }
-
-    .table input {
-        height: 38px; /* Match button height for uniform rows */
-        border-radius: 4px; /* Rounded edges for inputs */
-    }
-
-    .table .btn {
-        padding: 5px 10px;
-        font-size: 14px; /* Smaller font for buttons */
-    }
-
-    .btn-save {
-        background-color: #28a745; /* Green Save button */
-        border: none;
-        color: white;
-    }
-
-    .btn-save:hover {
-        background-color: #218838; /* Darker green on hover */
-    }
-
-    .btn-delete {
-        background-color: #dc3545; /* Red Delete button */
-        border: none;
-        color: white;
-    }
-
-    .btn-delete:hover {
-        background-color: #c82333; /* Darker red on hover */
-    }
-
-        /* Responsive Adjustments */
-        @media (max-width: 576px) {
-            .form-container {
-                margin: 20px;
-                padding: 15px;
-            }
-
-            .form-header h2 {
-                font-size: 24px;
-            }
-        }
-    </style>
+          background-color: #f8f9fa;
+          color: #333;
+          font-family: 'Arial', sans-serif;
+          margin: 0;
+          padding: 0;
+      }
+      
+      /* General Card Styling */
+      .card {
+          border: none;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          margin-bottom: 20px;
+          background-color: #fff;
+      }
+      
+      .card-header {
+          font-size: 18px;
+          font-weight: bold;
+          padding: 15px;
+          text-transform: uppercase;
+          color: #fff;
+          border-top-left-radius: 8px;
+          border-top-right-radius: 8px;
+          text-align: center;
+      }
+      
+      .card-header.bg-primary {
+          background-color: #ff4d4f; /* Red color for "Create New Account" */
+      }
+      
+      .card-header.bg-secondary {
+          background-color: #6c757d; /* Gray color for "Existing Accounts" */
+      }
+      
+      .card-body {
+          padding: 20px;
+          font-size: 14px;
+      }
+      
+      /* Button Styling */
+      .btn-save {
+          background-color: #28a745;
+          color: #fff;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 13px;
+          transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+      
+      .btn-save:hover {
+          background-color: #218838;
+          transform: scale(1.05);
+      }
+      
+      .btn-delete {
+          background-color: #dc3545;
+          color: #fff;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 13px;
+          transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+      
+      .btn-delete:hover {
+          background-color: #c82333;
+          transform: scale(1.05);
+      }
+      
+      /* Table Styling */
+      .table {
+          border-collapse: collapse;
+          width: 100%;
+          font-size: 14px;
+          color: #333;
+          background-color: #fff;
+          margin-top: 1rem;
+          text-align: center;
+      }
+      
+      .table thead {
+          background-color: #f8f9fa;
+          font-weight: bold;
+      }
+      
+      .table th,
+      .table td {
+          border: 1px solid #dee2e6;
+          padding: 10px;
+          vertical-align: middle;
+          text-align: center;
+      }
+      
+      .table tbody tr:hover {
+          background-color: #f1f3f5;
+          cursor: pointer;
+      }
+      
+      .table td input[type="text"],
+      .table td input[type="email"] {
+          border: 1px solid #ced4da;
+          border-radius: 4px;
+          padding: 5px 8px;
+          width: 100%;
+          font-size: 13px;
+          color: #495057;
+      }
+      
+      /* Form Styling */
+      .form-label {
+          font-weight: bold;
+          margin-bottom: 5px;
+          display: block;
+          color: #333;
+      }
+      
+      .form-control {
+          border: 1px solid #ced4da;
+          border-radius: 6px;
+          padding: 10px;
+          font-size: 14px;
+          color: #495057;
+          margin-bottom: 15px;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .form-control:focus {
+          border-color: #ff4d4f;
+          box-shadow: 0 0 5px rgba(255, 77, 79, 0.25);
+      }
+      
+      /* Flash Messages */
+      .alert {
+          font-size: 14px;
+          margin-bottom: 10px;
+          border-radius: 4px;
+          padding: 10px;
+          font-weight: bold;
+      }
+      /* Styling for the dropdowns (select elements) */
+      select.form-control {
+          font-size: 14px;
+          padding: 8px 12px;
+          border: 1px solid #ced4da;
+          border-radius: 6px;
+          background-color: #fff;
+          color: #495057;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      /* Hover and focus effects */
+      select.form-control:focus {
+          border-color: #007bff;
+          box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+          outline: none;
+      }
+      
+      /* Optional: Increase width for better readability */
+      select.form-control {
+          width: 100%; /* Ensures it takes the full width of the container */
+      }
+      
+      /* Improve spacing between the dropdowns */
+      .mb-3 {
+          margin-bottom: 20px;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+          .card-body {
+              padding: 15px;
+          }
+      
+          .btn-save,
+          .btn-delete {
+              font-size: 12px;
+              padding: 5px 10px;
+          }
+      
+          table th,
+          table td {
+              font-size: 12px;
+              padding: 8px;
+          }
+      }
+      
+      </style>
 </head>
 
 <body class="sb-nav-fixed">
@@ -210,7 +242,9 @@
        <!-- Main Content Area -->
 <div id="layoutSidenav_content">
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Manage Account</h1>
+        <h1 class="mt-4" style="display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: bold; color: #333;">
+            <i class="fas fa-users-cog" style="color: #007bff;"></i> Manage Accounts
+        </h1>
         <div class="row">
             <!-- Manage Account Form -->
             <div class="col-lg-5 mb-4">
@@ -219,6 +253,12 @@
                         <h5 class="mb-0">Create New Account</h5>
                     </div>
                     <div class="card-body">
+                           <!-- Directions -->
+                           <p style="font-size: 14px; color: #555; margin-bottom: 20px;">
+                            Fill out the form below to create a new account. Make sure all fields are filled out 
+                            accurately. Select the appropriate office and campus from the dropdown menus.
+                        </p>
+
                         <!-- Flash Messages -->
                         {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}

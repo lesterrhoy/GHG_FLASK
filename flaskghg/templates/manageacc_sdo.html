@@ -6,54 +6,204 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SDO Report</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/sdo.jpg') }}" type="image/x-icon">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/emucss.css') }}" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<style>
+  body {
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
 
-    <style>
-        body {
-            background-color: #f8f9fa;
-            color: #333;
-        }
+/* General Card Styling */
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    background-color: #fff;
+}
 
-        .card-header {
-            font-size: 16px;
-            font-weight: bold;
-        }
+.card-header {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 15px;
+    text-transform: uppercase;
+    color: #fff;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    text-align: center;
+}
 
-        .table th,
-        .table td {
-            vertical-align: middle;
-            text-align: center;
-        }
+.card-header.bg-primary {
+    background-color: #ff4d4f; /* Red color for "Create New Account" */
+}
 
-        .table th {
-            background-color: #f8f9fa;
-        }
+.card-header.bg-secondary {
+    background-color: #6c757d; /* Gray color for "Existing Accounts" */
+}
 
-        .btn-save {
-            background-color: #28a745;
-            color: white;
-            border: none;
-        }
+.card-body {
+    padding: 20px;
+    font-size: 14px;
+}
 
-        .btn-save:hover {
-            background-color: #218838;
-        }
+/* Button Styling */
+.btn-save {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
 
-        .btn-delete {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-        }
+.btn-save:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
 
-        .btn-delete:hover {
-            background-color: #c82333;
-        }
-    </style>
+.btn-delete {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+}
+
+/* Table Styling */
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    color: #333;
+    background-color: #fff;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.table thead {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.table th,
+.table td {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f3f5;
+    cursor: pointer;
+}
+
+.table td input[type="text"],
+.table td input[type="email"] {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 5px 8px;
+    width: 100%;
+    font-size: 13px;
+    color: #495057;
+}
+
+/* Form Styling */
+.form-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+    color: #333;
+}
+
+.form-control {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    color: #495057;
+    margin-bottom: 15px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #ff4d4f;
+    box-shadow: 0 0 5px rgba(255, 77, 79, 0.25);
+}
+
+/* Flash Messages */
+.alert {
+    font-size: 14px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    padding: 10px;
+    font-weight: bold;
+}
+/* Styling for the dropdowns (select elements) */
+select.form-control {
+    font-size: 14px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #495057;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover and focus effects */
+select.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* Optional: Increase width for better readability */
+select.form-control {
+    width: 100%; /* Ensures it takes the full width of the container */
+}
+
+/* Improve spacing between the dropdowns */
+.mb-3 {
+    margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px;
+    }
+
+    .btn-save,
+    .btn-delete {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+
+    table th,
+    table td {
+        font-size: 12px;
+        padding: 8px;
+    }
+}
+
+</style>
 </head>
 
 <body class="sb-nav-fixed">
@@ -91,8 +241,10 @@
 
         <div id="layoutSidenav_content">
             <main class="container-fluid px-4">
-                <h1 class="mt-4">Manage Accounts</h1>
-                <div class="row">
+                <h1 class="mt-4" style="display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: bold; color: #333;">
+                    <i class="fas fa-users-cog" style="color: #007bff;"></i> Manage Accounts
+                </h1>
+                                <div class="row">
                     <!-- Account Creation Form -->
                     <div class="col-lg-5 mb-4">
                         <div class="card shadow-sm">
@@ -100,6 +252,12 @@
                                 <h5>Create New Account</h5>
                             </div>
                             <div class="card-body">
+                                <!-- Directions -->
+                                <p style="font-size: 14px; color: #555; margin-bottom: 20px;">
+                                    Fill out the form below to create a new account. Make sure all fields are filled out 
+                                    accurately. Select the appropriate office and campus from the dropdown menus.
+                                </p>
+        
                                 <!-- Flash Messages -->
                                 {% with messages = get_flashed_messages(with_categories=true) %}
                                 {% if messages %}
@@ -108,13 +266,13 @@
                                 {% endfor %}
                                 {% endif %}
                                 {% endwith %}
-
+        
                                 <form action="{{ url_for('manageacc_sdo') }}" method="POST">
                                     <div class="mb-3">
                                         <label for="username" class="form-label">Username</label>
                                         <input type="text" class="form-control" id="username" name="username" required>
                                     </div>
-
+        
                                     <div class="mb-3">
                                         <label for="office" class="form-label">Office</label>
                                         <select class="form-control" id="office" name="office" required>
@@ -124,7 +282,7 @@
                                             <option value="Procurement Office">Procurement Office</option>
                                         </select>
                                     </div>
-
+                                    
                                     <div class="mb-3">
                                         <label for="campus" class="form-label">Campus</label>
                                         <select class="form-control" id="campus" name="campus" required>
@@ -143,23 +301,24 @@
                                             <option value="San Juan">San Juan</option>
                                         </select>
                                     </div>
-
+                                    
+        
                                     <div class="mb-3">
                                         <label for="email" class="form-label">Email</label>
                                         <input type="email" class="form-control" id="email" name="email" required>
                                     </div>
-
+        
                                     <div class="mb-3">
                                         <label for="password" class="form-label">Password</label>
                                         <input type="password" class="form-control" id="password" name="password" required>
                                     </div>
-
+        
                                     <button type="submit" class="btn btn-primary w-100">Create Account</button>
                                 </form>
                             </div>
                         </div>
                     </div>
-
+        
                     <!-- Existing Accounts Table -->
                     <div class="col-lg-7">
                         <div class="card shadow-sm">
@@ -215,6 +374,7 @@
                 </div>
             </main>
         </div>
+
     </div>
 </body>
 

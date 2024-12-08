@@ -44,20 +44,20 @@
 }
 .pagination .page-link {
     background-color: white;
-    color: #d50000;
-    border-color: #d50000;
+    color: #f44336;
+    border-color: #f44336;
     transition: background-color 0.3s, color 0.3s;
 }
 
 .pagination .page-link:hover {
-    background-color: #a30000; /* Darker red on hover */
+    background-color: #f44336; /* Darker red on hover */
     color: white;
 }
 
 .pagination .page-item.active .page-link {
-    background-color: #d50000;
+    background-color: #f44336;
     color: white;
-    border-color: #d50000;
+    border-color: #f44336;
 }
 
 
@@ -107,22 +107,111 @@
         }
     
         /* Table Styling */
+         /* Simula dito yung style  pababa*/
+   body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f8fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .table-wrapper {
+            margin: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h1 {
+            font-size: 20px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .table-header .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-header .actions button {
+            border: none;
+            padding: 10px 15px;
+            background-color: #003c57;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .table-header .actions button:hover {
+            background-color: #00587a;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
         }
-    
+
         th, td {
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ddd;
+            padding: 15px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
         }
-    
         th {
-            background-color: #f2f2f2;
-            color: #000;
+            background: linear-gradient(180deg, #f5b3b3, #f77d7d, #f5756c, #c62828); /* Bold red gradient */
+            color: #FFFFFF; /* White text for contrast */
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            padding: 10px;
+            transition: background 0.3s ease, color 0.3s ease;
         }
+
+        th:hover {
+            background: linear-gradient(180deg, #f89f9f, #f85e5e, #e53935, #b71c1c); /* Slightly darker red tones on hover */
+            color: #080404; /* Maintain contrast */
+            cursor: pointer;
+        }
+
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        td {
+            font-size: 10px;
+            color: #333;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #eef5f9;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
 
         .content {
             flex: 1;
@@ -285,6 +374,7 @@
             
             <div class="table-responsive mt-4">
                 <h3>Food Waste Report</h3>
+                <div class="table-wrapper">
                 <table class="table table-bordered mt-4" id="food_data">
                     <thead>
                         <tr>
@@ -319,6 +409,7 @@
                         {% endif %}
                     </tbody>
                 </div>
+                </div>
                 </table>
         
                 <!-- Pagination -->
@@ -344,14 +435,14 @@
     </nav>
                 <div class="mb-4">
                     <!-- Button for PDF Download -->
-                    <a href="{{ url_for('sdo_food_consumption_pdf', campus=campus_filter, month=month_filter, year=year_filter, office=office_filter) }}" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000; color: white;">
+                    <a href="{{ url_for('sdo_food_consumption_pdf', campus=campus_filter, month=month_filter, year=year_filter, office=office_filter) }}" class="btn btn-primary" style="background-color: #f44336; color: #ffffff;">
                         <i class="fas fa-download"></i> Download PDF Report
                     </a>
                     <!-- Button for Excel Download -->
-                    <a href="{{ url_for('sdo_food_consumption_excel', campus=campus_filter, month=month_filter, year=year_filter, office=office_filter) }}" class="btn btn-success" style="background-color: #d50000; border-color: #d50000; color: white;">
+                    <a href="{{ url_for('sdo_food_consumption_excel', campus=campus_filter, month=month_filter, year=year_filter, office=office_filter) }}" class="btn btn-success" style="background-color: #f44336; color: #ffffff;">
                         <i class="fas fa-download"></i> Download Excel Report
                     </a>
-                    <button id="downloadCSV" class="btn btn-warning" style="background-color: #d50000; border-color: #d50000; color: white;">
+                    <button id="downloadCSV" class="btn btn-warning" style="background-color: #f44336; color: #ffffff;">
                         <i class="fas fa-download"></i> Download CSV Report
                     </button>
                     <br>

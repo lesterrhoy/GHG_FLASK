@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,7 +143,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div class="row">
                                 <!-- Flight Emissions Card -->
                                 <div class="col-xl-6 col-md-12">
@@ -153,6 +153,17 @@
                                                 <strong>Current Emission:</strong>
                                                 <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;">
                                                     {{ "%.2f"|format(forecast_data['flight_forecast']['prophet']['forecast'][-1] if forecast_data['flight_forecast']['prophet']['forecast'] else 0) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% set current_flight = forecast_data['flight_forecast']['prophet']['forecast'][-1] if forecast_data['flight_forecast']['prophet']['forecast'] else 0 %}
+                                                        {% set previous_flight = forecast_data['flight_forecast']['prophet']['forecast'][-2] if forecast_data['flight_forecast']['prophet']['forecast'] and forecast_data['flight_forecast']['prophet']['forecast']|length > 1 else 0 %}
+                                                        {% if current_flight > previous_flight %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_flight < previous_flight %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div class="mt-3">
@@ -168,9 +179,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                
                             
-                                
+                                <!-- Accommodation Emissions Card -->
                                 <div class="col-xl-6 col-md-12">
                                     <div class="card bg-warning text-white mb-4" style="height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
                                         <div class="card-body">
@@ -179,6 +189,17 @@
                                                 <strong>Current Emission:</strong>
                                                 <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;">
                                                     {{ "%.2f"|format(forecast_data['accommodation_forecast']['prophet']['forecast'][-1] if forecast_data['accommodation_forecast']['prophet']['forecast'] else 0) }} CO₂e
+                                                    <span class="indicator">
+                                                        {% set current_accommodation = forecast_data['accommodation_forecast']['prophet']['forecast'][-1] if forecast_data['accommodation_forecast']['prophet']['forecast'] else 0 %}
+                                                        {% set previous_accommodation = forecast_data['accommodation_forecast']['prophet']['forecast'][-2] if forecast_data['accommodation_forecast']['prophet']['forecast'] and forecast_data['accommodation_forecast']['prophet']['forecast']|length > 1 else 0 %}
+                                                        {% if current_accommodation > previous_accommodation %}
+                                                            <i class="fa fa-arrow-up" style="color: red; animation: bounce 1s infinite;"></i>
+                                                        {% elif current_accommodation < previous_accommodation %}
+                                                            <i class="fa fa-arrow-down" style="color: green; animation: bounce 1s infinite;"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-minus" style="color: gray;"></i>
+                                                        {% endif %}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div class="mt-3">
@@ -194,7 +215,23 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+                            </div>
+                            
+                            <style>
+                            /* Animation for bounce effect */
+                            @keyframes bounce {
+                                0%, 20%, 50%, 80%, 100% {
+                                    transform: translateY(0);
+                                }
+                                40% {
+                                    transform: translateY(-10px);
+                                }
+                                60% {
+                                    transform: translateY(-5px);
+                                }
+                            }
+                            </style>
+                            
                         
                         <style>
                             .highlighted-result {

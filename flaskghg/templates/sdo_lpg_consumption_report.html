@@ -99,20 +99,20 @@
 }
 .pagination .page-link {
     background-color: white;
-    color: #d50000;
-    border-color: #d50000;
+    color: #f44336;
+    border-color: #f44336;
     transition: background-color 0.3s, color 0.3s;
 }
 
 .pagination .page-link:hover {
-    background-color: #a30000; /* Darker red on hover */
+    background-color: #f44336; /* Darker red on hover */
     color: white;
 }
 
 .pagination .page-item.active .page-link {
-    background-color: #d50000;
+    background-color: #f44336;
     color: white;
-    border-color: #d50000;
+    border-color: #f44336;
 }
 
         .content {
@@ -338,33 +338,22 @@
         </ul>
     </nav>
 
-<div class="mb-4">
-    <!-- Button for PDF Download -->
-    <a href="{{ url_for('sdo_lpg_consumption_pdf', campus=campus_filter, year=year_filter, month=month_filter, office=office_filter) }}" class="btn btn-primary"  style="background-color: #d50000; border-color: #d50000; color: white;">
-        <i class="fas fa-download"></i> Download PDF Report
-    </a>
-    <!-- Button for Excel Download -->
-    <a href="{{ url_for('sdo_lpg_consumption_excel', campus=campus_filter, year=year_filter, month=month_filter, office=office_filter) }}" class="btn btn-success"  style="background-color: #d50000; border-color: #d50000; color: white;">
-        <i class="fas fa-download"></i> Download Excel Report
-    </a>
-    <button id="downloadCSV" class="btn btn-warning" style="background-color: #d50000; border-color: #d50000; color: white;">
-        <i class="fas fa-download"></i> Download CSV Report
-    </button>
-</div>
+    <div class="mb-4">
+        <!-- Button for PDF Download -->
+        <a href="{{ url_for('sdo_lpg_consumption_pdf', campus=campus_filter, year=year_filter, month=month_filter, office=office_filter) }}" class="btn btn-primary" style="background-color: #f44336; color: #ffffff;">
+            <i class="fas fa-download"></i> Download PDF Report
+        </a>
+        <!-- Button for Excel Download -->
+        <a href="{{ url_for('sdo_lpg_consumption_excel', campus=campus_filter, year=year_filter, month=month_filter, office=office_filter) }}" class="btn btn-success" style="background-color: #f44336; color: #ffffff;">
+            <i class="fas fa-download"></i> Download Excel Report
+        </a>
+        <!-- Button for CSV Download -->
+        <a href="{{ url_for('sdo_lpg_consumption_csv', campus=campus_filter, year=year_filter, month=month_filter, office=office_filter) }}" class="btn btn-warning" style="background-color: #f44336; color: #ffffff;">
+            <i class="fas fa-download"></i> Download CSV Report
+        </a>
+    </div>
+    
+
             </div>
         </div>
-        
-        <script>
-            document.getElementById("downloadCSV").addEventListener("click", function () {
-                const year = document.getElementById("year").value;
-                const month = document.getElementById("month").value;
-                const office = document.getElementById("office").value;
-        
-                // Construct the URL with query parameters for filtering
-                const url = `/export_lpg_consumption_csv?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&office=${encodeURIComponent(office)}`;
-        
-                // Redirect to the URL to initiate the download
-                window.location.href = url;
-            });
-        </script>
         

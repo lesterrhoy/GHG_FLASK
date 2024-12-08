@@ -2037,7 +2037,21 @@ def csd_dashboard():
         "lpg": 0,
         "flight": 0,
         "accommodation": 0,
-        "tree_offset": 0,  # Add tree_offset field
+        "tree_offset": 0,
+    }
+
+    previous_emission_data = {
+        "electricity": 0,
+        "fuel": 0,
+        "waste_segregated": 0,
+        "waste_unsegregated": 0,
+        "water": 0,
+        "treated_water": 0,
+        "food_waste": 0,
+        "lpg": 0,
+        "flight": 0,
+        "accommodation": 0,
+        "tree_offset": 0,
     }
 
     total_records = {
@@ -2065,33 +2079,41 @@ def csd_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Tree Offset Query
+        # Tree Offset Query for Current and Previous Years
         tree_offset_query = """
             SELECT SUM(tree_offset) AS total_tree_offset
             FROM electricity_consumption
             WHERE year = %s {campus_filter}
         """
-        cursor.execute(tree_offset_query.format(campus_filter=campus_filter), 
+        # Current year
+        cursor.execute(tree_offset_query.format(campus_filter=campus_filter),
                        (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
         row = cursor.fetchone()
-        if row and row['total_tree_offset'] is not None:
-            current_emission_data['tree_offset'] = int(row['total_tree_offset'])
-        else:
-            current_emission_data['tree_offset'] = 0  # Default value if no data
+        current_emission_data['tree_offset'] = int(row['total_tree_offset'] or 0)
 
-        # Emission Data Queries
+        # Previous year
+        cursor.execute(tree_offset_query.format(campus_filter=campus_filter),
+                       (selected_year - 1, selected_campus) if selected_campus != 'all' else (selected_year - 1,))
+        row = cursor.fetchone()
+        previous_emission_data['tree_offset'] = int(row['total_tree_offset'] or 0)
+
+        # Emission Data Queries for Current and Previous Years
         queries = [
             ("SELECT month, SUM(kg_co2_per_kwh) AS total_emission FROM electricity_consumption WHERE year = %s {campus_filter} GROUP BY month ORDER BY month ASC", electricity_data, "electricity"),
             ("SELECT MONTHNAME(date) AS month, SUM(total_emission) AS total_emission FROM fuel_emissions WHERE YEAR(date) = %s {campus_filter} GROUP BY MONTH(date) ORDER BY MONTH(date) ASC", fuel_data, "fuel"),
             ("SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblsolidwastesegregated WHERE Year = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_segregated_data, "waste_segregated"),
             ("SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblsolidwasteunsegregated WHERE Year = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", waste_unsegregated_data, "waste_unsegregated"),
             ("SELECT MONTHNAME(Date) AS month, SUM(FactorKGCO2e) AS total_emission FROM tblwater WHERE YEAR(Date) = %s {campus_filter} GROUP BY MONTHNAME(Date) ORDER BY FIELD(MONTHNAME(Date), 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", water_data, "water"),
+            ("SELECT MONTHNAME(date) AS month, SUM(kg_co2) AS total_emission FROM tbl_lpg WHERE YEAR(date) = %s {campus_filter} GROUP BY MONTH(date) ORDER BY MONTH(date) ASC", lpg_data, "lpg"),
         ]
 
         for query, data_list, category in queries:
-            cursor.execute(query.format(campus_filter=campus_filter), 
+            # Current year
+            cursor.execute(query.format(campus_filter=campus_filter),
                            (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
-            for row in cursor.fetchall():
+            rows = cursor.fetchall()
+            total_records[category] += len(rows)  # Count the number of records
+            for row in rows:
                 month_index = month_to_index.get(row.get('month') or row.get('Month'), -1)
                 if month_index != -1:
                     emission_value = row.get('total_emission')
@@ -2099,115 +2121,15 @@ def csd_dashboard():
                         data_list[month_index] += float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
-        # Additional Queries for other categories
-        additional_queries = [
-            ("SELECT Month AS month, SUM(FactorKGCO2e) AS total_emission FROM tbltreatedwater WHERE YEAR(CURDATE()) = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", treated_water_data, "treated_water"),
-            ("SELECT Month AS month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tblfoodwaste WHERE YearTransaction = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", food_waste_data, "food_waste"),
-            ("SELECT Month AS month, SUM(GHGEmissionKGCO2e) AS total_emission FROM tbllpg WHERE YearTransact = %s {campus_filter} GROUP BY Month ORDER BY FIELD(Month, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", lpg_data, "lpg"),
-        ]
-
-        for query, data_list, category in additional_queries:
-            cursor.execute(query.format(campus_filter=campus_filter), 
-                           (selected_year, selected_campus) if selected_campus != 'all' else (selected_year,))
-            for row in cursor.fetchall():
-                month_index = month_to_index.get((row.get('month') or row.get('Month')).capitalize(), -1)
-                if month_index != -1:
-                    emission_value = row.get('total_emission')
-                    if emission_value is not None:
-                        data_list[month_index] += float(emission_value)
-                        current_emission_data[category] += float(emission_value)
-
-        # Queries for flight and accommodation data
-        queries_for_year = [
-            ("SELECT Year AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblflight WHERE Year BETWEEN 2020 AND 2024 {campus_filter} GROUP BY Year ORDER BY Year", flight_data, "flight"),
-            ("SELECT YearTransact AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblaccommodation WHERE YearTransact BETWEEN 2020 AND 2024 {campus_filter} GROUP BY YearTransact ORDER BY YearTransact", accommodation_data, "accommodation"),
-        ]
-
-        for query, data_list, category in queries_for_year:
-            cursor.execute(query.format(campus_filter=campus_filter), 
-                           (selected_campus,) if selected_campus != 'all' else ())
-            for row in cursor.fetchall():
-                year_index = row['year'] - 2020
-                if 0 <= year_index < len(data_list):
-                    emission_value = row.get('total_emission')
-                    if emission_value is not None:
-                        data_list[year_index] += float(emission_value)
-                        current_emission_data[category] += float(emission_value)
-
-        # Total Records Queries
-        count_queries = [
-            # Electricity Consumption
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.electricity_consumption WHERE {} year = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "electricity",
-            ),
-            # Fuel Emissions
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.fuel_emissions WHERE {} YEAR(date) = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "fuel",
-            ),
-            # Water Consumption
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tblwater WHERE {} YEAR(Date) = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "water",
-            ),
-            # Treated Water
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tbltreatedwater WHERE {} YEAR(CURDATE()) = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "treated_water",
-            ),
-            # Waste Segregated
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwastesegregated WHERE {} Year = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "waste_segregated",
-            ),
-            # Waste Unsegregated
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwasteunsegregated WHERE {} Year = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "waste_unsegregated",
-            ),
-            # Food Waste
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tblfoodwaste WHERE {} YearTransaction = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "food_waste",
-            ),
-            # LPG
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tbllpg WHERE {} YearTransact = %s;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "lpg",
-            ),
-            # Flight
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tblflight WHERE {} Year BETWEEN 2020 AND 2024;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "flight",
-            ),
-            # Accommodation
-            (
-                "SELECT COUNT(*) AS total_records FROM ghg_database.tblaccommodation WHERE {} YearTransact BETWEEN 2020 AND 2024;"
-                .format("" if selected_campus == 'all' else "campus = %s AND"),
-                "accommodation",
-            ),
-        ]
-
-        # Execute Count Queries
-        for query, category in count_queries:
-            if selected_campus == 'all':
-                cursor.execute(query, (selected_year,))
-            else:
-                cursor.execute(query, (selected_campus, selected_year))
-            total_records[category] = cursor.fetchone().get('total_records', 0)
-
-        # Debugging Output
-        print(f"Total Records: {total_records}")  # Check all total records
+            # Previous year
+            cursor.execute(query.format(campus_filter=campus_filter),
+                           (selected_year - 1, selected_campus) if selected_campus != 'all' else (selected_year - 1,))
+            rows = cursor.fetchall()
+            total_records[category] += len(rows)  # Count the number of records for the previous year
+            for row in rows:
+                emission_value = row.get('total_emission')
+                if emission_value is not None:
+                    previous_emission_data[category] += float(emission_value)
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -2222,12 +2144,14 @@ def csd_dashboard():
         flight_data=flight_data,
         accommodation_data=accommodation_data,
         current_emission_data=current_emission_data,
+        previous_emission_data=previous_emission_data,
         electricity_data=electricity_data,
         current_year=current_year,
         selected_year=selected_year,
         selected_campus=selected_campus,
         total_records=total_records,
     )
+
 
 
 
@@ -4921,10 +4845,25 @@ def sdo_dashboard():
     # Extract parameters
     campus = session['campus']
     selected_year = int(request.args.get('year', datetime.now().year))
+    previous_year = selected_year - 1
     current_year = datetime.now().year
 
     # Initialize data containers
     current_emission_data = {
+        "accommodation": 0,
+        "flight": 0,
+        "electricity": 0,
+        "fuel": 0,
+        "waste_segregated": 0,
+        "waste_unsegregated": 0,
+        "water": 0,
+        "treated_water": 0,
+        "lpg": 0,
+        "food_waste": 0,
+        "tree_offset": 0,  # Initialize tree offset
+    }
+
+    previous_emission_data = {
         "accommodation": 0,
         "flight": 0,
         "electricity": 0,
@@ -4946,210 +4885,77 @@ def sdo_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Queries for Electricity
-        electricity_query = """
-            SELECT SUM(kg_co2_per_kwh) AS total_emission
-            FROM electricity_consumption
-            WHERE year = %s AND campus = %s
-        """
-        cursor.execute(electricity_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['electricity'] = float(row['total_emission'])
+        # Function to execute queries for current and previous years
+        def fetch_emissions(query, year, category):
+            cursor.execute(query, (year, campus))
+            row = cursor.fetchone()
+            if row and row['total_emission'] is not None:
+                return float(row['total_emission'])
+            return 0
 
-        # Queries for Fuel
-        fuel_query = """
-            SELECT SUM(total_emission) AS total_emission
-            FROM fuel_emissions
-            WHERE YEAR(date) = %s AND campus = %s
-        """
-        cursor.execute(fuel_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['fuel'] = float(row['total_emission'])
+        # Queries for current and previous years
+        emission_queries = {
+            "electricity": """
+                SELECT SUM(kg_co2_per_kwh) AS total_emission
+                FROM electricity_consumption
+                WHERE year = %s AND campus = %s
+            """,
+            "fuel": """
+                SELECT SUM(total_emission) AS total_emission
+                FROM fuel_emissions
+                WHERE YEAR(date) = %s AND campus = %s
+            """,
+            "waste_segregated": """
+                SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+                FROM tblsolidwastesegregated
+                WHERE Year = %s AND campus = %s
+            """,
+            "waste_unsegregated": """
+                SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+                FROM tblsolidwasteunsegregated
+                WHERE Year = %s AND campus = %s
+            """,
+            "treated_water": """
+                SELECT SUM(FactorKGCO2e) AS total_emission
+                FROM tbltreatedwater
+                WHERE YEAR(CURDATE()) = %s AND campus = %s
+            """,
+            "water": """
+                SELECT SUM(FactorKGCO2e) AS total_emission
+                FROM tblwater
+                WHERE YEAR(Date) = %s AND campus = %s
+            """,
+            "lpg": """
+                SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+                FROM tbllpg
+                WHERE Campus = %s AND YearTransact = %s
+            """,
+            "food_waste": """
+                SELECT SUM(GHGEmissionKGCO2e) AS total_emission
+                FROM tblfoodwaste
+                WHERE Campus = %s AND YearTransaction = %s
+            """,
+            "accommodation": """
+                SELECT SUM(GHGEmissionKGC02e) AS total_emission
+                FROM tblaccommodation
+                WHERE Campus = %s AND YearTransact = %s
+            """,
+            "flight": """
+                SELECT SUM(GHGEmissionKGC02e) AS total_emission
+                FROM tblflight
+                WHERE Campus = %s AND Year = %s
+            """,
+            "tree_offset": """
+                SELECT SUM(tree_offset) AS total_emission
+                FROM electricity_consumption
+                WHERE year = %s AND campus = %s
+            """
+        }
 
-        # Queries for Waste Segregated
-        waste_segregated_query = """
-            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
-            FROM tblsolidwastesegregated
-            WHERE Year = %s AND campus = %s
-        """
-        cursor.execute(waste_segregated_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['waste_segregated'] = float(row['total_emission'])
-
-        # Queries for Waste Unsegregated
-        waste_unsegregated_query = """
-            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
-            FROM tblsolidwasteunsegregated
-            WHERE Year = %s AND campus = %s
-        """
-        cursor.execute(waste_unsegregated_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['waste_unsegregated'] = float(row['total_emission'])
-
-        # Queries for Treated Water
-        treated_water_query = """
-            SELECT SUM(FactorKGCO2e) AS total_emission
-            FROM tbltreatedwater
-            WHERE YEAR(CURDATE()) = %s AND campus = %s
-        """
-        cursor.execute(treated_water_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['treated_water'] = float(row['total_emission'])
-
-        # Queries for Water Consumption
-        water_query = """
-            SELECT SUM(FactorKGCO2e) AS total_emission
-            FROM tblwater
-            WHERE YEAR(Date) = %s AND campus = %s
-        """
-        cursor.execute(water_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['water'] = float(row['total_emission'])
-
-        # Queries for LPG
-        lpg_query = """
-            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
-            FROM tbllpg
-            WHERE Campus = %s AND YearTransact = %s
-        """
-        cursor.execute(lpg_query, (campus, selected_year))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['lpg'] = float(row['total_emission'])
-
-        # Queries for Food Waste
-        food_waste_query = """
-            SELECT SUM(GHGEmissionKGCO2e) AS total_emission
-            FROM tblfoodwaste
-            WHERE Campus = %s AND YearTransaction = %s
-        """
-        cursor.execute(food_waste_query, (campus, selected_year))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['food_waste'] = float(row['total_emission'])
-
-        # Queries for Accommodation
-        accommodation_query = """
-            SELECT SUM(GHGEmissionKGC02e) AS total_emission
-            FROM tblaccommodation
-            WHERE Campus = %s AND YearTransact = %s
-        """
-        cursor.execute(accommodation_query, (campus, selected_year))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['accommodation'] = float(row['total_emission'])
-
-        # Queries for Flight
-        flight_query = """
-            SELECT SUM(GHGEmissionKGC02e) AS total_emission
-            FROM tblflight
-            WHERE Campus = %s AND Year = %s
-        """
-        cursor.execute(flight_query, (campus, selected_year))
-        row = cursor.fetchone()
-        if row and row['total_emission'] is not None:
-            current_emission_data['flight'] = float(row['total_emission'])
-
-        # Queries for Tree Offset (Sum per year)
-        tree_offset_query = """
-            SELECT SUM(tree_offset) AS total_tree_offset
-            FROM electricity_consumption
-            WHERE year = %s AND campus = %s
-        """
-        cursor.execute(tree_offset_query, (selected_year, campus))
-        row = cursor.fetchone()
-        if row and row['total_tree_offset'] is not None:
-            current_emission_data['tree_offset'] = int(row['total_tree_offset'])
-        else:
-            current_emission_data['tree_offset'] = 0  # Default value if no data
-
-                # Count total records for electricity consumption filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.electricity_consumption WHERE campus = %s AND year = %s;",
-            (session['campus'], selected_year)
-        )
-        total_electricity_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for fuel emissions filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.fuel_emissions WHERE campus = %s AND YEAR(date) = %s;",
-            (session['campus'], selected_year)
-        )
-        total_fuel_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for water data filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tblwater WHERE campus = %s AND YEAR(Date) = %s;",
-            (session['campus'], selected_year)
-        )
-        total_water_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for treated water data filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tbltreatedwater WHERE campus = %s AND YEAR(CURDATE()) = %s;",
-            (session['campus'], selected_year)
-        )
-        total_treated_water_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for waste segregated data filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwastesegregated WHERE campus = %s AND Year = %s;",
-            (session['campus'], selected_year)
-        )
-        total_waste_segregated_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for waste unsegregated data filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tblsolidwasteunsegregated WHERE campus = %s AND Year = %s;",
-            (session['campus'], selected_year)
-        )
-        total_waste_unsegregated_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for food waste filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tblfoodwaste WHERE campus = %s AND YearTransaction = %s;",
-            (session['campus'], selected_year)
-        )
-        total_food_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for LPG filtered by campus and year
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tbllpg WHERE campus = %s AND YearTransact = %s;",
-            (session['campus'], selected_year)
-        )
-        total_lpg_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for flight emissions filtered by campus
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tblflight WHERE campus = %s;",
-            (session['campus'],)
-        )
-        total_flight_records = cursor.fetchone().get('total_records', 0)
-
-        # Count total records for accommodation emissions filtered by campus
-        cursor.execute(
-            "SELECT COUNT(*) AS total_records FROM ghg_database.tblaccommodation WHERE campus = %s;",
-            (session['campus'],)
-        )
-        total_accommodation_records = cursor.fetchone().get('total_records', 0)
-
-        # Store in session
-        session['total_electricity_records'] = total_electricity_records
-        session['total_fuel_records'] = total_fuel_records
-        session['total_water_records'] = total_water_records
-        session['total_treated_water_records'] = total_treated_water_records
-        session['total_waste_segregated_records'] = total_waste_segregated_records
-        session['total_waste_unsegregated_records'] = total_waste_unsegregated_records
-        session['total_food_records'] = total_food_records
-        session['total_lpg_records'] = total_lpg_records
-        session['total_flight_records'] = total_flight_records
-        session['total_accommodation_records'] = total_accommodation_records
+        # Populate current and previous emission data
+        for category, query in emission_queries.items():
+            current_emission_data[category] = fetch_emissions(query, selected_year, category)
+            previous_emission_data[category] = fetch_emissions(query, previous_year, category)
 
     except mysql.connector.Error as e:
         flash(f"Database Error: {e}", "danger")
@@ -5160,25 +4966,17 @@ def sdo_dashboard():
             conn.close()
 
     # Calculate total emission subtracting tree offset
-    total_emission = (
-        current_emission_data['electricity'] +
-        current_emission_data['fuel'] +
-        current_emission_data['waste_segregated'] +
-        current_emission_data['waste_unsegregated'] +
-        current_emission_data['water'] +
-        current_emission_data['treated_water'] +
-        current_emission_data['lpg'] +
-        current_emission_data['food_waste'] +
-        current_emission_data['accommodation'] +
-        current_emission_data['flight']
-    ) - current_emission_data['tree_offset']
+    total_emission = sum(current_emission_data.values()) - current_emission_data['tree_offset']
+    previous_total_emission = sum(previous_emission_data.values()) - previous_emission_data['tree_offset']
 
     # Emit real-time data
     socketio.emit(
         'update_emissions',
         clean_for_json({
             "current_emissions": current_emission_data,
-            "total_emission": total_emission
+            "previous_emissions": previous_emission_data,
+            "total_emission": total_emission,
+            "previous_total_emission": previous_total_emission,
         })
     )
 
@@ -5186,21 +4984,25 @@ def sdo_dashboard():
     return render_template(
         'sdo_dashboard.html',
         current_emission_data=current_emission_data,
+        previous_emission_data=previous_emission_data,
         total_emission=total_emission,
+        previous_total_emission=previous_total_emission,
         current_year=current_year,
         selected_year=selected_year,
+        previous_year=previous_year,
         campus=campus,
-        total_electricity_records=session['total_electricity_records'],
-        total_fuel_records=session['total_fuel_records'],
-        total_water_records=session['total_water_records'],
-        total_treated_water_records=session['total_treated_water_records'],
-        total_waste_segregated_records=session['total_waste_segregated_records'],
-        total_waste_unsegregated_records=session['total_waste_unsegregated_records'],
-        total_food_records=session['total_food_records'],
-        total_lpg_records=session['total_lpg_records'],
-        total_flight_records=session['total_flight_records'],
-        total_accommodation_records=session['total_accommodation_records']
+        total_electricity_records=session.get('total_electricity_records', 0),
+        total_fuel_records=session.get('total_fuel_records', 0),
+        total_water_records=session.get('total_water_records', 0),
+        total_treated_water_records=session.get('total_treated_water_records', 0),
+        total_waste_segregated_records=session.get('total_waste_segregated_records', 0),
+        total_waste_unsegregated_records=session.get('total_waste_unsegregated_records', 0),
+        total_food_records=session.get('total_food_records', 0),
+        total_lpg_records=session.get('total_lpg_records', 0),
+        total_flight_records=session.get('total_flight_records', 0),
+        total_accommodation_records=session.get('total_accommodation_records', 0)
     )
+
 
 
 
@@ -7773,6 +7575,80 @@ def sdo_lpg_consumption_excel():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+@app.route('/sdo_lpg_consumption_csv')
+def sdo_lpg_consumption_csv():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
+    # Get filter values from request arguments
+    year = request.args.get('year', None)
+    month = request.args.get('month', None)
+    office = request.args.get('office', None)
+
+    # Database connection
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Build the WHERE clause with enforced campus restriction
+        filter_conditions = ["Campus = %s"]  # Enforce campus from session
+        params = [user_campus]
+
+        if year:
+            filter_conditions.append("YearTransact = %s")
+            params.append(year)
+
+        if month:
+            filter_conditions.append("Month = %s")
+            params.append(month)
+
+        if office:
+            filter_conditions.append("Office = %s")
+            params.append(office)
+
+        where_clause = "WHERE " + " AND ".join(filter_conditions)
+
+        # Query to fetch all data matching the filters
+        query = f"""
+            SELECT Campus, YearTransact, Month, Office, ConcessionariesType, TankQuantity, 
+                   TankWeight, TankVolume, TotalTankVolume, GHGEmissionKGCO2e, GHGEmissionTCO2e
+            FROM tbllpg {where_clause}
+            ORDER BY YearTransact DESC, Month ASC
+        """
+        cursor.execute(query, tuple(params))
+        lpg_data = cursor.fetchall()
+
+    except mysql.connector.Error as e:
+        return f"Database error: {e}", 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn.is_connected():
+            conn.close()
+
+    # Check if data is empty
+    if not lpg_data:
+        return "No data available for the selected filters.", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(lpg_data)
+
+    # Create a CSV file in memory
+    buffer = BytesIO()
+    df.to_csv(buffer, index=False)
+    buffer.seek(0)  # Move the buffer's position to the start
+
+    # Send the CSV file as a downloadable response
+    return send_file(
+        buffer,
+        download_name="lpg_consumption_report.csv",
+        as_attachment=True,
+        mimetype='text/csv'
+    )
 
 @app.route('/sdo_flight_emissions_report')
 def sdo_flight_emissions_report():
@@ -8545,26 +8421,11 @@ import pandas as pd
 from flask_socketio import SocketIO, emit
 from flask_caching import Cache
 
-# Initialize the cache with a simple in-memory backend
-cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 300})
-
-
 # Initialize Flask-SocketIO (assuming socketio is already initialized in your app)
 socketio = SocketIO(app)
 
-
-# Initialize cache (ensure this is properly configured in your app)
-cache = Cache(app)
-
-# Custom cache key function to include campus in the cache key
-def make_external_dashboard_cache_key():
-    campus = session.get('campus', 'unknown')  # Fallback to 'unknown' if campus isn't in the session
-    query_string = request.query_string.decode('utf-8')
-    return f"external_dashboard:{campus}:{query_string}"
-
 # Main external_dashboard route
 @app.route('/external_dashboard', methods=['GET', 'POST'])
-@cache.cached(key_prefix=make_external_dashboard_cache_key)
 def external_dashboard():
     # Check if user is logged in and session is valid
     if 'loggedIn' not in session or 'campus' not in session:
@@ -8577,9 +8438,6 @@ def external_dashboard():
         flash("Invalid session. Please log in again.", "danger")
         return redirect(url_for('login'))
 
-    # Log the campus for debugging
-    app.logger.info(f"Current campus in session: {campus}")
-
     # Define the current year and selected year
     current_year = datetime.now().year
     selected_year = int(request.args.get('year', current_year))
@@ -8588,6 +8446,7 @@ def external_dashboard():
     flight_data = [0] * 5  # Data for 2020-2024
     accommodation_data = [0] * 5  # Data for 2020-2024
     current_emission_data = {"flight": 0, "accommodation": 0}
+    previous_emission_data = {"flight": 0, "accommodation": 0}  # Add previous emission data
 
     # Initialize total records
     total_flight_records = 0
@@ -8601,7 +8460,7 @@ def external_dashboard():
 
         cursor = conn.cursor(dictionary=True)
 
-        # Queries for fetching data filtered by campus
+        # Queries for fetching current and previous year data
         queries = [
             (
                 "SELECT Year, SUM(GHGEmissionKGC02e) AS total_emission "
@@ -8627,8 +8486,11 @@ def external_dashboard():
             for row in cursor.fetchall():
                 year_index = row['Year'] - 2020
                 if 0 <= year_index < len(data_list):
-                    data_list[year_index] = float(row['total_emission'])
-                    current_emission_data[category] += float(row['total_emission'])
+                    emission_value = float(row['total_emission'])
+                    data_list[year_index] = emission_value
+                    current_emission_data[category] += emission_value
+                    if year_index < 4:  # Add previous year data (up to 2023)
+                        previous_emission_data[category] += emission_value
 
         # Count total records for flight
         cursor.execute(
@@ -8711,11 +8573,13 @@ def external_dashboard():
         accommodation_data=accommodation_data,
         forecast_data=forecast_data,
         current_emission_data=current_emission_data,
+        previous_emission_data=previous_emission_data,  # Include previous emission data
         selected_year=selected_year,
         current_year=current_year,
         total_flight_records=total_flight_records,          # Total flight records
         total_accommodation_records=total_accommodation_records  # Total accommodation records
     )
+
 
 @app.route('/ea_analytics')
 def ea_analytics():
@@ -9371,14 +9235,19 @@ def procurement_dashboard():
     # Extract campus and year from session and request
     campus = session['campus']
     selected_year = int(request.args.get('year', datetime.now().year))
+    previous_year = selected_year - 1
     current_year = datetime.now().year
 
     # Initialize data structures for emissions
     food_waste_data = [0] * 12  # Data for each month
     lpg_data = [0] * 12  # Data for each month
 
-    # Initialize current emission totals
+    # Initialize current and previous emission totals
     current_emission_data = {
+        "food_waste": 0,
+        "lpg": 0,
+    }
+    previous_emission_data = {
         "food_waste": 0,
         "lpg": 0,
     }
@@ -9409,7 +9278,8 @@ def procurement_dashboard():
                 "WHERE campus = %s AND YearTransaction = %s "
                 "GROUP BY Month",
                 food_waste_data,
-                "food_waste"
+                "food_waste",
+                current_emission_data
             ),
             (
                 "SELECT Month, SUM(GHGEmissionKGCO2e) AS total_emission "
@@ -9417,20 +9287,29 @@ def procurement_dashboard():
                 "WHERE campus = %s AND YearTransact = %s "
                 "GROUP BY Month",
                 lpg_data,
-                "lpg"
+                "lpg",
+                current_emission_data
             ),
         ]
 
-        # Execute each query and populate the corresponding data list
-        for query, data_list, category in queries:
-            cursor.execute(query, (campus, selected_year))  # Use session['campus']
+        # Fetch current year data
+        for query, data_list, category, data_totals in queries:
+            cursor.execute(query, (campus, selected_year))
             for row in cursor.fetchall():
                 month_index = month_to_index.get(row.get('Month'), -1)
                 if month_index != -1:
                     emission_value = row.get('total_emission')
                     if emission_value is not None:
                         data_list[month_index] = float(emission_value)
-                        current_emission_data[category] += float(emission_value)
+                        data_totals[category] += float(emission_value)
+
+        # Fetch previous year data
+        for query, _, category, data_totals in queries:
+            cursor.execute(query, (campus, previous_year))
+            for row in cursor.fetchall():
+                emission_value = row.get('total_emission')
+                if emission_value is not None:
+                    data_totals[category] += float(emission_value)
 
         # Count total records for food waste
         cursor.execute(
@@ -9469,6 +9348,7 @@ def procurement_dashboard():
         food_waste_data=food_waste_data,
         lpg_data=lpg_data,
         current_emission_data=current_emission_data,
+        previous_emission_data=previous_emission_data,  # Include previous data
         selected_year=selected_year,
         current_year=current_year,
         campus=campus,
@@ -9476,6 +9356,7 @@ def procurement_dashboard():
         total_food_waste_records=total_food_waste_records,  # Total food waste records
         total_lpg_records=total_lpg_records                 # Total LPG records
     )
+
 
 
 
