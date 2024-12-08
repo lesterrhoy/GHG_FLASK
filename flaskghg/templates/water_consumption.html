@@ -140,16 +140,21 @@
 }
 
 .container {
-    background-color: #d50000;
+    background: #f44336; /* Solid red color matching the delete icon */
     padding: 15px;
     width: 100%;
     border-radius: 10px;
-    color: #fff;
+    color: #ffffff; /* White text for readability */
     display: flex;
     justify-content: space-between;
+    align-items: center; /* Align content vertically */
     box-sizing: border-box;
+    transition: background 0.3s ease; /* Smooth transition for hover effect */
 }
 
+.container:hover {
+    background: #e53935; /* Slightly darker red for hover */
+}
 .form-container {
     width: 100%; /* Adjust the width to allow more space for form fields */
 }
@@ -227,6 +232,22 @@
          transition: background-color 0.3s ease;
          margin-left: 10px; /* Adds space to move the button to the right */
      }
+
+        /* start button */
+button.btn-primary {
+    background-color: #f44336; /* Matching red background color */
+    color: #fff; /* White text for readability */
+    border: none; /* Remove default border */
+    padding: 10px 20px; /* Adjust padding for a better button appearance */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Font size for the button */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+button.btn-primary:hover {
+    background-color: #e53935; /* Slightly darker red for hover effect */
+}
+/* end*/
      
      button:first-child {
          background-color: #666;
@@ -256,13 +277,13 @@
      }
      
      .pagination .page-item.active .page-link {
-         background-color: #d50000; /* Active page with the same red color */
-         border-color: #d50000;
+         background-color: #f44336; /* Active page with the same red color */
+         border-color: #f44336;
          color: white; /* White text for the active page */
      }
      
      .pagination .page-link:hover {
-         background-color: #b71c1c; /* Darker red on hover */
+         background-color: #f44336; /* Darker red on hover */
          color: white; /* White text on hover */
      }
      
@@ -354,10 +375,10 @@
                     <!-- Button to open the modal -->
                     <div id="WaterSection">
                         <div>
-                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; border-color: #d50000;" onclick="openCalculatorModal()">Calculate</button>
-                            <button style="background-color: #d50000; color: white; border: none;"onclick="printReport()">Print Report</button>
-                            <button class="btn btn-success" style="background-color: #d50000; color: white;" onclick="downloadExcel()">Download Excel</button>
-                            <button class="btn btn-info" style="background-color: #d50000; color: white;" onclick="downloadCSV()">Download CSV</button>
+                            <button id="openModalBtn" class="btn btn-primary" onclick="openCalculatorModal()">Calculate</button>
+                            <button class="btn btn-primary" onclick="printReport()">Print Report</button>
+                            <button class="btn btn-primary" onclick="downloadExcel()">Download Excel</button>
+                            <button class="btn btn-primary" onclick="downloadCSV()">Download CSV</button>
                         </div>
                     </div>
 
