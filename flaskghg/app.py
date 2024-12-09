@@ -2235,13 +2235,6 @@ def csd_dashboard():
         total_records=total_records,
     )
 
-
-
-
-
-
-
-
 from flask import Flask, request, render_template, flash
 from datetime import datetime
 import mysql.connector
@@ -2333,6 +2326,23 @@ def csdanalytics():
                     emission_value = row.get('total_emission')
                     if emission_value is not None:
                         data_list[month_index] += float(emission_value)
+                        current_emission_data[category] += float(emission_value)
+
+        # Queries for flight and accommodation data
+        queries_for_year = [
+            ("SELECT Year AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblflight WHERE Year BETWEEN 2020 AND 2024 {campus_filter} GROUP BY Year ORDER BY Year", flight_data, "flight"),
+            ("SELECT YearTransact AS year, SUM(GHGEmissionKGC02e) AS total_emission FROM tblaccommodation WHERE YearTransact BETWEEN 2020 AND 2024 {campus_filter} GROUP BY YearTransact ORDER BY YearTransact", accommodation_data, "accommodation"),
+        ]
+
+        for query, data_list, category in queries_for_year:
+            cursor.execute(query.format(campus_filter=campus_filter),
+                        (selected_campus,) if selected_campus != 'all' else ())
+            for row in cursor.fetchall():
+                year_index = row['year'] - 2020  # Map year (e.g., 2020) to index (0 for 2020)
+                if 0 <= year_index < len(data_list):
+                    emission_value = row.get('total_emission')
+                    if emission_value is not None:
+                        data_list[year_index] += float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
     except mysql.connector.Error as e:
@@ -5436,8 +5446,9 @@ def sdoanalytics():
     ]}
 
     # Accommodation and flight data remain unchanged
-    forecasts["accommodation_forecast"] = accommodation_data
-    forecasts["flight_forecast"] = flight_data
+    # Apply forecasting for accommodation and flight data (5 years ahead, yearly frequency)
+    forecasts["accommodation_forecast"] = forecast_prophet(accommodation_data, 5, freq='Y', selected_year='2024')
+    forecasts["flight_forecast"] = forecast_prophet(flight_data, 5, freq='Y', selected_year='2024')
 
       # Emit real-time updates for data and forecasts
     socketio.emit('update_emissions', {
@@ -5474,7 +5485,6 @@ def sdoanalytics():
         labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan (Next)', 'Feb (Next)'],
         yearly_labels=["2020", "2021", "2022", "2023", "2024", "2025"],
     )
-
 
 
 @app.route('/sdo_electricity_report', methods=['GET'])

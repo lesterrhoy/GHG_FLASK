@@ -370,8 +370,8 @@ button:last-child:hover {
 }
 
 .pagination .page-item.active .page-link {
- background-color: #d50000; /* Active page with the same red color */
- border-color: #d50000;
+ background-color: #f44336; /* Active page with the same red color */
+ border-color: #f44336;
  color: white; /* White text for the active page */
 }
 
@@ -384,7 +384,7 @@ button:last-child:hover {
 
      .delete-icon {
          cursor: pointer;
-         color: #fd0808;
+         color: #f44336;
      }
 
      @media screen and (max-width: 768px) {
@@ -478,10 +478,10 @@ button:last-child:hover {
 
                     <div id="AccommoSection">
                     <div>
-                        <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000; color: white;" onclick="openCalculatorModal()">Calculate</button>
-                        <button class="btn" style="background-color: #d50000; color: white;" onclick="printReport()">Print Report</button>
-                        <button class="btn" style="background-color: #d50000; color: white;" onclick="downloadExcel()">Download Excel</button>
-                        <button class="btn" style="background-color: #d50000; color: white;" onclick="downloadCSV()">Download CSV</button>
+                        <button id="openModalBtn"  style="background-color: #f44336; color: #ffffff;"class="btn btn-primary" style="background-color: #d50000; color: white;" onclick="openCalculatorModal()">Calculate</button>
+                        <button class="btn"  style="background-color: #f44336; color: #ffffff;" onclick="printReport()">Print Report</button>
+                        <button class="btn"  style="background-color: #f44336; color: #ffffff;" onclick="downloadExcel()">Download Excel</button>
+                        <button class="btn"  style="background-color: #f44336; color: #ffffff;" onclick="downloadCSV()">Download CSV</button>
                     </div>
                     </div>
     
@@ -584,7 +584,7 @@ button:last-child:hover {
                                 <td>{{ accommodation['GHGEmissionKGC02e'] }}</td>
                                 <td>{{ accommodation['GHGEmissionTC02e'] }}</td>
                                 <td>
-                                   <button class="delete-btn" onclick="deleteAccommodation({{ record.id }})"><i class="fa-solid fa-trash"></i></button>
+                                   <button class="delete-btn" onclick="deleteAccommodation({{ accommodation.id }})"><i class="fa-solid fa-trash"></i></button>
                                 </td>
                             </tr>
                             {% endfor %}
