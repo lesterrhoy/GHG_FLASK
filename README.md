@@ -4,8 +4,9 @@ Name of database: ghg_database.sql
 
 Credentials of Admins and Users
 
-Username	              Office	                         Campus	                     Email                     	      Password
-csd	               Central Sustainable Office	           Central	                   central@gmail.com	              csd1
+
+csd - Central Sustainable Office	           
+Central	                   central@gmail.com	              csd1
 sdo-alangilan	     Sustainable Development Office	       Alangilan	                 sdoalangilan@gmail.com	          sdoalangilan1
 sdo-nasugbu	       Sustainable Development Office	       ARASOF-Nasugbu	             sdonasugbu@gmail.com	            sdonasugbu1
 sdo-balayan	       Sustainable Development Office	       Balayan	                   sdobalayan@gmail.com	            sdobalayan1
