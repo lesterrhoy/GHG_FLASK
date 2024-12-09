@@ -11,11 +11,14 @@ sdo-alangilan - Sustainable Development Office - Alangilan - sdoalangilan@gmail.
 
 sdo-nasugbu - Sustainable Development Office - ARASOF-Nasugbu	- sdonasugbu@gmail.com - sdonasugbu1
 
-sdo-balayan	       Sustainable Development Office	       Balayan	                   sdobalayan@gmail.com	            sdobalayan1
+sdo-balayan	  -     Sustainable Development Office	  -     Balayan	         -          sdobalayan@gmail.com	  -          sdobalayan1
 
-sdo-central	       Sustainable Development Office	       Central	                   sdocentral@gmail.com	            sdocentral1
-sdo-malvar	       Sustainable Development Office	       JPLPC-Malvar	               sdomalvar@gmail.com	            sdomalvar1
-sdo-lemery	       Sustainable Development Office	       Lemery	                     sdolemery@gmail.com	            sdolemery1
+sdo-central	   -    Sustainable Development Office	-       Central	         -          sdocentral@gmail.com	       -     sdocentral1
+
+sdo-malvar	   -    Sustainable Development Office	  -     JPLPC-Malvar	        -       sdomalvar@gmail.com	       -     sdomalvar1
+
+sdo-lemery	  -     Sustainable Development Office	  -     Lemery	        -             sdolemery@gmail.com	      -      sdolemery1
+
 sdo-lipa	         Sustainable Development Office	       Lipa	                       sdolipa@gmail.com	              sdolipa1
 sdo-lobo	         Sustainable Development Office    	   Lobo	                       sdolobo@gmail.com	              sdolobo1
 sdo-mabini	       Sustainable Development Office	       Mabini	                     sdomabini@gmail.com	            sdomabini1
