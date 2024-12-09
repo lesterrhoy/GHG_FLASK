@@ -140,24 +140,15 @@
  cursor: pointer;
 }
 
-/* start modal */
-.container {
-    background: #f44336; /* Solid red color matching the delete icon */
-    padding: 15px;
-    width: 100%;
+.modal .container {
+    background-color: #d50000;
+    padding: 20px 10px; /* Reduced padding for a tighter fit */
     border-radius: 10px;
-    color: #ffffff; /* White text for readability */
+    color: #fff;
     display: flex;
-    justify-content: space-between;
-    align-items: center; /* Align content vertically */
+    justify-content: center;
     box-sizing: border-box;
-    transition: background 0.3s ease; /* Smooth transition for hover effect */
 }
-
-.container:hover {
-    background: #e53935; /* Slightly darker red for hover */
-}
-/* end */
 
 .form-container {
     width: 100%; /* Full width to remove extra space */
@@ -237,22 +228,6 @@ button {
  margin-left: 10px; /* Adds space to move the button to the right */
 }
 
-/* start button */
-button.btn-primary {
-    background-color: #f44336; /* Matching red background color */
-    color: #fff; /* White text for readability */
-    border: none; /* Remove default border */
-    padding: 10px 20px; /* Adjust padding for a better button appearance */
-    border-radius: 5px; /* Rounded corners */
-    font-size: 16px; /* Font size for the button */
-    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
-}
-
-button.btn-primary:hover {
-    background-color: #e53935; /* Slightly darker red for hover effect */
-}
-/* end*/
-
 button:first-child {
  background-color: #666;
  color: white;
@@ -282,13 +257,13 @@ button:last-child:hover {
 }
 
 .pagination .page-item.active .page-link {
- background-color: #f44336; /* Active page with the same red color */
- border-color: #f44336;
+ background-color: #d50000; /* Active page with the same red color */
+ border-color: #d50000;
  color: white; /* White text for the active page */
 }
 
 .pagination .page-link:hover {
- background-color: #f44336; /* Darker red on hover */
+ background-color: #b71c1c; /* Darker red on hover */
  color: white; /* White text on hover */
 }
 
@@ -400,10 +375,10 @@ button:last-child:hover {
 
                     <div id="FlightSection">
                         <div>
-                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #f44336;" onclick="openCalculatorModal()">Calculate</button>
-                            <button class="btn btn-primary" onclick="printReport()">Print Report</button>
-                            <button class="btn btn-primary" onclick="downloadExcel()">Download Excel</button>
-                            <button class="btn btn-primary" onclick="downloadCSV()">Download CSV</button>
+                            <button id="openModalBtn" class="btn btn-primary" style="background-color: #d50000;" onclick="openCalculatorModal()">Calculate</button>
+                            <button class="btn btn-primary" style="background-color: #d50000;" onclick="printFlightReport()">Print Report</button>
+                            <button class="btn btn-success" style="background-color: #d50000; color: #f9f9f9;" onclick="downloadFlightExcel()">Download Excel</button>
+                            <button class="btn btn-warning" style="background-color: #d50000; color: #fff;" onclick="downloadFlightCSV()">Download CSV</button>
                         </div>
     
                         <div class="mb-4">
