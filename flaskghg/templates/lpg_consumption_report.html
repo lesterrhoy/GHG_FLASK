@@ -310,7 +310,7 @@
             <select id="office" name="office" class="form-control" onchange="document.getElementById('filterForm').submit()">
                 <option value="">All Offices</option>
                 <option value="Procurement" {% if request.args.get('office') == 'Procurement' %}selected{% endif %}>Procurement</option>
-                <option value="Auxillary Services" {% if request.args.get('office') == 'Auxillary Services' %}selected{% endif %}>Auxillary Services</option>
+                <option value="Auxiliary Services" {% if request.args.get('office') == 'Auxiliary Services' %}selected{% endif %}> Auxiliary Services</option>
                 <option value="RGO" {% if request.args.get('office') == 'RGO' %}selected{% endif %}>RGO</option>
                 <option value="IAU" {% if office == 'IAU' %}selected{% endif %}>IAU</option>
                 <option value="QAM" {% if office == 'QAM' %}selected{% endif %}>QAM</option>

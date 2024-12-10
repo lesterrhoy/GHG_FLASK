@@ -496,7 +496,7 @@ button.btn-primary:hover {
                         <button id="openModalBtn" class="btn btn-primary" style="background-color:#f44336; color: white; border: none;" onclick="openCalculatorModal()">Calculate</button>
                         <button class="btn btn-primary" onclick="printReport()">Print Report</button>
                         <button class="btn btn-primary" onclick="downloadExcel()">Download Excel</button>
-                        <button class="btn btn-primary" onclick="downloadCSV()">Download CSV</button>
+                        <button class="btn btn-primary" style="background-color:#f44336; color: white; border: none;" onclick="downloadCSV()">Download CSV</button>
                     </div>
                     
 
@@ -583,37 +583,40 @@ button.btn-primary:hover {
                     
 
                     <div class="table-wrapper">
-                    <table id="reportTable" class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Year</th>
-                                <th>Month</th>
-                                <th>Office</th>
-                                <th>Food Type</th>
-                                <th>Servings</th>
-                                <th>GHG Emission (KG CO2e)</th>
-                                <th>GHG Emission (T CO2e)</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reportData">
-                            {% for record in food_data %}
-                            <tr id="row-{{ record['id'] }}">
-                                <td>{{ record['YearTransaction'] }}</td>
-                                <td>{{ record['Month'] }}</td>
-                                <td>{{ record['Office'] }}</td>
-                                <td>{{ record['TypeOfFoodServed'] }}</td>
-                                <td>{{ record['QuantityOfServing'] }}</td>
-                                <td>{{ record['GHGEmissionKGCO2e'] }}</td>
-                                <td>{{ record['GHGEmissionTCO2e'] }}</td>
-                                <td>
-                                    <button class="delete-btn" onclick="deleteRecord({{ record.id }})"><i class="fa-solid fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        <table id="reportTable" class="table table-bordered">
+                            <thead style="background-color: #c62828; color: white; text-align: center;">
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Month</th>
+                                    <th>Office</th>
+                                    <th>Food Type</th>
+                                    <th>Servings</th>
+                                    <th>GHG Emission (KG CO2e)</th>
+                                    <th>GHG Emission (T CO2e)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportData">
+                                {% for record in food_data %}
+                                <tr id="row-{{ record['id'] }}">
+                                    <td>{{ record['YearTransaction'] }}</td>
+                                    <td>{{ record['Month'] }}</td>
+                                    <td>{{ record['Office'] }}</td>
+                                    <td>{{ record['TypeOfFoodServed'] }}</td>
+                                    <td>{{ record['QuantityOfServing'] }}</td>
+                                    <td>{{ record['GHGEmissionKGCO2e'] }}</td>
+                                    <td>{{ record['GHGEmissionTCO2e'] }}</td>
+                                    <td>
+                                        <button class="delete-btn" onclick="deleteRecord({{ record.id }})">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
+                    
                      <!-- Pagination controls -->
 <div class="pagination-container">
     <nav aria-label="Page navigation example">
@@ -1038,16 +1041,19 @@ function deleteRecord(recordId) {
     }
 }
 function downloadCSV() {
-    // Get filter values from the form or dropdowns
-    const campus = document.getElementById('campus')?.value || '';
-    const year = document.getElementById('year')?.value || '';
-    const month = document.getElementById('month')?.value || '';
+    const month = document.getElementById('monthFilter').value;
+    const office = document.getElementById('officeFilter').value; // Assuming you have an office filter
+    const year = document.getElementById('yearFilter').value;
 
-    // Construct the query string with the filters
-    const queryString = `?campus=${encodeURIComponent(campus)}&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
+    // Build the query string with selected filters
+    let queryString = '';
+    if (month) queryString += `month=${encodeURIComponent(month)}&`;
+    if (office) queryString += `office=${encodeURIComponent(office)}&`;
+    if (year) queryString += `year=${encodeURIComponent(year)}`;
+    queryString = queryString ? '?' + queryString : '';
 
-    // Fetch all data directly from the backend
-    fetch(`/waste_unseg/all${queryString}`)
+    // Fetch data from the backend
+    fetch(`/food_consumption/all${queryString}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Server error: ${response.status}`);
@@ -1055,50 +1061,125 @@ function downloadCSV() {
             return response.json();
         })
         .then(data => {
-            if (data.length === 0) {
-                alert('No data available to download.');
+            if (!data || data.length === 0) {
+                alert('No data available for export.');
                 return;
             }
 
-            // Prepare CSV headers
-            const headers = [
-                'Campus', 'Year', 'Month', 'Waste Type', 'Quantity (KG)',
-                'Sent to Landfill (KG)', 'Sent to Landfill (TONS)',
-                'GHG Emission (KG CO₂e)', 'GHG Emission (T CO₂e)'
-            ];
-
-            // Map the data into CSV rows
-            const rows = data.map(record => [
-                record.Campus || '',
-                record.Year || '',
-                record.Month || '',
-                record.WasteType || '',
-                record.QuantityInKG || 0,
-                record.SentToLandfillKG || 0,
-                record.SentToLandfillTONS || 0,
-                record.GHGEmissionKGCO2e || 0,
-                record.GHGEmissionTCO2e || 0
+            // Prepare CSV headers and rows
+            const headers = ['YearTransaction', 'Month', 'Office', 'Food Type', 'Servings', 'Amount of Servings', 'GHG Emission (KG CO₂-e)', 'GHG Emission (T CO₂-e)'];
+            const rows = data.map(report => [
+                report.Campus,
+                report.YearTransaction,
+                report.Month,
+                report.Office,
+                report.FoodType,
+                report.Servings,
+                report.AmountOfServings,
+                report.GHGEmissionKGCO2e,
+                report.GHGEmissionTCO2e,
             ]);
 
-            // Convert the rows into CSV format
+            // Generate CSV content
             const csvContent = [headers, ...rows]
-                .map(row => row.map(value => `"${value}"`).join(","))
-                .join("\n");
+                .map(e => e.join(',')) // Join each row's values with a comma
+                .join('\n'); // Join rows with a newline
 
-            // Create a Blob for the CSV file
+            // Create and download the CSV file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-            // Create a download link and trigger it
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'WasteUnsegregationReport.csv'; // Set the filename
-            document.body.appendChild(link); // Append link to body
-            link.click(); // Trigger download
-            document.body.removeChild(link); // Remove link after download
+            link.href = url;
+            link.setAttribute('download', 'FoodConsumptionReport.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         })
         .catch(error => {
             console.error('Error exporting data:', error);
-            alert('An error occurred while exporting the data. Please try again.');
+            alert('An error occurred while exporting the data.');
+        });
+}
+
+function printReport() {
+    // Get filter values
+    const month = document.getElementById('monthFilter').value;
+    const office = document.getElementById('officeFilter').value;
+    const year = document.getElementById('yearFilter').value;
+
+    // Build the query string for the fetch URL
+    let queryString = '';
+    if (month) queryString += `month=${encodeURIComponent(month)}&`;
+    if (office) queryString += `office=${encodeURIComponent(office)}&`;
+    if (year) queryString += `year=${encodeURIComponent(year)}`;
+
+    // Remove trailing '&' if present
+    queryString = queryString ? '?' + queryString : '';
+
+    // Fetch data from the backend
+    fetch(`/food_consumption/all${queryString}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.length) {
+                alert('No data available to print for the selected filters.');
+                return;
+            }
+
+            // Prepare table content for printing
+            const tableHeader = `
+                <thead>
+                    <tr>
+                        <th>Campus</th>
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Office</th>
+                        <th>Food Type</th>
+                        <th>Servings</th>
+                        <th>Amount of Servings</th>
+                        <th>GHG Emission (KG CO₂-e)</th>
+                        <th>GHG Emission (T CO₂-e)</th>
+                    </tr>
+                </thead>`;
+
+            const tableBody = data
+                .map(report => `
+                    <tr>
+                        <td>${report.Campus}</td>
+                        <td>${report.YearTransaction}</td>
+                        <td>${report.Month}</td>
+                        <td>${report.Office}</td>
+                        <td>${report.FoodType}</td>
+                        <td>${report.Servings}</td>
+                        <td>${report.AmountOfServings}</td>
+                        <td>${report.GHGEmissionKGCO2e}</td>
+                        <td>${report.GHGEmissionTCO2e}</td>
+                    </tr>
+                `)
+                .join('');
+
+            const printContents = `
+                <div style="text-align: center;">
+                    <h2>Food Consumption Report</h2>
+                </div>
+                <table border="1" style="width: 100%; border-collapse: collapse;">
+                    ${tableHeader}
+                    <tbody>${tableBody}</tbody>
+                </table>`;
+
+            // Print the table
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        })
+        .catch(error => {
+            console.error('Error fetching data for print:', error);
+            alert('An error occurred while fetching data for printing.');
         });
 }
 

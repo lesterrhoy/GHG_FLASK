@@ -381,14 +381,28 @@
         </div>
        
         <script>
-            document.getElementById("downloadCSV").addEventListener("click", function () {
-                const month = document.getElementById("month").value;
-        
-                // Construct the URL with query parameters for filtering
-                const url = `/export_treated_water_csv?month=${encodeURIComponent(month)}`;
-        
-                // Redirect to the URL to initiate the download
-                window.location.href = url;
-            });
+           document.getElementById("downloadCSV").addEventListener("click", function () {
+    const month = document.getElementById("month").value;
+
+    // Construct the URL with query parameters for filtering
+    const url = `/export_treated_water_csv?month=${encodeURIComponent(month)}`;
+
+    console.log("Generated URL:", url);
+
+    // Debug using fetch (optional)
+    fetch(url)
+        .then(response => {
+            if (response.ok) {
+                console.log("Server response is OK");
+                window.location.href = url; // Redirect to download
+            } else {
+                console.error("Error response from server:", response.status);
+                alert("An error occurred while generating the CSV file.");
+            }
+        })
+        .catch(error => console.error("Fetch error:", error));
+});
+
+
         </script>
         

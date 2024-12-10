@@ -1553,6 +1553,7 @@ def waste_segregation():
             sub_category = request.form.get('subCategory')
             quantity = float(request.form.get('quantity'))
 
+            # Define emission factors
             emission_factors = {
                 "Biodegradable": {
                     "Garden Waste": 0.57896,
@@ -1618,10 +1619,15 @@ def waste_segregation():
             params.append(quarter_filter)
         if year_filter:
             sql += " AND Year = %s"
-            params.append(year_filter)
+            params.append(int(year_filter))  # Convert the year to integer
+
+
+        # Debug: Log the query
+        app.logger.debug(f"SQL Query: {sql}")
+        app.logger.debug(f"Params: {params}")
 
         # Get total records count with current filters
-        count_sql = f"SELECT COUNT(*) FROM ({sql}) AS count_query"
+        count_sql = sql.replace("SELECT *", "SELECT COUNT(*)")
         cursor.execute(count_sql, tuple(params))
         total_records = cursor.fetchone()['COUNT(*)']
         total_pages = (total_records + per_page - 1) // per_page
@@ -1648,8 +1654,9 @@ def waste_segregation():
         total_pages=total_pages,
         selected_month=month_filter,
         selected_quarter=quarter_filter,
-        selected_year=year_filter
+        selected_year=year_filter  # Ensure this is passed back
     )
+
 
 # Updated route with a unique function name
 @app.route('/delete_waste_record/<int:record_id>', methods=['DELETE'])
@@ -3016,16 +3023,16 @@ def export_treated_water_csv():
     if not campus:
         return jsonify({"error": "Campus is not set in the session"}), 400
 
-    # Get other filter parameters from the request (query parameters)
+    # Get the filter parameter
     month = request.args.get("month", None)
 
     # Base query with mandatory campus filter
-    query = "SELECT * FROM tbltreatedwater WHERE campus = %s"
+    query = "SELECT * FROM tbltreatedwater WHERE Campus = %s"
     params = [campus]
 
-    # Add additional filters dynamically to the query
+    # Add filter for Month (case-sensitive)
     if month:
-        query += " AND month = %s"
+        query += " AND Month = %s"
         params.append(month)
 
     # Execute the query to fetch the data
@@ -3042,6 +3049,10 @@ def export_treated_water_csv():
         if 'db_connection' in locals() and db_connection.is_connected():
             db_connection.close()
 
+    # Debugging: Check the query and params
+    print("Executed Query:", query)
+    print("Query Parameters:", params)
+
     # If no data is returned, handle the empty case
     if not data:
         return "No data available to generate CSV", 404
@@ -3054,6 +3065,8 @@ def export_treated_water_csv():
     response = Response(csv_data, mimetype='text/csv')
     response.headers.set("Content-Disposition", "attachment", filename="treated_water_report.csv")
     return response
+
+
 
 @app.route('/download_treated_water_data')
 def download_treated_water_data():
@@ -3251,7 +3264,7 @@ def export_water_report_csv():
         query += " AND category = %s"
         params.append(category)
     if year:
-        query += " AND year = %s"
+        query += " AND YEAR(Date) = %s"  # Extract year from the Date column
         params.append(year)
 
     # Execute the query to fetch the data
@@ -3280,6 +3293,7 @@ def export_water_report_csv():
     response = Response(csv_data, mimetype='text/csv')
     response.headers.set("Content-Disposition", "attachment", filename="water_consumption_report.csv")
     return response
+
 
 @app.route('/download_water_pdf')
 def download_water_pdf():
@@ -3997,8 +4011,8 @@ def export_food_consumption_csv():
 
     # Add filters dynamically
     if year:
-        query += " AND year_transaction = %s"
-        params.append(year)
+        query += " AND YearTransaction = %s"  # Correctly referencing the column name
+        params.append(year)  # Append the year value from the request arguments
     if month:
         query += " AND month = %s"
         params.append(month)
@@ -4034,6 +4048,7 @@ def export_food_consumption_csv():
     response = Response(csv_data, mimetype='text/csv')
     response.headers.set("Content-Disposition", "attachment", filename="food_consumption_report.csv")
     return response
+
 
 @app.route('/download_food_consumption_pdf')
 def download_food_consumption_pdf():
@@ -6088,7 +6103,7 @@ def export_fuel_report_csv():
         query += " AND quarter = %s"
         params.append(quarter)
     if year:
-        query += " AND YEAR(date_column) = %s"  # Replace 'date_column' with the actual column name
+        query += " AND YEAR(date) = %s"  # Replace 'date_column' with the actual column name
         params.append(year)
 
     # Execute the query
@@ -7795,6 +7810,75 @@ def sdo_lpg_consumption_excel():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+@app.route('/sdo_lpg_consumption_csv')
+def sdo_lpg_consumption_csv():
+    # Ensure the user is logged in and has a valid session
+    if 'campus' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Get the user's campus from the session
+    user_campus = session['campus']
+
+    # Get filter values from request arguments
+    year = request.args.get('year', None)
+    month = request.args.get('month', None)
+    office = request.args.get('office', None)
+
+    # Database connection
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Build the WHERE clause with enforced campus restriction
+        filter_conditions = ["Campus = %s"]  # Enforce campus from session
+        params = [user_campus]
+
+        if year:
+            filter_conditions.append("YearTransact = %s")
+            params.append(year)
+
+        if month:
+            filter_conditions.append("Month = %s")
+            params.append(month)
+
+        if office:
+            filter_conditions.append("Office = %s")
+            params.append(office)
+
+        where_clause = "WHERE " + " AND ".join(filter_conditions)
+
+        # Query to fetch all data matching the filters
+        query = f"""
+            SELECT Campus, YearTransact, Month, Office, ConcessionariesType, TankQuantity, 
+                   TankWeight, TankVolume, TotalTankVolume, GHGEmissionKGCO2e, GHGEmissionTCO2e
+            FROM tbllpg {where_clause}
+            ORDER BY YearTransact DESC, Month ASC
+        """
+        cursor.execute(query, tuple(params))
+        lpg_data = cursor.fetchall()
+
+    except mysql.connector.Error as e:
+        return f"Database error: {e}", 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn.is_connected():
+            conn.close()
+
+    # Check if data is empty
+    if not lpg_data:
+        return "No data available for the selected filters.", 404
+
+    # Convert data into a pandas DataFrame
+    df = pd.DataFrame(lpg_data)
+
+    # Convert DataFrame to CSV
+    csv_data = df.to_csv(index=False)
+
+    # Send the CSV file as a downloadable response
+    response = Response(csv_data, mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="sdo_lpg_consumption_report.csv")
+    return response
 
 @app.route('/sdo_flight_emissions_report')
 def sdo_flight_emissions_report():
@@ -8157,7 +8241,7 @@ def export_accommodation_emissions_csv():
         query += " AND office = %s"
         params.append(office)
     if year:
-        query += " AND year_transact = %s"
+        query += " AND YearTransact = %s"
         params.append(year)
 
     # Fetch data from the database
