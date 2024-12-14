@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,8 +19,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-
-    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"> <!-- Roboto font -->
 
     <style>
         /* Layout Styling */
@@ -72,23 +73,103 @@
         }
     
         /* Table Styling */
+        /* Simula dito yung style  pababa*/
+   body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f8fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .table-wrapper {
+            margin: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h1 {
+            font-size: 20px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .table-header .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-header .actions button {
+            border: none;
+            padding: 10px 15px;
+            background-color: #003c57;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .table-header .actions button:hover {
+            background-color: #00587a;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-        }
-    
-        th, td {
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-    
-        th {
-            background-color: #f2f2f2;
-            color: #000;
         }
 
+        th, td {
+            padding: 15px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+        th {
+            background: linear-gradient(180deg, #f5b3b3, #f77d7d, #f5756c, #c62828); /* Bold red gradient */
+            color: #FFFFFF; /* White text for contrast */
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            padding: 10px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        th:hover {
+            background: linear-gradient(180deg, #f89f9f, #f85e5e, #e53935, #b71c1c); /* Slightly darker red tones on hover */
+            color: #080404; /* Maintain contrast */
+            cursor: pointer;
+        }
+
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        td {
+            font-size: 10px;
+            color: #333;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #eef5f9;
+        }
         .content-area {
     flex-grow: 1;
     padding: 20px;
@@ -276,6 +357,7 @@
                 
                 <div class="table-responsive mt-4">
                 <h3>LPG Consumption Report</h3>
+                <div class="table-wrapper"></div>
                 <table class="table table-bordered mt-4" id="lpg_data">
                     <thead>
                         <tr>
@@ -316,6 +398,7 @@
                         {% endif %}
                     </tbody>
                 </table>
+                </div>
                 </div>
      <!-- Pagination -->
     <nav aria-label="Page navigation">

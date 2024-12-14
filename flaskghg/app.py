@@ -474,7 +474,7 @@ def emu_dashboard():
 @app.route('/analytics')
 def analytics():
     # Extract session data
-    campus = session['campus']
+    campus = session.get('campus', '')
     selected_year = int(request.args.get('year', datetime.now().year))
     current_year = datetime.now().year  # Get the current year
 
@@ -521,13 +521,13 @@ def analytics():
             cursor.execute(query, (selected_year, campus))
             for row in cursor.fetchall():
                 month_index = month_to_index.get(row.get('month') or row.get('Month'), -1)
-                if month_index != -1:
+                if 0 <= month_index < len(data_list):  # Ensure index is valid
                     emission_value = row.get('total_emission') or row.get('kg_co2_per_kwh') or row.get('GHGEmissionKGCO2e')
                     if emission_value is not None:
                         data_list[month_index] = float(emission_value)
                         current_emission_data[category] += float(emission_value)
 
-        # Treated water query (with campus filter)
+        # Treated water query
         treated_water_query = """
             SELECT Month, SUM(FactorKGCO2e) AS total_emission
             FROM tbltreatedwater
@@ -538,7 +538,7 @@ def analytics():
         cursor.execute(treated_water_query, (selected_year, campus))
         for row in cursor.fetchall():
             month_index = month_to_index.get(row.get('Month'), -1)
-            if month_index != -1:
+            if 0 <= month_index < len(treated_water_data):  # Ensure index is valid
                 treated_value = row.get('total_emission')
                 if treated_value is not None:
                     treated_water_data[month_index] = float(treated_value)
@@ -548,14 +548,13 @@ def analytics():
         def simple_forecast(data):
             last_two_values = [val for val in data[-2:] if val > 0]  # Get the last two non-zero values
             if len(last_two_values) < 2:
-                avg_growth = 0
-            else:
-                avg_growth = (last_two_values[1] - last_two_values[0]) / last_two_values[0] if last_two_values[0] != 0 else 0
+                return [0, 0]  # Return zero for forecasts if insufficient data
+            avg_growth = (last_two_values[1] - last_two_values[0]) / last_two_values[0] if last_two_values[0] != 0 else 0
             next_value_1 = last_two_values[-1] * (1 + avg_growth)
             next_value_2 = next_value_1 * (1 + avg_growth)
             return [round(next_value_1, 2), round(next_value_2, 2)]
 
-        # Apply forecasting to all data sets
+        # Apply forecasting
         electricity_data[-2:] = simple_forecast(electricity_data[:12])
         fuel_data[-2:] = simple_forecast(fuel_data[:12])
         waste_segregated_data[-2:] = simple_forecast(waste_segregated_data[:12])
@@ -582,7 +581,7 @@ def analytics():
         treated_water_data=treated_water_data,
         labels=labels,
         selected_year=selected_year,
-        current_year=current_year  # Add current_year here
+        current_year=current_year
     )
 
 
